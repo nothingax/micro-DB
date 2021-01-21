@@ -1,0 +1,10 @@
+### maven ignore ####
+target/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+log
+out/
