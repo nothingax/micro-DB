@@ -16,7 +16,7 @@ public class TableDesc implements Serializable {
     private static final long serialVersionUID = -1072772284817404997L;
 
     /**
-     * 表中中的属性
+     * 表中的属性
      */
     private List<Attribute> attributes;
 

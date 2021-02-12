@@ -3,6 +3,9 @@ package com.microdb.model.dbfile;
 import com.microdb.model.page.Page;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 
 /**
  * 表磁盘文件，存储一个表的数据
@@ -28,19 +31,33 @@ public class DbFile {
      * @param pageNo number of page
      * @return page
      */
-    private Page readPage(int pageNo) {
+    private Page readPageFromDisk(int pageNo) {
+        byte[] emptyPage = new byte[Page.defaultPageSizeByte];
+        try {
+            FileInputStream in = new FileInputStream(file);
+            in.skip(pageNo * Page.defaultPageSizeByte);
+            in.read(emptyPage);
+        } catch (IOException e) {
+            throw new RuntimeException("todo ,read Page from disk error", e);
+        }
 
-        // TODO
-        return null;
+
+        return new Page(pageNo, emptyPage);
     }
 
     /**
-     * 写入一页数据
+     * 写数据至磁盘
      *
      * @param page
      */
-    private void writePage(Page page) {
-
-        // TODO
+    public void writePageToDisk(Page page) {
+        byte[] pgData = page.getPageData();
+        try {
+            RandomAccessFile dbFile = new RandomAccessFile(file, "rws");
+            dbFile.skipBytes(page.getPageNo() * Page.defaultPageSizeByte);
+            dbFile.write(pgData);
+        } catch (IOException e) {
+            throw new RuntimeException("todo ,write Page To Disk error", e);
+        }
     }
 }

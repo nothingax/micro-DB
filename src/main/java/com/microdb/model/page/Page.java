@@ -12,7 +12,7 @@ public class Page {
     /**
      * 默认每页4KB
      */
-    private Integer defaultPageSizeByte = 4096;
+    public static Integer defaultPageSizeByte = 4096;
 
     /**
      * 页号
@@ -24,8 +24,21 @@ public class Page {
      */
     private Tuple[] tuples;
 
-    // /**
-    //  * 每页的数据
-    //  */
-    // private byte[] pageData;
+    /**
+     * 每页的数据
+     */
+    private byte[] pageData;
+
+    public int getPageNo() {
+        return pageNo;
+    }
+
+    public byte[] getPageData() {
+        return pageData;
+    }
+
+    public Page(int pageNo, byte[] pageData) {
+        this.pageNo = pageNo;
+        this.pageData = pageData;
+    }
 }
