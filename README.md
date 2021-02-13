@@ -13,4 +13,7 @@
 
    添加文件、页、表结构描述等定义
    
-   添加writePageToDisk、readPageFromDisk，实现从表的磁盘文件中写入一页数据、读取一页数据
+   
+   
+   添加表文件（DbFile）的方法: writePageToDisk、readPageFromDisk，实现从表的磁盘文件中写入一页数据、读取一页数据
+
