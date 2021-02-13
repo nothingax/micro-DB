@@ -40,8 +40,6 @@ public class DbFile {
         } catch (IOException e) {
             throw new RuntimeException("todo ,read Page from disk error", e);
         }
-
-
         return new Page(pageNo, emptyPage);
     }
 
