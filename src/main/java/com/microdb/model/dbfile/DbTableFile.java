@@ -13,7 +13,7 @@ import java.io.RandomAccessFile;
  * @author zhangjw
  * @version 1.0
  */
-public class DbFile {
+public class DbTableFile {
 
     /**
      * 文件
@@ -21,7 +21,7 @@ public class DbFile {
     private File file;
 
 
-    public DbFile(File file) {
+    public DbTableFile(File file) {
         this.file = file;
     }
 

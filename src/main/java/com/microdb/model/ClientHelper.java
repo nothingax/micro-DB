@@ -1,6 +1,6 @@
 package com.microdb.model;
 
-import com.microdb.model.dbfile.DbFile;
+import com.microdb.model.dbfile.DbTableFile;
 import com.microdb.model.page.Page;
 
 import java.io.File;
@@ -15,11 +15,11 @@ public class ClientHelper {
     public static void main(String[] args) {
 
         // 创建数据库文件
-        DbFile dbFile = new DbFile(new File("/db_file.txt"));
+        DbTableFile dbTableFile = new DbTableFile(new File("/db_file.txt"));
 
         Page page = new Page(0, new byte[]{});
 
         // 数据写入file
-        dbFile.writePageToDisk(page);
+        dbTableFile.writePageToDisk(page);
     }
 }
