@@ -18,6 +18,12 @@ public class DataBase {
         this.tables = new HashMap<>();
     }
 
+    /**
+     * 添加表
+     *
+     * @param dbTableFile table file
+     * @param name talbe name
+     */
     public void addTable(DbTableFile dbTableFile, String name) {
         tables.put(dbTableFile.getId(), new DbTable(name, dbTableFile));
     }
