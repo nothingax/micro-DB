@@ -58,4 +58,9 @@ public class DbTableFile {
             throw new RuntimeException("todo ,write Page To Disk error", e);
         }
     }
+
+    public Integer getId() {
+        // TODO
+        return null;
+    }
 }
