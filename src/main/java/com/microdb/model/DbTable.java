@@ -13,7 +13,7 @@ public class DbTable {
     /**
      * table name
      */
-    private String name;
+    private String tableName;
 
     /**
      * table file
@@ -25,13 +25,21 @@ public class DbTable {
      */
     private TableDesc tableDesc;
 
-
-    public DbTable(String name, DbTableFile dbTableFile) {
-        this.name = name;
+    public DbTable(String tableName, DbTableFile dbTableFile, TableDesc tableDesc) {
+        this.tableName = tableName;
         this.dbTableFile = dbTableFile;
+        this.tableDesc = tableDesc;
     }
 
     public TableDesc getTupleDesc() {
         return this.tableDesc;
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public DbTableFile getDbTableFile() {
+        return dbTableFile;
     }
 }
