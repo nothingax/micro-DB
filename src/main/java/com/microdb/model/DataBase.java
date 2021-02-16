@@ -24,7 +24,7 @@ public class DataBase {
      * @param dbTableFile table file
      * @param name talbe name
      */
-    public void addTable(DbTableFile dbTableFile, String name) {
-        tables.put(dbTableFile.getId(), new DbTable(name, dbTableFile));
+    public void addTable(DbTableFile dbTableFile, String name,TableDesc tableDesc) {
+        tables.put(dbTableFile.getId(), new DbTable(name, dbTableFile, tableDesc));
     }
 }
