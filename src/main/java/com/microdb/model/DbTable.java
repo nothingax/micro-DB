@@ -20,9 +20,18 @@ public class DbTable {
      */
     private DbTableFile dbTableFile;
 
+    /**
+     * 表结构
+     */
+    private TableDesc tableDesc;
+
 
     public DbTable(String name, DbTableFile dbTableFile) {
         this.name = name;
         this.dbTableFile = dbTableFile;
+    }
+
+    public TableDesc getTupleDesc() {
+        return this.tableDesc;
     }
 }
