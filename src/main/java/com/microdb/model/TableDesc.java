@@ -1,6 +1,6 @@
 package com.microdb.model;
 
-import sun.jvm.hotspot.oops.FieldType;
+import com.microdb.model.enums.FieldType;
 
 import java.io.Serializable;
 import java.util.List;
@@ -35,6 +35,14 @@ public class TableDesc implements Serializable {
          * 字段类型
          */
         private FieldType fieldType;
+
+        public Attribute(String filedName, FieldType fieldType) {
+            this.filedName = filedName;
+            this.fieldType = fieldType;
+        }
     }
 
+    public TableDesc(List<Attribute> attributes) {
+        this.attributes = attributes;
+    }
 }

@@ -1,4 +1,4 @@
-package com.microdb.model.enum
+package com.microdb.model.enums;
 
 /**
  * 字段数据类型
@@ -6,7 +6,7 @@ package com.microdb.model.enum
  * @author zhangjw
  * @version 1.0
  */
-enum class FieldType {
+public enum FieldType {
     INT,
     STRING;
 }

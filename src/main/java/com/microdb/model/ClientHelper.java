@@ -1,9 +1,12 @@
 package com.microdb.model;
 
 import com.microdb.model.dbfile.DbTableFile;
+import com.microdb.model.enums.FieldType;
 import com.microdb.model.page.Page;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * 访问客户地段helper，用于调试
@@ -17,8 +20,8 @@ public class ClientHelper {
         DataBase dataBase = new DataBase();
         // 创建数据库文件
         DbTableFile dbTableFile = new DbTableFile(new File("/db_file.txt"));
-
-        TableDesc tableDesc = new TableDesc();
+        List<TableDesc.Attribute> attributes = Arrays.asList(new TableDesc.Attribute("f1", FieldType.INT));
+        TableDesc tableDesc = new TableDesc(attributes);
         // tableDesc
         dataBase.addTable(dbTableFile, "t_person", tableDesc);
         Page page = new Page(0, new byte[]{});
