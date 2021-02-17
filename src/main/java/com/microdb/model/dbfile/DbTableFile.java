@@ -59,8 +59,13 @@ public class DbTableFile {
         }
     }
 
-    public Integer getId() {
-        // TODO
-        return null;
+    /**
+     * 返回文件的唯一标识
+     *
+     * @return  表文件的唯一标识
+     */
+    public int getId() {
+        return this.file.getAbsoluteFile().hashCode();
     }
+
 }
