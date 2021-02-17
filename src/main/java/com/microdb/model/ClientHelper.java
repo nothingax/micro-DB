@@ -14,9 +14,13 @@ import java.io.File;
 public class ClientHelper {
     public static void main(String[] args) {
 
+        DataBase dataBase = new DataBase();
         // 创建数据库文件
         DbTableFile dbTableFile = new DbTableFile(new File("/db_file.txt"));
 
+        TableDesc tableDesc = new TableDesc();
+        // tableDesc
+        dataBase.addTable(dbTableFile, "t_person", tableDesc);
         Page page = new Page(0, new byte[]{});
 
         // 数据写入file

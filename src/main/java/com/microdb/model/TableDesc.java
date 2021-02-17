@@ -37,5 +37,4 @@ public class TableDesc implements Serializable {
         private FieldType fieldType;
     }
 
-
 }
