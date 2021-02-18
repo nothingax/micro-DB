@@ -1,5 +1,7 @@
 package com.microdb.model;
 
+import com.microdb.model.enums.FieldType;
+
 import java.io.Serializable;
 
 /**
@@ -23,4 +25,8 @@ public class IntField implements Field, Serializable {
         return value;
     }
 
+    @Override
+    public FieldType getType() {
+        return FieldType.INT;
+    }
 }
