@@ -32,15 +32,15 @@ public class DbTableFile {
      * @return page
      */
     private Page readPageFromDisk(int pageNo) {
-        byte[] emptyPage = new byte[Page.defaultPageSizeByte];
+        byte[] pageData = new byte[Page.defaultPageSizeByte];
         try {
             FileInputStream in = new FileInputStream(file);
             in.skip(pageNo * Page.defaultPageSizeByte);
-            in.read(emptyPage);
+            in.read(pageData);
         } catch (IOException e) {
             throw new RuntimeException("todo ,read Page from disk error", e);
         }
-        return new Page(pageNo, emptyPage);
+        return new Page(pageNo, pageData);
     }
 
     /**
@@ -60,7 +60,7 @@ public class DbTableFile {
     }
 
     /**
-     * 返回文件的唯一标识
+     * 返回文件的唯一id
      *
      * @return  表文件的唯一标识
      */

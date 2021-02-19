@@ -1,5 +1,7 @@
 package com.microdb.model;
 
+import com.microdb.model.field.Field;
+
 import java.io.Serializable;
 import java.util.List;
 

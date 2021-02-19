@@ -1,6 +1,6 @@
 package com.microdb.model;
 
-import com.microdb.model.enums.FieldType;
+import com.microdb.model.field.FieldType;
 
 import java.io.Serializable;
 import java.util.List;

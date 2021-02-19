@@ -1,11 +1,9 @@
-package com.microdb.model;
-
-import com.microdb.model.enums.FieldType;
+package com.microdb.model.field;
 
 import java.io.Serializable;
 
 /**
- * 分量/字段，表示元组中的一个属性值，类型见{@link com.microdb.model.enums.FieldType}
+ * 分量/字段，表示元组中的一个属性值，类型见{@link FieldType}
  *
  *
  * @author zhangjw

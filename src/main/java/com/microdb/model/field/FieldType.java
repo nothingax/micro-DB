@@ -1,4 +1,4 @@
-package com.microdb.model.enums;
+package com.microdb.model.field;
 
 /**
  * 字段数据类型

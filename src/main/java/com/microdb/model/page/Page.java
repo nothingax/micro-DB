@@ -20,7 +20,7 @@ public class Page {
     private int pageNo;
 
     /**
-     * 当前page中的元组
+     * 页面中数据
      */
     private Tuple[] tuples;
 

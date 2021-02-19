@@ -11,7 +11,9 @@ import java.util.HashMap;
  * @version 1.0
  */
 public class DataBase {
-
+    /**
+     * dbTableFile id to DbTable
+     */
     private HashMap<Integer, DbTable> tables;
 
     public DataBase() {
@@ -22,9 +24,9 @@ public class DataBase {
      * 添加表
      *
      * @param dbTableFile table file
-     * @param name talbe name
+     * @param tableName   table name
      */
-    public void addTable(DbTableFile dbTableFile, String name,TableDesc tableDesc) {
-        tables.put(dbTableFile.getId(), new DbTable(name, dbTableFile, tableDesc));
+    public void addTable(DbTableFile dbTableFile, String tableName, TableDesc tableDesc) {
+        tables.put(dbTableFile.getId(), new DbTable(tableName, dbTableFile, tableDesc));
     }
 }
