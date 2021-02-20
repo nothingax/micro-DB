@@ -1,9 +1,11 @@
 package com.microdb.model;
 
 import com.microdb.model.field.FieldType;
+import com.microdb.model.field.IFieldType;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 表结构描述
@@ -20,10 +22,29 @@ public class TableDesc implements Serializable {
      */
     private List<Attribute> attributes;
 
+    public TableDesc(List<Attribute> attributes) {
+        this.attributes = attributes;
+    }
+
+    public int getAttributesNum() {
+        return attributes.size();
+    }
+
+    /**
+     * 返回一行数据占用的字节数
+     */
+    public int getRowMaxSizeInBytes() {
+        return this.attributes
+                .stream()
+                .map(Attribute::getFieldType)
+                .mapToInt(IFieldType::getSizeInByte)
+                .sum();
+    }
+
     /**
      * 属性，表中的一列
      */
-    public static class Attribute implements Serializable{
+    public static class Attribute implements Serializable {
 
         private static final long serialVersionUID = 6568833840007706206L;
         /**
@@ -36,13 +57,37 @@ public class TableDesc implements Serializable {
          */
         private FieldType fieldType;
 
+        public String getFiledName() {
+            return filedName;
+        }
+
+        public FieldType getFieldType() {
+            return fieldType;
+        }
+
         public Attribute(String filedName, FieldType fieldType) {
             this.filedName = filedName;
             this.fieldType = fieldType;
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof Attribute)) {
+                return false;
+            }
+
+            return fieldType.equals(((Attribute) obj).fieldType)
+                    && Objects.equals(filedName, ((Attribute) obj).filedName);
+        }
     }
 
-    public TableDesc(List<Attribute> attributes) {
-        this.attributes = attributes;
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj == null ? this.attributes == null : ((TableDesc) obj).attributes.equals(this.attributes);
     }
 }

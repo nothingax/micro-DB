@@ -1,7 +1,9 @@
 package com.microdb.model;
 
+import com.microdb.exception.DbException;
 import com.microdb.model.dbfile.DbTableFile;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 /**
@@ -15,9 +17,11 @@ public class DataBase {
      * dbTableFile id to DbTable
      */
     private HashMap<Integer, DbTable> tables;
+    private HashMap<String, DbTable> tableNameToTable;
 
     public DataBase() {
         this.tables = new HashMap<>();
+        this.tableNameToTable = new HashMap<>();
     }
 
     /**
@@ -27,6 +31,20 @@ public class DataBase {
      * @param tableName   table name
      */
     public void addTable(DbTableFile dbTableFile, String tableName, TableDesc tableDesc) {
-        tables.put(dbTableFile.getId(), new DbTable(tableName, dbTableFile, tableDesc));
+        DbTable dbTable = new DbTable(tableName, dbTableFile, tableDesc);
+        tables.put(dbTableFile.getId(), dbTable);
+        tableNameToTable.put(tableName, dbTable);
+    }
+
+    public DbTable getDbTableByName(String name) {
+        DbTable dbTable = tableNameToTable.get(name);
+        if (dbTable == null) {
+            throw new DbException("table not exist");
+        }
+        return dbTable;
+    }
+
+    public void insertRow(Tuple tuple, String tableName) throws IOException {
+        this.getDbTableByName(tableName).insertRow(tuple);
     }
 }

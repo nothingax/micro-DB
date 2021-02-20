@@ -1,5 +1,7 @@
 package com.microdb.model.field;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 
 /**
@@ -26,5 +28,10 @@ public class IntField implements Field, Serializable {
     @Override
     public FieldType getType() {
         return FieldType.INT;
+    }
+
+    @Override
+    public void serialize(DataOutputStream dos) throws IOException {
+        dos.write(value);
     }
 }

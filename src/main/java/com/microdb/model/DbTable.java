@@ -1,6 +1,10 @@
 package com.microdb.model;
 
+import com.microdb.exception.DbException;
 import com.microdb.model.dbfile.DbTableFile;
+
+import java.io.IOException;
+import java.util.Objects;
 
 /**
  * 表对象
@@ -41,5 +45,12 @@ public class DbTable {
 
     public DbTableFile getDbTableFile() {
         return dbTableFile;
+    }
+
+    public void insertRow(Tuple tuple) throws IOException {
+        if (!Objects.equals(tuple.getTableDesc(), this.getTupleDesc())) {
+            throw new DbException("insertRow error: TableDesc not match");
+        }
+        this.dbTableFile.insertRow(tuple);
     }
 }

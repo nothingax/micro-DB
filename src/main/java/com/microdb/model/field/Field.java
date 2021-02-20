@@ -1,5 +1,7 @@
 package com.microdb.model.field;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 
 /**
@@ -15,4 +17,6 @@ public interface Field extends Serializable {
      * 返回字段数据类型
      */
      FieldType getType();
+
+    void serialize(DataOutputStream dos) throws IOException;
 }

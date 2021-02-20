@@ -6,7 +6,11 @@ package com.microdb.model.field;
  * @author zhangjw
  * @version 1.0
  */
-public enum FieldType {
-    INT,
-    STRING;
+public enum FieldType implements IFieldType {
+    INT() {
+        @Override
+        public int getSizeInByte() {
+            return 4;
+        }
+    }
 }
