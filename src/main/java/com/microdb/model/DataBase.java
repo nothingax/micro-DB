@@ -19,12 +19,12 @@ public class DataBase {
     /**
      * dbTableFile id to DbTable
      */
-    private HashMap<Integer, DbTable> tableIdToTable;
-    private HashMap<String, DbTable> tableNameToTable;
+    private HashMap<Integer, DbTable> tableId2Table;
+    private HashMap<String, DbTable> tableName2Table;
 
     private DataBase() {
-        this.tableIdToTable = new HashMap<>();
-        this.tableNameToTable = new HashMap<>();
+        this.tableId2Table = new HashMap<>();
+        this.tableName2Table = new HashMap<>();
     }
 
     public static DataBase getInstance() {
@@ -39,12 +39,12 @@ public class DataBase {
      */
     public void addTable(DbTableFile dbTableFile, String tableName, TableDesc tableDesc) {
         DbTable dbTable = new DbTable(tableName, dbTableFile, tableDesc);
-        tableIdToTable.put(dbTableFile.getId(), dbTable);
-        tableNameToTable.put(tableName, dbTable);
+        tableId2Table.put(dbTableFile.getId(), dbTable);
+        tableName2Table.put(tableName, dbTable);
     }
 
     public DbTable getDbTableById(int tableId) {
-        DbTable dbTable = tableIdToTable.get(tableId);
+        DbTable dbTable = tableId2Table.get(tableId);
         if (dbTable == null) {
             throw new DbException("table not exist");
         }
@@ -53,7 +53,7 @@ public class DataBase {
 
 
     public DbTable getDbTableByName(String name) {
-        DbTable dbTable = tableNameToTable.get(name);
+        DbTable dbTable = tableName2Table.get(name);
         if (dbTable == null) {
             throw new DbException("table not exist");
         }
