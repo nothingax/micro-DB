@@ -9,7 +9,7 @@ import com.microdb.model.field.Field;
 import java.io.*;
 
 /**
- * 页，读取磁盘文件数据时以page为基本单位
+ * 页，读写磁盘文件数据时以page为基本单位
  *
  * @author zhangjw
  * @version 1.0
@@ -24,7 +24,7 @@ public class Page {
      */
     private PageID pageID;
     /**
-     * 页面中数据
+     * 行数据数组，每个tuple一行数据
      */
     private Tuple[] tuples;
     /**
@@ -102,7 +102,21 @@ public class Page {
             slotUsageStatusBitMap[i] = dis.readBoolean();
         }
 
-        //  TODO tuple 反序列化
+        // 行数据Tuple反序列化
+        tuples = new Tuple[maxSlotNum];
+        for (int i = 0; i < tuples.length; i++) {
+            if (isSlotUsed(i)) {
+                Tuple tuple = new Tuple(this.tableDesc);
+                Field[] fields = this.tableDesc.getFieldTypes()
+                        .stream()
+                        .map(x -> x.parse(dis))
+                        .toArray(Field[]::new);
+                tuple.setFields(fields);
+                tuples[i] = tuple;
+            } else {
+                tuples[i] = null;
+            }
+        }
 
         dis.close();
     }

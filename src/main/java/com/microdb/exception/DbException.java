@@ -6,7 +6,7 @@ package com.microdb.exception;
  * @author zhangjw
  * @version 1.0
  */
-public class DbException extends RuntimeException{
+public class DbException extends RuntimeException {
     public DbException() {
     }
 

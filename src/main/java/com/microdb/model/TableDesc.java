@@ -6,6 +6,7 @@ import com.microdb.model.field.IFieldType;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * 表结构描述
@@ -28,6 +29,10 @@ public class TableDesc implements Serializable {
 
     public int getAttributesNum() {
         return attributes.size();
+    }
+
+    public List<FieldType> getFieldTypes() {
+        return this.attributes.stream().map(Attribute::getFieldType).collect(Collectors.toList());
     }
 
     /**

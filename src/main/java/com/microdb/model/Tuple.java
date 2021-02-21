@@ -45,6 +45,10 @@ public class Tuple implements Serializable {
         return fields[index];
     }
 
+    public void setFields(Field[] fields) {
+        this.fields = fields;
+    }
+
     public List<Field> getFields() {
         return Stream.of(fields).collect(Collectors.toList());
     }
