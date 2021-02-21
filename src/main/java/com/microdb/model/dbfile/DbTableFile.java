@@ -51,7 +51,7 @@ public class DbTableFile {
      */
     public void writePageToDisk(Page page) {
         try {
-            byte[] pgData = page.getPageData();
+            byte[] pgData = page.serialize();
             RandomAccessFile dbFile = new RandomAccessFile(file, "rws");
             dbFile.skipBytes(page.getPageNo() * Page.defaultPageSizeInByte);
             dbFile.write(pgData);

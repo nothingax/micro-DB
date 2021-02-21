@@ -46,10 +46,11 @@ public class Page {
     public int getPageNo() {
         return pageID.getPageNo();
     }
+
     /**
      * 序列化page数据
      */
-    public byte[] getPageData() throws IOException {
+    public byte[] serialize() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(Page.defaultPageSizeInByte);
         DataOutputStream dos = new DataOutputStream(baos);
 
@@ -81,27 +82,16 @@ public class Page {
         return baos.toByteArray();
     }
 
-    private boolean isSlotUsed(int i) {
-        return slotUsageStatusBitMap[i];
-    }
-
-    private boolean isSlotEmpty(int i) {
-        return !slotUsageStatusBitMap[i];
-    }
-
-    public Page(PageID pageID, byte[] pageData) throws IOException {
-        this.pageID = pageID;
-        this.tableDesc = DataBase.getInstance().getDbTableById(pageID.getTableId()).getTableDesc();
-        this.maxSlotNum = calculateMaxSlotNum(this.tableDesc);
-        this.tuples = new Tuple[this.maxSlotNum];
-        this.slotUsageStatusBitMap = new boolean[this.maxSlotNum];
+    /**
+     * 反序列化文件数据到page
+     * 将 slotUsageStatusBitMap 、tuples 字节反序列化到对象
+     */
+    private void deserialize(byte[] pageData) throws IOException {
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(pageData));
-
         // slot状态位反序列化
         for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
             slotUsageStatusBitMap[i] = dis.readBoolean();
         }
-
         // 行数据Tuple反序列化
         tuples = new Tuple[maxSlotNum];
         for (int i = 0; i < tuples.length; i++) {
@@ -119,6 +109,23 @@ public class Page {
         }
 
         dis.close();
+    }
+
+    private boolean isSlotUsed(int i) {
+        return slotUsageStatusBitMap[i];
+    }
+
+    private boolean isSlotEmpty(int i) {
+        return !slotUsageStatusBitMap[i];
+    }
+
+    public Page(PageID pageID, byte[] pageData) throws IOException {
+        this.pageID = pageID;
+        this.tableDesc = DataBase.getInstance().getDbTableById(pageID.getTableId()).getTableDesc();
+        this.maxSlotNum = calculateMaxSlotNum(this.tableDesc);
+        this.tuples = new Tuple[this.maxSlotNum];
+        this.slotUsageStatusBitMap = new boolean[this.maxSlotNum];
+        deserialize(pageData);
     }
 
     public static byte[] createEmptyPageData() {
