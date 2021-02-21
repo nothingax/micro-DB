@@ -32,6 +32,6 @@ public class IntField implements Field, Serializable {
 
     @Override
     public void serialize(DataOutputStream dos) throws IOException {
-        dos.write(value);
+        dos.writeInt(value);
     }
 }

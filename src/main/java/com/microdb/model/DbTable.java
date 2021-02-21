@@ -20,6 +20,11 @@ public class DbTable {
     private String tableName;
 
     /**
+     * table id
+     */
+    private int tableId;
+
+    /**
      * table file
      */
     private DbTableFile dbTableFile;
@@ -31,11 +36,12 @@ public class DbTable {
 
     public DbTable(String tableName, DbTableFile dbTableFile, TableDesc tableDesc) {
         this.tableName = tableName;
+        this.tableId = dbTableFile.getId();
         this.dbTableFile = dbTableFile;
         this.tableDesc = tableDesc;
     }
 
-    public TableDesc getTupleDesc() {
+    public TableDesc getTableDesc() {
         return this.tableDesc;
     }
 
@@ -43,12 +49,16 @@ public class DbTable {
         return tableName;
     }
 
+    public int getTableId() {
+        return tableId;
+    }
+
     public DbTableFile getDbTableFile() {
         return dbTableFile;
     }
 
     public void insertRow(Tuple tuple) throws IOException {
-        if (!Objects.equals(tuple.getTableDesc(), this.getTupleDesc())) {
+        if (!Objects.equals(tuple.getTableDesc(), this.getTableDesc())) {
             throw new DbException("insertRow error: TableDesc not match");
         }
         this.dbTableFile.insertRow(tuple);

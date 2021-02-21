@@ -81,7 +81,8 @@ public class DbTableFile {
 
         // 现有所有页面均没有空slot,新建立一个页面
         if (null == availablePage) {
-            PageID pageID = new PageID(this.getId(), existPageCount + 1);
+            int pageNo = existPageCount; // 由于pageNo从0开始
+            PageID pageID = new PageID(this.getId(), pageNo);
             availablePage = new Page(pageID, Page.createEmptyPageData());
         }
         availablePage.insertTuple(tuple);
@@ -89,6 +90,11 @@ public class DbTableFile {
     }
 
     private Page getFirstPageHasEmptySlot(int existPageCount) throws IOException {
+        // 当前文件还没有插入数据，返回空
+        if (existPageCount == 0) {
+            return null;
+        }
+
         for (int pageNo = 0; pageNo < existPageCount; pageNo++) {
             PageID pageID = new PageID(this.getId(), pageNo);
             Page pg = this.readPageFromDisk(pageID);

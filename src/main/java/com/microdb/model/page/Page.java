@@ -91,8 +91,8 @@ public class Page {
 
     public Page(PageID pageID, byte[] pageData) throws IOException {
         this.pageID = pageID;
-        this.tableDesc = DataBase.getInstance().getDbTableById(pageID.getTableId()).getTupleDesc();
-        this.maxSlotNum = calculateMaxSlotNum();
+        this.tableDesc = DataBase.getInstance().getDbTableById(pageID.getTableId()).getTableDesc();
+        this.maxSlotNum = calculateMaxSlotNum(this.tableDesc);
         this.tuples = new Tuple[this.maxSlotNum];
         this.slotUsageStatusBitMap = new boolean[this.maxSlotNum];
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(pageData));
@@ -140,7 +140,7 @@ public class Page {
      * 页字节数容量（4KB）/(表一行占用字节+行的状态标识占用字节），向下取整
      * 行的状态标识占用位数：每行占用1byte
      */
-    public int calculateMaxSlotNum() {
+    public int calculateMaxSlotNum(TableDesc tableDesc) {
         // slot状态位占用空间=1byte
         int slotStatusSizeInByte = 1;
         return Page.defaultPageSizeInByte / (tableDesc.getRowMaxSizeInBytes() + slotStatusSizeInByte);
