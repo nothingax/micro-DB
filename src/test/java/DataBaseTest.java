@@ -25,7 +25,7 @@ public class DataBaseTest {
 
     @Before
     public void initDataBase() {
-        DataBase dataBase = new DataBase();
+        DataBase dataBase = DataBase.getInstance();
         // 创建数据库文件
         DbTableFile dbTableFile = new DbTableFile(new File("table_person.txt"));
         List<TableDesc.Attribute> attributes = Arrays.asList(new TableDesc.Attribute("f1", FieldType.INT));
@@ -57,7 +57,6 @@ public class DataBaseTest {
         Tuple tuple = new Tuple(tablePerson.getTupleDesc());
         tablePerson.insertRow(tuple);
     }
-
 
     @Test
     public void insertRowTest() throws IOException {

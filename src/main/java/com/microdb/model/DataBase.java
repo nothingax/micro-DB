@@ -5,6 +5,7 @@ import com.microdb.model.dbfile.DbTableFile;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 数据库对象
@@ -13,15 +14,21 @@ import java.util.HashMap;
  * @version 1.0
  */
 public class DataBase {
+    private static AtomicReference<DataBase> singleton = new AtomicReference<DataBase>(new DataBase());
+
     /**
      * dbTableFile id to DbTable
      */
-    private HashMap<Integer, DbTable> tables;
+    private HashMap<Integer, DbTable> tableIdToTable;
     private HashMap<String, DbTable> tableNameToTable;
 
-    public DataBase() {
-        this.tables = new HashMap<>();
+    private DataBase() {
+        this.tableIdToTable = new HashMap<>();
         this.tableNameToTable = new HashMap<>();
+    }
+
+    public static DataBase getInstance() {
+        return singleton.get();
     }
 
     /**
@@ -32,9 +39,18 @@ public class DataBase {
      */
     public void addTable(DbTableFile dbTableFile, String tableName, TableDesc tableDesc) {
         DbTable dbTable = new DbTable(tableName, dbTableFile, tableDesc);
-        tables.put(dbTableFile.getId(), dbTable);
+        tableIdToTable.put(dbTableFile.getId(), dbTable);
         tableNameToTable.put(tableName, dbTable);
     }
+
+    public DbTable getDbTableById(int tableId) {
+        DbTable dbTable = tableIdToTable.get(tableId);
+        if (dbTable == null) {
+            throw new DbException("table not exist");
+        }
+        return dbTable;
+    }
+
 
     public DbTable getDbTableByName(String name) {
         DbTable dbTable = tableNameToTable.get(name);

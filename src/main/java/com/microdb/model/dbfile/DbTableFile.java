@@ -3,6 +3,7 @@ package com.microdb.model.dbfile;
 import com.microdb.exception.DbException;
 import com.microdb.model.Tuple;
 import com.microdb.model.page.Page;
+import com.microdb.model.page.PageID;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,19 +29,19 @@ public class DbTableFile {
     /**
      * 读取一页数据
      *
-     * @param pageNo number of page
+     * @param pageID pageID
      * @return page
      */
-    private Page readPageFromDisk(int pageNo) throws IOException {
+    private Page readPageFromDisk(PageID pageID) throws IOException {
         byte[] pageData = Page.createEmptyPageData();
         try {
             FileInputStream in = new FileInputStream(file);
-            in.skip(pageNo * Page.defaultPageSizeInByte);
+            in.skip(pageID.getPageNo() * Page.defaultPageSizeInByte);
             in.read(pageData);
         } catch (IOException e) {
             throw new RuntimeException("todo ,read Page from disk error", e);
         }
-        return new Page(pageNo, pageData);
+        return new Page(pageID, pageData);
     }
 
     /**
@@ -81,7 +82,8 @@ public class DbTableFile {
 
         // 现有所有页面均没有空slot,新建立一个页面
         if (null == availablePage) {
-            availablePage = new Page(existPageCount + 1, Page.createEmptyPageData());
+            PageID pageID = new PageID(this.getId(), existPageCount + 1);
+            availablePage = new Page(pageID, Page.createEmptyPageData());
         }
         availablePage.insertTuple(tuple);
         this.writePageToDisk(availablePage);
@@ -89,7 +91,8 @@ public class DbTableFile {
 
     private Page getFirstPageHasEmptySlot(int existPageCount) throws IOException {
         for (int pageNo = 0; pageNo < existPageCount; pageNo++) {
-            Page pg = this.readPageFromDisk(pageNo);
+            PageID pageID = new PageID(this.getId(), pageNo);
+            Page pg = this.readPageFromDisk(pageID);
             if (pg.hasEmptySlot()) {
                 return pg;
             }

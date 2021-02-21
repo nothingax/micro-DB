@@ -1,6 +1,7 @@
 package com.microdb.model.page;
 
 import com.microdb.exception.DbException;
+import com.microdb.model.DataBase;
 import com.microdb.model.TableDesc;
 import com.microdb.model.Tuple;
 import com.microdb.model.field.Field;
@@ -19,10 +20,20 @@ public class Page {
      */
     public static int defaultPageSizeInByte = 4096;
 
+    //
+    // /**
+    //  * 表Id
+    //  */
+    // private int tableId;
+    //
+    // /**
+    //  * 页编号
+    //  */
+    // private int pageNo;
     /**
-     * 页号
+     * page 编号
      */
-    private int pageNo;
+    private PageID pageID;
 
 
     /**
@@ -55,7 +66,7 @@ public class Page {
     }
 
     public int getPageNo() {
-        return pageNo;
+        return pageID.getPageNo();
     }
 
     /**
@@ -101,14 +112,13 @@ public class Page {
         return !slotUsageStatusBitMap[i];
     }
 
-    public Page(int pageNo, byte[] pageData) throws IOException {
-        this.pageNo = pageNo;
-        // this.pageData = pageData;
+    public Page(PageID pageID, byte[] pageData) throws IOException {
+        this.pageID = pageID;
+        this.tableDesc = DataBase.getInstance().getDbTableById(pageID.getTableId()).getTupleDesc();
         this.maxSlotNum = calculateMaxSlotNum();
+        this.tuples = new Tuple[this.maxSlotNum];
         this.slotUsageStatusBitMap = new boolean[this.maxSlotNum];
-
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(pageData));
-
         // TODO 存在字节对齐问题
         for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
             slotUsageStatusBitMap[i] = dis.readBoolean();
@@ -137,9 +147,8 @@ public class Page {
     public int calculateMaxSlotNum() {
         int defaultPageSizeInBit = Page.defaultPageSizeInByte * 8;
         int rowMaxSizeInBit = tableDesc.getRowMaxSizeInBytes() * 8;
-        /**
-         * slot 状态位占用空间
-         */
+
+        // slot状态位占用空间=1bit
         int slotStatusSizeInBit = 1;
         return (defaultPageSizeInBit) / (rowMaxSizeInBit * 8 + slotStatusSizeInBit);
     }
