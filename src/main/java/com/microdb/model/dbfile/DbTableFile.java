@@ -62,8 +62,7 @@ public class DbTableFile {
 
     /**
      * 返回文件的唯一id
-     *
-     * @return 表文件的唯一标识
+     * 取文件绝对路径散列值
      */
     public int getId() {
         return this.file.getAbsoluteFile().hashCode();

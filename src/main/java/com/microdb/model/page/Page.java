@@ -19,56 +19,33 @@ public class Page {
      * 默认每页4KB
      */
     public static int defaultPageSizeInByte = 4096;
-
-    //
-    // /**
-    //  * 表Id
-    //  */
-    // private int tableId;
-    //
-    // /**
-    //  * 页编号
-    //  */
-    // private int pageNo;
     /**
      * page 编号
      */
     private PageID pageID;
-
-
     /**
      * 页面中数据
      */
     private Tuple[] tuples;
-
-    // /**
-    //  * 每页的数据
-    //  */
-    // private byte[] pageData;
-
     /**
      * 表结构
      */
     private TableDesc tableDesc;
-
     /**
      * 一页数据最多可存放的数据行数
      */
     private int maxSlotNum;
-
     /**
      * slot使用状态标识位图
+     * 为利用 {@link DataOutputStream#writeBoolean(boolean)} api的便利性，
+     * 物理文件使用一个byte存储一个状态位
      */
     private boolean[] slotUsageStatusBitMap;
 
-    public int getMaxSlotNum() {
-        return maxSlotNum;
-    }
 
     public int getPageNo() {
         return pageID.getPageNo();
     }
-
     /**
      * 序列化page数据
      */
@@ -95,7 +72,7 @@ public class Page {
         // 3.slot状态位图和行数据之外的位置填充 0
         int zeroSize =
                 Page.defaultPageSizeInByte
-                        - ((slotUsageStatusBitMap.length + 7) / 8)
+                        - slotUsageStatusBitMap.length
                         - tableDesc.getRowMaxSizeInBytes() * tuples.length;
         byte[] zeroes = new byte[zeroSize];
         dos.write(zeroes, 0, zeroSize);
@@ -119,10 +96,15 @@ public class Page {
         this.tuples = new Tuple[this.maxSlotNum];
         this.slotUsageStatusBitMap = new boolean[this.maxSlotNum];
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(pageData));
-        // TODO 存在字节对齐问题
+
+        // slot状态位反序列化
         for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
             slotUsageStatusBitMap[i] = dis.readBoolean();
         }
+
+        //  TODO tuple 反序列化
+
+        dis.close();
     }
 
     public static byte[] createEmptyPageData() {
@@ -141,16 +123,13 @@ public class Page {
 
     /**
      * 计算返回一页数据可存放的数据行数
-     * 页位数容量/(表一行占用位数+行的状态标识占用位数），向下取整
-     * 行的状态标识占用位数：每行占用1bit
+     * 页字节数容量（4KB）/(表一行占用字节+行的状态标识占用字节），向下取整
+     * 行的状态标识占用位数：每行占用1byte
      */
     public int calculateMaxSlotNum() {
-        int defaultPageSizeInBit = Page.defaultPageSizeInByte * 8;
-        int rowMaxSizeInBit = tableDesc.getRowMaxSizeInBytes() * 8;
-
-        // slot状态位占用空间=1bit
-        int slotStatusSizeInBit = 1;
-        return (defaultPageSizeInBit) / (rowMaxSizeInBit * 8 + slotStatusSizeInBit);
+        // slot状态位占用空间=1byte
+        int slotStatusSizeInByte = 1;
+        return Page.defaultPageSizeInByte / (tableDesc.getRowMaxSizeInBytes() + slotStatusSizeInByte);
     }
 
     public void insertTuple(Tuple tuple) {
