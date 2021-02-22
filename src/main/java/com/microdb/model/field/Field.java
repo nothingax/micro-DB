@@ -19,4 +19,6 @@ public interface Field extends Serializable {
      FieldType getType();
 
     void serialize(DataOutputStream dos) throws IOException;
+
+    String toString();
 }

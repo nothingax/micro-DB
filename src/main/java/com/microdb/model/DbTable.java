@@ -36,7 +36,7 @@ public class DbTable {
 
     public DbTable(String tableName, TableFile tableFile, TableDesc tableDesc) {
         this.tableName = tableName;
-        this.tableId = tableFile.getId();
+        this.tableId = tableFile.getTableId();
         this.tableFile = tableFile;
         this.tableDesc = tableDesc;
     }

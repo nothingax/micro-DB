@@ -26,6 +26,11 @@ public class IntField implements Field, Serializable {
     }
 
     @Override
+    public String toString() {
+        return Integer.toString(value);
+    }
+
+    @Override
     public FieldType getType() {
         return FieldType.INT;
     }

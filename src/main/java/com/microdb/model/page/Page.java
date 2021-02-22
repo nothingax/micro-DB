@@ -2,11 +2,13 @@ package com.microdb.model.page;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
-import com.microdb.model.TableDesc;
 import com.microdb.model.Row;
+import com.microdb.model.TableDesc;
 import com.microdb.model.field.Field;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * 页，读写磁盘文件数据时以page为基本单位
@@ -165,5 +167,34 @@ public class Page {
             }
         }
         throw new DbException("insert row error: no empty slot");
+    }
+
+    public Iterator<Row> getRowIterator() {
+        return new RowIterator();
+    }
+
+    //====================================迭代器======================================
+
+    private class RowIterator implements Iterator<Row> {
+        private Iterator<Row> rowIterator;
+        public  RowIterator() {
+            ArrayList<Row> rowList = new ArrayList<>();
+            for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
+                if (isSlotUsed(i)) {
+                    rowList.add(rows[i]);
+                }
+            }
+            rowIterator = rowList.iterator();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return rowIterator.hasNext();
+        }
+
+        @Override
+        public Row next() {
+            return rowIterator.next();
+        }
     }
 }

@@ -2,6 +2,8 @@ package com.microdb.model;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.dbfile.TableFile;
+import com.microdb.model.page.Page;
+import com.microdb.model.page.PageID;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -35,11 +37,11 @@ public class DataBase {
      * 添加表
      *
      * @param tableFile table file
-     * @param tableName   table name
+     * @param tableName table name
      */
     public void addTable(TableFile tableFile, String tableName, TableDesc tableDesc) {
         DbTable dbTable = new DbTable(tableName, tableFile, tableDesc);
-        tableId2Table.put(tableFile.getId(), dbTable);
+        tableId2Table.put(tableFile.getTableId(), dbTable);
         tableName2Table.put(tableName, dbTable);
     }
 
@@ -51,13 +53,20 @@ public class DataBase {
         return dbTable;
     }
 
-
     public DbTable getDbTableByName(String name) {
         DbTable dbTable = tableName2Table.get(name);
         if (dbTable == null) {
             throw new DbException("table not exist");
         }
         return dbTable;
+    }
+
+    public Page getPage(PageID pageID) throws DbException {
+        try {
+            return this.getDbTableById(pageID.getTableId()).getTableFile().readPageFromDisk(pageID);
+        } catch (IOException e) {
+            throw new DbException("read page failed", e);
+        }
     }
 
     public void insertRow(Row row, String tableName) throws IOException {
