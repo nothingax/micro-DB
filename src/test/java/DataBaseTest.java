@@ -1,7 +1,7 @@
 import com.microdb.model.DataBase;
 import com.microdb.model.DbTable;
 import com.microdb.model.TableDesc;
-import com.microdb.model.Tuple;
+import com.microdb.model.Row;
 import com.microdb.model.dbfile.DbTableFile;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
@@ -59,8 +59,8 @@ public class DataBaseTest {
     @Test
     public void insertRow() throws IOException {
         DbTable tablePerson = this.dataBase.getDbTableByName("t_person");
-        Tuple tuple = new Tuple(tablePerson.getTableDesc());
-        tablePerson.insertRow(tuple);
+        Row row = new Row(tablePerson.getTableDesc());
+        tablePerson.insertRow(row);
     }
 
     /**
@@ -81,26 +81,26 @@ public class DataBaseTest {
     @Test
     public void insertRowTest() throws IOException {
         DbTable tablePerson = this.dataBase.getDbTableByName("t_person");
-        Tuple tuple = new Tuple(tablePerson.getTableDesc());
+        Row row = new Row(tablePerson.getTableDesc());
 
         // 第1页
         for (int i = 0; i < 819; i++) {
-            tuple.setField(0, new IntField(i));
-            tablePerson.insertRow(tuple);
+            row.setField(0, new IntField(i));
+            tablePerson.insertRow(row);
             int existPageCount = tablePerson.getDbTableFile().getExistPageCount();
             Assert.assertEquals(1, existPageCount);
         }
 
         // 第2页
         for (int i = 0; i < 819; i++) {
-            tuple.setField(0, new IntField(i));
-            tablePerson.insertRow(tuple);
+            row.setField(0, new IntField(i));
+            tablePerson.insertRow(row);
             int existPageCount = tablePerson.getDbTableFile().getExistPageCount();
             Assert.assertEquals(2, existPageCount);
         }
 
-        tuple.setField(0, new IntField(1000));
-        tablePerson.insertRow(tuple);
+        row.setField(0, new IntField(1000));
+        tablePerson.insertRow(row);
         int existPageCount = tablePerson.getDbTableFile().getExistPageCount();
         Assert.assertEquals(3, existPageCount);
 

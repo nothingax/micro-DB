@@ -14,7 +14,7 @@ import java.util.stream.Stream;
  * @author zhangjw
  * @version 1.0
  */
-public class Tuple implements Serializable {
+public class Row implements Serializable {
     private static final long serialVersionUID = 3508867799019762862L;
 
     /**
@@ -24,7 +24,7 @@ public class Tuple implements Serializable {
 
     private TableDesc tableDesc;
 
-    public Tuple(TableDesc tableDesc) {
+    public Row(TableDesc tableDesc) {
         this.tableDesc = tableDesc;
         this.fields = new Field[tableDesc.getAttributesNum()];
     }

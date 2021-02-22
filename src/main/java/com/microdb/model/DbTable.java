@@ -57,10 +57,10 @@ public class DbTable {
         return dbTableFile;
     }
 
-    public void insertRow(Tuple tuple) throws IOException {
-        if (!Objects.equals(tuple.getTableDesc(), this.getTableDesc())) {
+    public void insertRow(Row row) throws IOException {
+        if (!Objects.equals(row.getTableDesc(), this.getTableDesc())) {
             throw new DbException("insertRow error: TableDesc not match");
         }
-        this.dbTableFile.insertRow(tuple);
+        this.dbTableFile.insertRow(row);
     }
 }

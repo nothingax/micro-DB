@@ -60,7 +60,7 @@ public class DataBase {
         return dbTable;
     }
 
-    public void insertRow(Tuple tuple, String tableName) throws IOException {
-        this.getDbTableByName(tableName).insertRow(tuple);
+    public void insertRow(Row row, String tableName) throws IOException {
+        this.getDbTableByName(tableName).insertRow(row);
     }
 }

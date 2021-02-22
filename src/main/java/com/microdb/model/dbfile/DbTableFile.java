@@ -1,7 +1,7 @@
 package com.microdb.model.dbfile;
 
 import com.microdb.exception.DbException;
-import com.microdb.model.Tuple;
+import com.microdb.model.Row;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 
@@ -75,7 +75,7 @@ public class DbTableFile {
         return (int) file.length() / Page.defaultPageSizeInByte;
     }
 
-    public void insertRow(Tuple tuple) throws IOException {
+    public void insertRow(Row row) throws IOException {
         int existPageCount = this.getExistPageCount();
         Page availablePage = getFirstPageHasEmptySlot(existPageCount);
 
@@ -85,7 +85,7 @@ public class DbTableFile {
             PageID pageID = new PageID(this.getId(), pageNo);
             availablePage = new Page(pageID, Page.createEmptyPageData());
         }
-        availablePage.insertTuple(tuple);
+        availablePage.insertRow(row);
         this.writePageToDisk(availablePage);
     }
 
