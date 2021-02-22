@@ -2,7 +2,7 @@ import com.microdb.model.DataBase;
 import com.microdb.model.DbTable;
 import com.microdb.model.TableDesc;
 import com.microdb.model.Row;
-import com.microdb.model.dbfile.DbTableFile;
+import com.microdb.model.dbfile.TableFile;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
 import com.microdb.model.page.Page;
@@ -32,11 +32,11 @@ public class DataBaseTest {
         DataBase dataBase = DataBase.getInstance();
         // 创建数据库文件
         String fileName = UUID.randomUUID().toString();
-        DbTableFile dbTableFile = new DbTableFile(new File(fileName));
+        TableFile tableFile = new TableFile(new File(fileName));
         List<TableDesc.Attribute> attributes = Arrays.asList(new TableDesc.Attribute("f1", FieldType.INT));
         TableDesc tableDesc = new TableDesc(attributes);
         // tableDesc
-        dataBase.addTable(dbTableFile, "t_person", tableDesc);
+        dataBase.addTable(tableFile, "t_person", tableDesc);
 
         this.dataBase = dataBase;
     }
@@ -87,7 +87,7 @@ public class DataBaseTest {
         for (int i = 0; i < 819; i++) {
             row.setField(0, new IntField(i));
             tablePerson.insertRow(row);
-            int existPageCount = tablePerson.getDbTableFile().getExistPageCount();
+            int existPageCount = tablePerson.getTableFile().getExistPageCount();
             Assert.assertEquals(1, existPageCount);
         }
 
@@ -95,13 +95,13 @@ public class DataBaseTest {
         for (int i = 0; i < 819; i++) {
             row.setField(0, new IntField(i));
             tablePerson.insertRow(row);
-            int existPageCount = tablePerson.getDbTableFile().getExistPageCount();
+            int existPageCount = tablePerson.getTableFile().getExistPageCount();
             Assert.assertEquals(2, existPageCount);
         }
 
         row.setField(0, new IntField(1000));
         tablePerson.insertRow(row);
-        int existPageCount = tablePerson.getDbTableFile().getExistPageCount();
+        int existPageCount = tablePerson.getTableFile().getExistPageCount();
         Assert.assertEquals(3, existPageCount);
 
     }

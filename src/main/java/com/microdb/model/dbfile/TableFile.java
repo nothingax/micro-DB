@@ -16,13 +16,13 @@ import java.io.RandomAccessFile;
  * @author zhangjw
  * @version 1.0
  */
-public class DbTableFile {
+public class TableFile {
     /**
      * 存储表数据的物理文件
      */
     private File file;
 
-    public DbTableFile(File file) {
+    public TableFile(File file) {
         this.file = file;
     }
 

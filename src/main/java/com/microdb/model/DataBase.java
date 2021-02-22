@@ -1,7 +1,7 @@
 package com.microdb.model;
 
 import com.microdb.exception.DbException;
-import com.microdb.model.dbfile.DbTableFile;
+import com.microdb.model.dbfile.TableFile;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -34,12 +34,12 @@ public class DataBase {
     /**
      * 添加表
      *
-     * @param dbTableFile table file
+     * @param tableFile table file
      * @param tableName   table name
      */
-    public void addTable(DbTableFile dbTableFile, String tableName, TableDesc tableDesc) {
-        DbTable dbTable = new DbTable(tableName, dbTableFile, tableDesc);
-        tableId2Table.put(dbTableFile.getId(), dbTable);
+    public void addTable(TableFile tableFile, String tableName, TableDesc tableDesc) {
+        DbTable dbTable = new DbTable(tableName, tableFile, tableDesc);
+        tableId2Table.put(tableFile.getId(), dbTable);
         tableName2Table.put(tableName, dbTable);
     }
 

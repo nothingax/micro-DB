@@ -1,7 +1,7 @@
 package com.microdb.model;
 
 import com.microdb.exception.DbException;
-import com.microdb.model.dbfile.DbTableFile;
+import com.microdb.model.dbfile.TableFile;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -27,17 +27,17 @@ public class DbTable {
     /**
      * table file
      */
-    private DbTableFile dbTableFile;
+    private TableFile tableFile;
 
     /**
      * 表结构
      */
     private TableDesc tableDesc;
 
-    public DbTable(String tableName, DbTableFile dbTableFile, TableDesc tableDesc) {
+    public DbTable(String tableName, TableFile tableFile, TableDesc tableDesc) {
         this.tableName = tableName;
-        this.tableId = dbTableFile.getId();
-        this.dbTableFile = dbTableFile;
+        this.tableId = tableFile.getId();
+        this.tableFile = tableFile;
         this.tableDesc = tableDesc;
     }
 
@@ -53,14 +53,14 @@ public class DbTable {
         return tableId;
     }
 
-    public DbTableFile getDbTableFile() {
-        return dbTableFile;
+    public TableFile getTableFile() {
+        return tableFile;
     }
 
     public void insertRow(Row row) throws IOException {
         if (!Objects.equals(row.getTableDesc(), this.getTableDesc())) {
             throw new DbException("insertRow error: TableDesc not match");
         }
-        this.dbTableFile.insertRow(row);
+        this.tableFile.insertRow(row);
     }
 }
