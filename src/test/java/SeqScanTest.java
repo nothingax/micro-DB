@@ -52,16 +52,18 @@ public class SeqScanTest {
     }
 
 
-
+    /**
+     * 基于seqScan 实现的简单查询，等同于sql：select * from t_person
+     */
     @Test
-    public void testScan() throws IOException {
+    public void testSimpleQueryBasedOnSeqScan() throws IOException {
         SeqScan scan = new SeqScan(this.dataBase.getDbTableByName("t_person").getTableId());
         scan.open();
         while (scan.hasNext()) {
             Row next = scan.next();
-            next.getFields().forEach(x->{
-                System.out.println(x.toString());
-            });
+            next.getFields().forEach(x-> System.out.println(x.toString()));
         }
+
+        scan.close();
     }
 }
