@@ -65,7 +65,7 @@ public class DataBaseTest {
 
     /**
      * 一页4096字节，表t_person有一个int型字段，占用4字节，slot状态占用1字节
-     * 4096/(4+1) = 819(向下取整)，级每页可容纳819行
+     * 4096/(4+1) = 819(向下取整)，即每页可容纳819行
      */
     @Test
     public void testCalculateMaxSlotNum() throws IOException {
