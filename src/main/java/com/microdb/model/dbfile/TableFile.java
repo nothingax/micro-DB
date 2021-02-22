@@ -1,14 +1,18 @@
 package com.microdb.model.dbfile;
 
 import com.microdb.exception.DbException;
+import com.microdb.model.DataBase;
 import com.microdb.model.Row;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
+import com.microdb.operator.ITableFileIterator;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * 表磁盘文件，存储一个表的数据
@@ -32,7 +36,7 @@ public class TableFile {
      * @param pageID pageID
      * @return page
      */
-    private Page readPageFromDisk(PageID pageID) throws IOException {
+    public Page readPageFromDisk(PageID pageID) throws IOException {
         byte[] pageData = Page.createEmptyPageData();
         try {
             FileInputStream in = new FileInputStream(file);
@@ -64,7 +68,7 @@ public class TableFile {
      * 返回文件的唯一id
      * 取文件绝对路径散列值
      */
-    public int getId() {
+    public int getTableId() {
         return this.file.getAbsoluteFile().hashCode();
     }
 
@@ -82,7 +86,7 @@ public class TableFile {
         // 现有所有页面均没有空slot,新建立一个页面
         if (null == availablePage) {
             int pageNo = existPageCount; // 由于pageNo从0开始
-            PageID pageID = new PageID(this.getId(), pageNo);
+            PageID pageID = new PageID(this.getTableId(), pageNo);
             availablePage = new Page(pageID, Page.createEmptyPageData());
         }
         availablePage.insertRow(row);
@@ -96,13 +100,76 @@ public class TableFile {
         }
 
         for (int pageNo = 0; pageNo < existPageCount; pageNo++) {
-            PageID pageID = new PageID(this.getId(), pageNo);
+            PageID pageID = new PageID(this.getTableId(), pageNo);
             Page pg = this.readPageFromDisk(pageID);
             if (pg.hasEmptySlot()) {
                 return pg;
             }
         }
         return null;
+    }
+
+    public ITableFileIterator getIterator() {
+        return new TableFileIterator();
+    }
+
+    //====================================迭代器======================================
+
+    private class TableFileIterator implements ITableFileIterator {
+        private Integer pageNo;
+        private int tableId;
+        private int existPageCount;
+        private Iterator<Row> rowIterator;
+
+        public TableFileIterator() {
+            this.pageNo = null;
+            this.tableId = getTableId();
+            this.existPageCount = getExistPageCount();
+            this.rowIterator = null;
+        }
+
+        @Override
+        public void open() throws DbException {
+            pageNo = 0;
+            rowIterator = getRowIterator(pageNo);
+        }
+
+        @Override
+        public boolean hasNext() throws DbException {
+            if (pageNo == null) {
+                return false; // TableFileIterator 尚未open
+            }
+
+            while (pageNo < existPageCount - 1) {
+                if (rowIterator.hasNext()) {
+                    return true;
+                } else {
+                    pageNo += 1;
+                    rowIterator = getRowIterator(pageNo);
+                }
+            }
+            return rowIterator.hasNext();
+        }
+
+        @Override
+        public Row next() throws DbException, NoSuchElementException {
+            if (!hasNext()) {
+                throw new NoSuchElementException("no element ");
+            }
+
+            return rowIterator.next();
+        }
+
+        @Override
+        public void close() {
+            pageNo = null;
+            rowIterator = null;
+        }
+
+        private Iterator<Row> getRowIterator(Integer pageNo) {
+            PageID pageID = new PageID(tableId, pageNo);
+            return DataBase.getInstance().getPage(pageID).getRowIterator();
+        }
     }
 
 }
