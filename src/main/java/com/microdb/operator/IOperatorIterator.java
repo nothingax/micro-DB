@@ -6,7 +6,7 @@ import com.microdb.model.Row;
 import java.util.NoSuchElementException;
 
 /**
- * 操作符迭代器接口
+ * 迭代器接口，行数据的迭代
  *
  * @author zhangjw
  * @version 1.0

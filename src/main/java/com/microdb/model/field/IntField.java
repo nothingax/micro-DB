@@ -1,5 +1,7 @@
 package com.microdb.model.field;
 
+import com.microdb.operator.Predicate;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
@@ -28,6 +30,31 @@ public class IntField implements Field, Serializable {
     @Override
     public String toString() {
         return Integer.toString(value);
+    }
+
+    @Override
+    public boolean compare(Predicate.OperationEnum operationEnum, Field operand) {
+        IntField operandValue = (IntField) operand;
+        switch (operationEnum) {
+            case EQUALS:
+                return value == operandValue.value;
+            case NOT_EQUALS:
+                return value != operandValue.value;
+
+            case GREATER_THAN:
+                return value > operandValue.value;
+
+            case GREATER_THAN_OR_EQ:
+                return value >= operandValue.value;
+
+            case LESS_THAN:
+                return value < operandValue.value;
+
+            case LESS_THAN_OR_EQ:
+                return value <= operandValue.value;
+        }
+
+        return false;
     }
 
     @Override
