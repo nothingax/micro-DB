@@ -61,8 +61,8 @@ public class Filter implements IOperatorIterator {
 
     @Override
     public void close() {
+        this.isOpen = false;
         tableIterator.close();
-        this.isOpen = true;
         this.nextRow = null;
     }
 

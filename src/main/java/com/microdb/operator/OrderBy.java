@@ -85,7 +85,7 @@ public class OrderBy implements IOperatorIterator {
     }
 
     private Row fetchNextRow() {
-        if (sortedRowIterator.hasNext()) {
+        if (isOpen && sortedRowIterator.hasNext()) {
             return sortedRowIterator.next();
         } else {
             return null;
