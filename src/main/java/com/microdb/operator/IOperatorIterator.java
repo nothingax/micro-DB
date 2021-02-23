@@ -2,6 +2,7 @@ package com.microdb.operator;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.Row;
+import com.microdb.model.TableDesc;
 
 import java.util.NoSuchElementException;
 
@@ -20,4 +21,9 @@ public interface IOperatorIterator {
     Row next() throws DbException, NoSuchElementException;
 
     void close();
+
+    /**
+     * 返回表结构
+     */
+    TableDesc getTableDesc();
 }

@@ -3,6 +3,7 @@ package com.microdb.operator;
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
 import com.microdb.model.Row;
+import com.microdb.model.TableDesc;
 import com.microdb.model.dbfile.TableFile;
 
 /**
@@ -35,6 +36,11 @@ public class SeqScan extends Operator {
     public void close() {
         super.close();
         tableFileIterator = null;
+    }
+
+    @Override
+    public TableDesc getTableDesc() {
+        return tableFile.getTableDesc();
     }
 
     @Override

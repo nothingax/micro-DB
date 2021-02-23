@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * 表结构描述
@@ -26,6 +27,11 @@ public class TableDesc implements Serializable {
     public TableDesc(List<Attribute> attributes) {
         this.attributes = attributes;
     }
+
+    public TableDesc(FieldType... fieldTypes) {
+        this.attributes = Stream.of(fieldTypes).map(x -> new Attribute(null, x)).collect(Collectors.toList());
+    }
+
 
     public int getAttributesNum() {
         return attributes.size();

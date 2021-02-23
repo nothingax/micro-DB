@@ -3,6 +3,7 @@ package com.microdb.model.dbfile;
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
 import com.microdb.model.Row;
+import com.microdb.model.TableDesc;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 import com.microdb.operator.ITableFileIterator;
@@ -26,8 +27,24 @@ public class TableFile {
      */
     private File file;
 
-    public TableFile(File file) {
+    /**
+     * 表结构
+     */
+    private TableDesc tableDesc;
+
+    public TableFile(File file, TableDesc tableDesc) {
+        if (tableDesc == null) {
+            throw new IllegalArgumentException("tableDesc cant not be null");
+        }
+        if (file == null) {
+            throw new IllegalArgumentException("file cant not be null");
+        }
         this.file = file;
+        this.tableDesc = tableDesc;
+    }
+
+    public TableDesc getTableDesc() {
+        return tableDesc;
     }
 
     /**

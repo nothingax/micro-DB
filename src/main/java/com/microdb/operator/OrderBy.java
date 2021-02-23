@@ -2,6 +2,7 @@ package com.microdb.operator;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.Row;
+import com.microdb.model.TableDesc;
 import com.microdb.model.field.Field;
 
 import java.util.*;
@@ -62,6 +63,11 @@ public class OrderBy extends Operator {
     public void close() {
         super.close();
         sortedRowIterator = null;
+    }
+
+    @Override
+    public TableDesc getTableDesc() {
+        return tableIterator.getTableDesc();
     }
 
 

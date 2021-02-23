@@ -2,6 +2,7 @@ package com.microdb.operator;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.Row;
+import com.microdb.model.TableDesc;
 
 import java.util.NoSuchElementException;
 
@@ -38,6 +39,11 @@ public class Filter extends Operator {
     public void close() {
         super.close();
         tableIterator = null;
+    }
+
+    @Override
+    public TableDesc getTableDesc() {
+        return tableIterator.getTableDesc();
     }
 
     @Override

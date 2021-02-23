@@ -2,6 +2,7 @@ package com.microdb.operator;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.Row;
+import com.microdb.model.TableDesc;
 
 import java.util.NoSuchElementException;
 
@@ -50,6 +51,9 @@ public abstract class Operator implements IOperatorIterator {
         this.nextRow = null;
         this.isOpen = false;
     }
+
+    @Override
+    public abstract TableDesc getTableDesc();
 
     protected abstract Row fetchNextMatched();
 }

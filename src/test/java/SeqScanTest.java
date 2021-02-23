@@ -31,9 +31,10 @@ public class SeqScanTest {
         DataBase dataBase = DataBase.getInstance();
         // 创建数据库文件
         String fileName = UUID.randomUUID().toString();
-        TableFile tableFile = new TableFile(new File(fileName));
         List<TableDesc.Attribute> attributes = Arrays.asList(new TableDesc.Attribute("f1", FieldType.INT));
         TableDesc tableDesc = new TableDesc(attributes);
+        TableFile tableFile = new TableFile(new File(fileName),tableDesc);
+
         // tableDesc
         dataBase.addTable(tableFile, "t_person", tableDesc);
 
