@@ -5,17 +5,19 @@ import com.microdb.model.DataBase;
 import com.microdb.model.Row;
 import com.microdb.model.dbfile.TableFile;
 
-import java.util.NoSuchElementException;
-
 /**
  * 表顺序扫描 sequence scan，基于迭代器
  *
  * @author zhangjw
  * @version 1.0
  */
-public class SeqScan implements IOperatorIterator {
+public class SeqScan extends Operator {
 
     private TableFile tableFile;
+
+    /**
+     * 表中行数据的迭代
+     */
     private ITableFileIterator tableFileIterator;
 
     public SeqScan(int tableId) {
@@ -26,20 +28,20 @@ public class SeqScan implements IOperatorIterator {
     @Override
     public void open() throws DbException {
         tableFileIterator.open();
-    }
-
-    @Override
-    public boolean hasNext() throws DbException {
-        return tableFileIterator.hasNext();
-    }
-
-    @Override
-    public Row next() throws DbException, NoSuchElementException {
-        return tableFileIterator.next();
+        super.open();
     }
 
     @Override
     public void close() {
-        tableFileIterator.close();
+        super.close();
+        tableFileIterator = null;
+    }
+
+    @Override
+    protected Row fetchNextMatched() {
+        if (tableFileIterator != null && tableFileIterator.hasNext()) {
+            return tableFileIterator.next();
+        }
+        return null;
     }
 }

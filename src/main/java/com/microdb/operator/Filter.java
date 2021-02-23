@@ -11,7 +11,7 @@ import java.util.NoSuchElementException;
  * @author zhangjw
  * @version 1.0
  */
-public class Filter implements IOperatorIterator {
+public class Filter extends Operator {
 
     /**
      * 条件谓词
@@ -23,9 +23,6 @@ public class Filter implements IOperatorIterator {
      */
     private IOperatorIterator tableIterator;
 
-    private Row nextRow = null;
-    private boolean isOpen = false;
-
     public Filter(Predicate predicate, IOperatorIterator tableIterator) {
         this.predicate = predicate;
         this.tableIterator = tableIterator;
@@ -34,40 +31,18 @@ public class Filter implements IOperatorIterator {
     @Override
     public void open() throws DbException {
         tableIterator.open();
-        this.isOpen = true;
-    }
-
-    @Override
-    public boolean hasNext() throws DbException {
-        if (!this.isOpen)
-            throw new IllegalStateException("iterator not open");
-
-        if (nextRow == null)
-            nextRow = fetchNextMatched();
-        return nextRow != null;
-    }
-
-    @Override
-    public Row next() throws DbException, NoSuchElementException {
-        if (nextRow == null) {
-            nextRow = fetchNextMatched();
-            if (nextRow == null)
-                throw new NoSuchElementException();
-        }
-        Row result = nextRow;
-        nextRow = null;
-        return result;
+        super.open();
     }
 
     @Override
     public void close() {
-        this.isOpen = false;
-        tableIterator.close();
-        this.nextRow = null;
+        super.close();
+        tableIterator = null;
     }
 
-    Row fetchNextMatched() throws NoSuchElementException, DbException {
-        while (tableIterator.hasNext()) {
+    @Override
+    public Row fetchNextMatched() throws NoSuchElementException, DbException {
+        while (tableIterator != null && tableIterator.hasNext()) {
             Row nextRow = tableIterator.next();
             if (predicate.filter(nextRow)) {
                 return nextRow;

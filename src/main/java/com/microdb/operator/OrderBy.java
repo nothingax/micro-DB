@@ -12,7 +12,7 @@ import java.util.*;
  * @author zhangjw
  * @version 1.0
  */
-public class OrderBy implements IOperatorIterator {
+public class OrderBy extends Operator {
 
     /**
      * 原始行数据的迭代器
@@ -39,9 +39,6 @@ public class OrderBy implements IOperatorIterator {
      */
     private Iterator<Row> sortedRowIterator;
 
-    private Row nextRow = null;
-    private boolean isOpen = false;
-
     public OrderBy(IOperatorIterator tableIterator, int orderByFieldIndex, boolean asc) {
         this.tableIterator = tableIterator;
         this.orderByFieldIndex = orderByFieldIndex;
@@ -58,44 +55,23 @@ public class OrderBy implements IOperatorIterator {
 
         sortedRows.sort(new RowComparator(orderByFieldIndex, asc));
         this.sortedRowIterator = sortedRows.iterator();
-        this.isOpen = true;
-    }
-
-
-    @Override
-    public boolean hasNext() throws DbException {
-        if (!this.isOpen)
-            throw new IllegalStateException("iterator not open");
-
-        if (nextRow == null)
-            nextRow = fetchNextRow();
-        return nextRow != null;
-    }
-
-    @Override
-    public Row next() throws DbException, NoSuchElementException {
-        if (nextRow == null) {
-            nextRow = fetchNextRow();
-            if (nextRow == null)
-                throw new NoSuchElementException();
-        }
-        Row result = nextRow;
-        nextRow = null;
-        return result;
-    }
-
-    private Row fetchNextRow() {
-        if (isOpen && sortedRowIterator.hasNext()) {
-            return sortedRowIterator.next();
-        } else {
-            return null;
-        }
+        super.open();
     }
 
     @Override
     public void close() {
-        this.isOpen = false;
+        super.close();
         sortedRowIterator = null;
+    }
+
+
+    @Override
+    public Row fetchNextMatched() {
+        if (sortedRowIterator != null && sortedRowIterator.hasNext()) {
+            return sortedRowIterator.next();
+        } else {
+            return null;
+        }
     }
 
     // ============================ 比较器 ==================================
