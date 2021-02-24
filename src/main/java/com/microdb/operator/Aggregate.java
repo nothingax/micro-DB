@@ -92,8 +92,8 @@ public class Aggregate extends Operator {
                     Row row = new Row(resultTableDesc);
                     IntField groupVal = new IntField(groupFieldValue);
                     Field aggregateVal = new IntField(this.calc(aggregateFieldValues));
-                    row.setField(0, groupVal);
-                    row.setField(1, aggregateVal);
+                    row.setField(0, aggregateVal);
+                    row.setField(1, groupVal);
                     aggResultRows.add(row);
                 }
                 aggResultRowIterator = aggResultRows.iterator();

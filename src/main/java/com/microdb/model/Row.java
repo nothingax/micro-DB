@@ -49,6 +49,16 @@ public class Row implements Serializable {
         this.fields = fields;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder column = new StringBuilder();
+        for (int i = 0; i < fields.length - 1; i++) {
+            column.append(fields[i].toString()).append("\t");
+        }
+        column.append(fields[fields.length - 1]).append("\n");
+        return column.toString();
+    }
+
     public List<Field> getFields() {
         return Stream.of(fields).collect(Collectors.toList());
     }
