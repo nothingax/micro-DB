@@ -93,9 +93,9 @@ public class OrderBy extends Operator {
         public int compare(Row o1, Row o2) {
             Field t1 = (o1).getField(fieldIndex);
             Field t2 = (o2).getField(fieldIndex);
-            if (t1.compare(Predicate.OperationEnum.EQUALS, t2))
+            if (t1.compare(FilterPredicate.OperationEnum.EQUALS, t2))
                 return 0;
-            if (t1.compare(Predicate.OperationEnum.GREATER_THAN, t2))
+            if (t1.compare(FilterPredicate.OperationEnum.GREATER_THAN, t2))
                 return asc ? 1 : -1;
             else
                 return asc ? -1 : 1;

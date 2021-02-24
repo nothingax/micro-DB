@@ -17,15 +17,15 @@ public class Filter extends Operator {
     /**
      * 条件谓词
      */
-    private Predicate predicate;
+    private FilterPredicate filterPredicate;
 
     /**
      * 需要过滤的表中，行数据的迭代
      */
     private IOperatorIterator tableIterator;
 
-    public Filter(Predicate predicate, IOperatorIterator tableIterator) {
-        this.predicate = predicate;
+    public Filter(FilterPredicate filterPredicate, IOperatorIterator tableIterator) {
+        this.filterPredicate = filterPredicate;
         this.tableIterator = tableIterator;
     }
 
@@ -50,7 +50,7 @@ public class Filter extends Operator {
     public Row fetchNextMatched() throws NoSuchElementException, DbException {
         while (tableIterator != null && tableIterator.hasNext()) {
             Row nextRow = tableIterator.next();
-            if (predicate.filter(nextRow)) {
+            if (filterPredicate.filter(nextRow)) {
                 return nextRow;
             }
         }

@@ -9,7 +9,7 @@ import com.microdb.model.field.Field;
  * @author zhangjw
  * @version 1.0
  */
-public class Predicate {
+public class FilterPredicate {
 
     /**
      * row中字段{@link Row#fields}的下标
@@ -26,7 +26,7 @@ public class Predicate {
     private Field paramOperand;
 
 
-    public Predicate(int fieldIndex, OperationEnum operationEnum, Field paramOperand) {
+    public FilterPredicate(int fieldIndex, OperationEnum operationEnum, Field paramOperand) {
         this.fieldIndex = fieldIndex;
         this.operationEnum = operationEnum;
         this.paramOperand = paramOperand;
