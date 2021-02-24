@@ -1,6 +1,6 @@
 package com.microdb.model.field;
 
-import com.microdb.operator.FilterPredicate;
+import com.microdb.operator.PredicateEnum;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -24,5 +24,5 @@ public interface Field extends Serializable {
 
     String toString();
 
-    boolean compare(FilterPredicate.OperationEnum operationEnum, Field operand);
+    boolean compare(PredicateEnum predicateEnum, Field operand);
 }

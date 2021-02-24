@@ -7,6 +7,7 @@ import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
 import com.microdb.operator.Filter;
 import com.microdb.operator.FilterPredicate;
+import com.microdb.operator.PredicateEnum;
 import com.microdb.operator.SeqScan;
 import org.junit.Assert;
 import org.junit.Before;
@@ -61,7 +62,7 @@ public class FilterTest {
     public void testSimpleQueryBasedOnSeqScan() throws IOException {
         SeqScan seqScan = new SeqScan(this.dataBase.getDbTableByName("t_person").getTableId());
         System.out.println("过滤第0字段等于'5'的行");
-        FilterPredicate filterPredicateEQ = new FilterPredicate(0, FilterPredicate.OperationEnum.EQUALS, new IntField(5));
+        FilterPredicate filterPredicateEQ = new FilterPredicate(0, PredicateEnum.EQUALS, new IntField(5));
         Filter filter = new Filter(filterPredicateEQ, seqScan);
         filter.open();
         while (filter.hasNext()) {
@@ -72,7 +73,7 @@ public class FilterTest {
 
 
         System.out.println("过滤第0字段<'5'的行");
-        FilterPredicate filterPredicateLessThan = new FilterPredicate(0, FilterPredicate.OperationEnum.LESS_THAN, new IntField(5));
+        FilterPredicate filterPredicateLessThan = new FilterPredicate(0, PredicateEnum.LESS_THAN, new IntField(5));
         Filter filter2 = new Filter(filterPredicateLessThan, seqScan);
         filter2.open();
         while (filter2.hasNext()) {

@@ -1,6 +1,6 @@
 package com.microdb.model.field;
 
-import com.microdb.operator.FilterPredicate;
+import com.microdb.operator.PredicateEnum;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -33,9 +33,9 @@ public class IntField implements Field, Serializable {
     }
 
     @Override
-    public boolean compare(FilterPredicate.OperationEnum operationEnum, Field operand) {
+    public boolean compare(PredicateEnum predicateEnum, Field operand) {
         IntField operandValue = (IntField) operand;
-        switch (operationEnum) {
+        switch (predicateEnum) {
             case EQUALS:
                 return value == operandValue.value;
             case NOT_EQUALS:
