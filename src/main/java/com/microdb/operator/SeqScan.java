@@ -35,7 +35,7 @@ public class SeqScan extends Operator {
     @Override
     public void close() {
         super.close();
-        tableFileIterator = null;
+        tableFileIterator.close();
     }
 
     @Override

@@ -18,7 +18,7 @@ public class FilterPredicate {
     /**
      * 操作符
      */
-    private OperationEnum operationEnum;
+    private PredicateEnum predicateEnum;
 
     /**
      * 参数操作数
@@ -26,18 +26,15 @@ public class FilterPredicate {
     private Field paramOperand;
 
 
-    public FilterPredicate(int fieldIndex, OperationEnum operationEnum, Field paramOperand) {
+    public FilterPredicate(int fieldIndex, PredicateEnum predicateEnum, Field paramOperand) {
         this.fieldIndex = fieldIndex;
-        this.operationEnum = operationEnum;
+        this.predicateEnum = predicateEnum;
         this.paramOperand = paramOperand;
     }
 
     public boolean filter(Row row) {
-        return row.getField(fieldIndex).compare(operationEnum, paramOperand);
+        return row.getField(fieldIndex).compare(predicateEnum, paramOperand);
     }
 
-    public enum OperationEnum {
-        EQUALS, GREATER_THAN, LESS_THAN, LESS_THAN_OR_EQ, GREATER_THAN_OR_EQ, NOT_EQUALS, LIKE, LEFT_LIKE, RIGHT_LIKE;
-    }
 
 }

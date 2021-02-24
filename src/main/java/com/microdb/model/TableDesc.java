@@ -4,6 +4,7 @@ import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IFieldType;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -32,13 +33,32 @@ public class TableDesc implements Serializable {
         this.attributes = Stream.of(fieldTypes).map(x -> new Attribute(null, x)).collect(Collectors.toList());
     }
 
-
     public int getAttributesNum() {
         return attributes.size();
     }
 
     public List<FieldType> getFieldTypes() {
         return this.attributes.stream().map(Attribute::getFieldType).collect(Collectors.toList());
+    }
+
+    public List<Attribute> getAttributes() {
+        return attributes;
+    }
+
+    /**
+     * 两个表结构合并成一个，在join时使用
+     *
+     * @param left  左表
+     * @param right 右表
+     * @return 合并后的新表结构
+     */
+    public static TableDesc merge(TableDesc left, TableDesc right) {
+        List<Attribute> leftAttributes = left.getAttributes();
+        List<Attribute> rightAttributes = right.getAttributes();
+        ArrayList<Attribute> newTableAttrs = new ArrayList<>(leftAttributes.size() + rightAttributes.size());
+        newTableAttrs.addAll(leftAttributes);
+        newTableAttrs.addAll(rightAttributes);
+        return new TableDesc(newTableAttrs);
     }
 
     /**

@@ -3,6 +3,7 @@ package com.microdb.model;
 import com.microdb.model.field.Field;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -49,6 +50,21 @@ public class Row implements Serializable {
         this.fields = fields;
     }
 
+    public void setFields(List<Field> fields) {
+        this.fields = fields.toArray(new Field[0]);
+    }
+
+    public static Row merge(Row left, Row right) {
+        Row row = new Row(TableDesc.merge(left.getTableDesc(), right.getTableDesc()));
+        List<Field> leftFields = left.getFields();
+        List<Field> rightFields = right.getFields();
+        ArrayList<Field> fields = new ArrayList<>(leftFields.size() + rightFields.size());
+        fields.addAll(leftFields);
+        fields.addAll(rightFields);
+        Field[] fieldsArray = fields.toArray(new Field[leftFields.size() + rightFields.size()]);
+        row.setFields(fieldsArray);
+        return row;
+    }
     @Override
     public String toString() {
         StringBuilder column = new StringBuilder();
