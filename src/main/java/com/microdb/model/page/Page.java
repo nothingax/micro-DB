@@ -14,7 +14,12 @@ import java.util.Iterator;
  * @version 1.0
  */
 public interface Page {
-    int getPageNo();
+    /**
+     * 默认每页4KB
+     */
+    public static int defaultPageSizeInByte = 4096;
+
+    PageID getPageID();
 
     /**
      * 序列化page数据

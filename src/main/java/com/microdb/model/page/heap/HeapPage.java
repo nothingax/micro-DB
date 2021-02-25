@@ -19,10 +19,7 @@ import java.util.Iterator;
  * @version 1.0
  */
 public class HeapPage implements Page {
-    /**
-     * 默认每页4KB
-     */
-    public static int defaultPageSizeInByte = 4096;
+
     /**
      * page 编号
      */
@@ -46,10 +43,18 @@ public class HeapPage implements Page {
      */
     private boolean[] slotUsageStatusBitMap;
 
+    public HeapPage(PageID pageID, byte[] pageData) throws IOException {
+        this.pageID = pageID;
+        this.tableDesc = DataBase.getInstance().getDbTableById(pageID.getTableId()).getTableDesc();
+        this.maxSlotNum = calculateMaxSlotNum(this.tableDesc);
+        this.rows = new Row[this.maxSlotNum];
+        this.slotUsageStatusBitMap = new boolean[this.maxSlotNum];
+        deserialize(pageData);
+    }
 
     @Override
-    public int getPageNo() {
-        return pageID.getPageNo();
+    public PageID getPageID() {
+        return pageID;
     }
 
     @Override
@@ -120,15 +125,6 @@ public class HeapPage implements Page {
 
     private boolean isSlotEmpty(int i) {
         return !slotUsageStatusBitMap[i];
-    }
-
-    public HeapPage(PageID pageID, byte[] pageData) throws IOException {
-        this.pageID = pageID;
-        this.tableDesc = DataBase.getInstance().getDbTableById(pageID.getTableId()).getTableDesc();
-        this.maxSlotNum = calculateMaxSlotNum(this.tableDesc);
-        this.rows = new Row[this.maxSlotNum];
-        this.slotUsageStatusBitMap = new boolean[this.maxSlotNum];
-        deserialize(pageData);
     }
 
     public static byte[] createEmptyPageData() {

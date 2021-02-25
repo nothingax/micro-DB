@@ -10,11 +10,22 @@ import com.microdb.model.page.PageID;
  */
 public class BTreePageID implements PageID {
 
-    public final static int ROOT_PTR = 0;
-    public final static int INTERNAL = 1;
-    public final static int LEAF = 2;
-    public final static int HEADER = 3;
-
+    /**
+     * 存储B+树根节点指针的页
+     */
+    public final static int TYPE_ROOT_PTR = 0;
+    /**
+     * 存储页面的使用状态，链表扩展
+     */
+    public final static int TYPE_HEADER = 1;
+    /**
+     * 存储B+树的内部节点
+     */
+    public final static int TYPE_INTERNAL = 2;
+    /**
+     * 存储B+树的页子节点，在聚簇索引树中，页子节点存储的是整行数据
+     */
+    public final static int TYPE_LEAF = 3;
 
     /**
      * 表ID

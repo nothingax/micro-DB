@@ -3,6 +3,7 @@ package com.microdb.model.page.btree;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
 import com.microdb.model.page.Page;
+import com.microdb.model.page.PageID;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -23,8 +24,8 @@ public class BTreeLeafPage implements Page {
     }
 
     @Override
-    public int getPageNo() {
-        return 0;
+    public PageID getPageID() {
+        return null;
     }
 
     @Override

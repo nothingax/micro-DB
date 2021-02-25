@@ -1,5 +1,6 @@
 package com.microdb.model.dbfile;
 
+import com.microdb.exception.DbException;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
 import com.microdb.model.field.Field;
@@ -7,13 +8,10 @@ import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 import com.microdb.model.page.btree.BTreeLeafPage;
 import com.microdb.model.page.btree.BTreePageID;
-import com.microdb.model.page.btree.BTreeRootPage;
+import com.microdb.model.page.btree.BTreeRootPtrPage;
 import com.microdb.operator.ITableFileIterator;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 
 /**
  * 基于B+tree的文件组织
@@ -62,7 +60,18 @@ public class BTreeFile implements TableFile {
 
     @Override
     public void writePageToDisk(Page page) {
-        throw new UnsupportedOperationException("todo");
+        try {
+            byte[] pageData = page.serialize();
+            RandomAccessFile rf = new RandomAccessFile(file, "rw");
+            BTreePageID pageID = (BTreePageID) page.getPageID();
+            if (pageID.getPageType() != BTreePageID.TYPE_ROOT_PTR) {
+                rf.seek(BTreeRootPtrPage.rootPtrPageSizeInByte + (page.getPageID().getPageNo() - 1) * Page.defaultPageSizeInByte);
+            }
+            rf.write(pageData);
+            rf.close();
+        } catch (IOException e) {
+            throw new DbException("serialize failed", e);
+        }
     }
 
     @Override
@@ -87,7 +96,7 @@ public class BTreeFile implements TableFile {
         // 首次在该页插入数据时，写入空数据
         if (file.length() == 0) {
             BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file, true));
-            byte[] emptyRootPtrData = BTreeRootPage.createEmptyPageData();
+            byte[] emptyRootPtrData = BTreeRootPtrPage.createEmptyPageData();
             byte[] emptyLeafData = BTreeLeafPage.createEmptyPageData();
             bos.write(emptyRootPtrData);
             bos.write(emptyLeafData);
@@ -95,24 +104,24 @@ public class BTreeFile implements TableFile {
         }
 
         // 获取单例的rootPage,如果不存在则新增
-        BTreePageID rootPageID = new BTreePageID(this.tableId, 0, BTreePageID.ROOT_PTR);
+        BTreePageID rootPageID = new BTreePageID(this.tableId, 0, BTreePageID.TYPE_ROOT_PTR);
 
         // 从磁盘中读取rootPage
-        BTreeRootPage rootPage = (BTreeRootPage) this.readPageFromDisk(rootPageID);
+        BTreeRootPtrPage rootPtrPage = (BTreeRootPtrPage) this.readPageFromDisk(rootPageID);
 
         // 从rootPage中解析根节点所在页的pageID
-        int rootNodePageNo = rootPage.getRootNodePageNo();
+        int rootNodePageNo = rootPtrPage.getRootNodePageNo();
         BTreePageID rootNodePageID = null;
         if (rootNodePageNo != 0) { // 表示该表尚未插入数据
-            rootNodePageID = new BTreePageID(tableId, rootNodePageNo, rootPage.getRootNodePageType());
+            rootNodePageID = new BTreePageID(tableId, rootNodePageNo, rootPtrPage.getRootNodePageType());
         }
 
         // 首次插入数据，初始化rootPage维护第一个leafPage的指针，写入磁盘
         if (rootNodePageID == null) {
             // 该表尚未插入数据，获取文件中最后一个LeafPage，也是第一个LeafPage，因为上面代码中写入了的leafPage的空数据空间
-            BTreePageID firstLeafPageID = new BTreePageID(tableId, getExistPageCount(), BTreePageID.LEAF);
-            rootPage.setRootPageID(firstLeafPageID);
-            writePageToDisk(rootPage);
+            BTreePageID firstLeafPageID = new BTreePageID(tableId, getExistPageCount(), BTreePageID.TYPE_LEAF);
+            rootPtrPage.setRootPageID(firstLeafPageID);
+            writePageToDisk(rootPtrPage);
         }
 
         // 从b+tree中查找按索引查找数据期望插入的leafPage。如果leafPage已满，触发页分裂

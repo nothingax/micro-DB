@@ -79,7 +79,7 @@ public class HeapTableFile implements TableFile {
         try {
             byte[] pgData = page.serialize();
             RandomAccessFile dbFile = new RandomAccessFile(file, "rws");
-            dbFile.skipBytes(page.getPageNo() * HeapPage.defaultPageSizeInByte);
+            dbFile.skipBytes(page.getPageID().getPageNo() * HeapPage.defaultPageSizeInByte);
             dbFile.write(pgData);
         } catch (IOException e) {
             throw new DbException("write page To disk error", e);
