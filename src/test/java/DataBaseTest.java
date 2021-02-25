@@ -5,6 +5,7 @@ import com.microdb.model.Row;
 import com.microdb.model.dbfile.TableFile;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
+import com.microdb.model.page.HeapPage;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 import org.junit.Assert;
@@ -71,7 +72,7 @@ public class DataBaseTest {
     @Test
     public void testCalculateMaxSlotNum() throws IOException {
         DbTable tablePerson = this.dataBase.getDbTableByName("t_person");
-        Page page = new Page(new PageID(tablePerson.getTableId(), 0), Page.createEmptyPageData());
+        Page page = new HeapPage(new PageID(tablePerson.getTableId(), 0), HeapPage.createEmptyPageData());
         int i = page.calculateMaxSlotNum(tablePerson.getTableDesc());
         System.out.println(i);
         Assert.assertEquals(819, i);

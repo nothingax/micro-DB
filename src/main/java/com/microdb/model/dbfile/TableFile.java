@@ -4,6 +4,7 @@ import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
+import com.microdb.model.page.HeapPage;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 import com.microdb.operator.ITableFileIterator;
@@ -54,15 +55,15 @@ public class TableFile {
      * @return page
      */
     public Page readPageFromDisk(PageID pageID) throws IOException {
-        byte[] pageData = Page.createEmptyPageData();
+        byte[] pageData = HeapPage.createEmptyPageData();
         try {
             FileInputStream in = new FileInputStream(file);
-            in.skip(pageID.getPageNo() * Page.defaultPageSizeInByte);
+            in.skip(pageID.getPageNo() * HeapPage.defaultPageSizeInByte);
             in.read(pageData);
         } catch (IOException e) {
             throw new RuntimeException("todo ,read Page from disk error", e);
         }
-        return new Page(pageID, pageData);
+        return new HeapPage(pageID, pageData);
     }
 
     /**
@@ -74,7 +75,7 @@ public class TableFile {
         try {
             byte[] pgData = page.serialize();
             RandomAccessFile dbFile = new RandomAccessFile(file, "rws");
-            dbFile.skipBytes(page.getPageNo() * Page.defaultPageSizeInByte);
+            dbFile.skipBytes(page.getPageNo() * HeapPage.defaultPageSizeInByte);
             dbFile.write(pgData);
         } catch (IOException e) {
             throw new DbException("write page To disk error", e);
@@ -93,7 +94,7 @@ public class TableFile {
      * 文件中已存在的page数量
      */
     public int getExistPageCount() {
-        return (int) file.length() / Page.defaultPageSizeInByte;
+        return (int) file.length() / HeapPage.defaultPageSizeInByte;
     }
 
     public void insertRow(Row row) throws IOException {
@@ -104,7 +105,7 @@ public class TableFile {
         if (null == availablePage) {
             int pageNo = existPageCount; // 由于pageNo从0开始
             PageID pageID = new PageID(this.getTableId(), pageNo);
-            availablePage = new Page(pageID, Page.createEmptyPageData());
+            availablePage = new HeapPage(pageID, HeapPage.createEmptyPageData());
         }
         availablePage.insertRow(row);
         this.writePageToDisk(availablePage);
