@@ -5,6 +5,8 @@ import com.microdb.model.TableDesc;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -40,6 +42,11 @@ public class BTreeRootPtrPage implements Page {
     private int rootNodePageType;
 
     /**
+     * 第一个headerPage的PageNo
+     */
+    private int firstHeaderPageNo;
+
+    /**
      * TODO
      */
     public static byte[] createEmptyPageData() {
@@ -51,9 +58,20 @@ public class BTreeRootPtrPage implements Page {
         return null;
     }
 
+    /**
+     * 序列化
+     */
     @Override
     public byte[] serialize() throws IOException {
-        return new byte[0];
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(rootPtrPageSizeInByte);
+        DataOutputStream dos = new DataOutputStream(baos);
+
+        dos.writeInt(rootNodePageNo);
+        dos.writeByte(rootNodePageType);
+        dos.writeInt(firstHeaderPageNo);
+        dos.flush();
+
+        return baos.toByteArray();
     }
 
     @Override
