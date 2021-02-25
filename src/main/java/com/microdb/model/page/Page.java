@@ -8,6 +8,7 @@ import java.util.Iterator;
 
 /**
  * Page 抽象接口
+ * 页，读写磁盘文件数据时以page为基本单位
  *
  * @author zhangjw
  * @version 1.0

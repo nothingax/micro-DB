@@ -6,6 +6,7 @@ import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
 import com.microdb.model.page.HeapPage;
 import com.microdb.model.page.Page;
+import com.microdb.model.page.HeapPageID;
 import com.microdb.model.page.PageID;
 import com.microdb.operator.ITableFileIterator;
 
@@ -104,7 +105,7 @@ public class TableFile {
         // 现有所有页面均没有空slot,新建立一个页面
         if (null == availablePage) {
             int pageNo = existPageCount; // 由于pageNo从0开始
-            PageID pageID = new PageID(this.getTableId(), pageNo);
+            PageID pageID = new HeapPageID(this.getTableId(), pageNo);
             availablePage = new HeapPage(pageID, HeapPage.createEmptyPageData());
         }
         availablePage.insertRow(row);
@@ -118,7 +119,7 @@ public class TableFile {
         }
 
         for (int pageNo = 0; pageNo < existPageCount; pageNo++) {
-            PageID pageID = new PageID(this.getTableId(), pageNo);
+            PageID pageID = new HeapPageID(this.getTableId(), pageNo);
             Page pg = this.readPageFromDisk(pageID);
             if (pg.hasEmptySlot()) {
                 return pg;
@@ -185,7 +186,7 @@ public class TableFile {
         }
 
         private Iterator<Row> getRowIterator(Integer pageNo) {
-            PageID pageID = new PageID(tableId, pageNo);
+            PageID pageID = new HeapPageID(tableId, pageNo);
             return DataBase.getInstance().getPage(pageID).getRowIterator();
         }
     }

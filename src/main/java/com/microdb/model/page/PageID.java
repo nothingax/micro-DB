@@ -6,27 +6,9 @@ package com.microdb.model.page;
  * @author zhangjw
  * @version 1.0
  */
-public class PageID {
-    /**
-     * 表Id
-     */
-    private int tableId;
+public interface PageID {
 
-    /**
-     * 页编号
-     */
-    private int pageNo;
+    int getTableId();
 
-    public PageID(int tableId, int pageNo) {
-        this.tableId = tableId;
-        this.pageNo = pageNo;
-    }
-
-    public int getTableId() {
-        return tableId;
-    }
-
-    public int getPageNo() {
-        return pageNo;
-    }
+    int getPageNo();
 }
