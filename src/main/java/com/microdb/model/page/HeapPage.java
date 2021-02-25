@@ -144,6 +144,11 @@ public class HeapPage implements Page {
     }
 
 
+    /**
+     * 计算返回一页数据可存放的数据行数
+     * 页字节数容量（4KB）/(表一行占用字节+行的状态标识占用字节），向下取整
+     * 行的状态标识占用位数：每行占用1byte
+     */
     @Override
     public int calculateMaxSlotNum(TableDesc tableDesc) {
         // slot状态位占用空间=1byte
