@@ -2,8 +2,8 @@ package com.microdb.model;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.dbfile.TableFile;
-import com.microdb.model.page.Page;
-import com.microdb.model.page.PageID;
+import com.microdb.model.page.heap.Page;
+import com.microdb.model.page.heap.PageID;
 
 import java.io.IOException;
 import java.util.HashMap;

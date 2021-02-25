@@ -1,4 +1,4 @@
-package com.microdb.model.page;
+package com.microdb.model.page.heap;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
