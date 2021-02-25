@@ -1,4 +1,4 @@
-package com.microdb.model.page.heap;
+package com.microdb.model.page;
 
 /**
  * pageID用于封装页编号、引用tableId，便于在page中使用tableDesc

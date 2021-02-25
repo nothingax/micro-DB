@@ -5,9 +5,9 @@ import com.microdb.model.DataBase;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
 import com.microdb.model.page.heap.HeapPage;
-import com.microdb.model.page.heap.Page;
+import com.microdb.model.page.Page;
 import com.microdb.model.page.heap.HeapPageID;
-import com.microdb.model.page.heap.PageID;
+import com.microdb.model.page.PageID;
 import com.microdb.operator.ITableFileIterator;
 
 import java.io.File;

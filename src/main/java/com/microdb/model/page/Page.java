@@ -1,4 +1,4 @@
-package com.microdb.model.page.heap;
+package com.microdb.model.page;
 
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;

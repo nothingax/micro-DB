@@ -7,7 +7,7 @@ import com.microdb.model.dbfile.TableFile;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
 import com.microdb.model.page.heap.HeapPage;
-import com.microdb.model.page.heap.Page;
+import com.microdb.model.page.Page;
 import com.microdb.model.page.heap.HeapPageID;
 import org.junit.Assert;
 import org.junit.Before;
