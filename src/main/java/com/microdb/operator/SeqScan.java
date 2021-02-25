@@ -22,7 +22,7 @@ public class SeqScan extends Operator {
     private ITableFileIterator tableFileIterator;
 
     public SeqScan(int tableId) {
-        this.tableFile = DataBase.getInstance().getDbTableById(tableId).getTableFile();
+        this.tableFile = DataBase.getInstance().getDbTableById(tableId).getHeapTableFile();
         this.tableFileIterator = this.tableFile.getIterator();
     }
 

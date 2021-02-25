@@ -2,6 +2,7 @@ import com.microdb.model.DataBase;
 import com.microdb.model.DbTable;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
+import com.microdb.model.dbfile.HeapTableFile;
 import com.microdb.model.dbfile.TableFile;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
@@ -34,7 +35,7 @@ public class FilterTest {
         String fileName = UUID.randomUUID().toString();
         List<TableDesc.Attribute> attributes = Arrays.asList(new TableDesc.Attribute("f1", FieldType.INT));
         TableDesc tableDesc = new TableDesc(attributes);
-        TableFile tableFile = new TableFile(new File(fileName),tableDesc);
+        TableFile tableFile = new HeapTableFile(new File(fileName),tableDesc);
 
         // tableDesc
         dataBase.addTable(tableFile, "t_person", tableDesc);
@@ -48,7 +49,7 @@ public class FilterTest {
         for (int i = 0; i < 20; i++) {
             row.setField(0, new IntField(i));
             tablePerson.insertRow(row);
-            int existPageCount = tablePerson.getTableFile().getExistPageCount();
+            int existPageCount = tablePerson.getHeapTableFile().getExistPageCount();
             Assert.assertEquals(1, existPageCount);
         }
     }

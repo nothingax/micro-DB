@@ -2,6 +2,7 @@ import com.microdb.model.DataBase;
 import com.microdb.model.DbTable;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
+import com.microdb.model.dbfile.HeapTableFile;
 import com.microdb.model.dbfile.TableFile;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
@@ -31,13 +32,13 @@ public class JoinTest {
                 Arrays.asList(new TableDesc.Attribute("person_id", FieldType.INT),
                         new TableDesc.Attribute("dept_id", FieldType.INT));
         TableDesc tableDesc = new TableDesc(attributes);
-        TableFile tableFile = new TableFile(new File(UUID.randomUUID().toString()), tableDesc);
+        TableFile tableFile = new HeapTableFile(new File(UUID.randomUUID().toString()), tableDesc);
         dataBase.addTable(tableFile, "t_person", tableDesc);
 
         // 部门表，2个int字段
         TableDesc depTableDesc = new TableDesc(
                 Arrays.asList(new TableDesc.Attribute("id", FieldType.INT)));
-        TableFile depTableFile = new TableFile(new File(UUID.randomUUID().toString()), depTableDesc);
+        TableFile depTableFile = new HeapTableFile(new File(UUID.randomUUID().toString()), depTableDesc);
         dataBase.addTable(depTableFile, "t_dept", depTableDesc);
 
 
