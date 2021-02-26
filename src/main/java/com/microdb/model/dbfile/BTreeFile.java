@@ -6,12 +6,12 @@ import com.microdb.model.TableDesc;
 import com.microdb.model.field.Field;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
-import com.microdb.model.page.btree.BTreeLeafPage;
-import com.microdb.model.page.btree.BTreePageID;
-import com.microdb.model.page.btree.BTreeRootPtrPage;
+import com.microdb.model.page.btree.*;
 import com.microdb.operator.ITableFileIterator;
+import com.microdb.operator.PredicateEnum;
 
 import java.io.*;
+import java.util.Iterator;
 
 /**
  * 基于B+tree的文件组织
@@ -70,7 +70,7 @@ public class BTreeFile implements TableFile {
             rf.write(pageData);
             rf.close();
         } catch (IOException e) {
-            throw new DbException("serialize failed", e);
+            throw new DbException("writePageToDisk failed", e);
         }
     }
 
@@ -125,7 +125,7 @@ public class BTreeFile implements TableFile {
         }
 
         // 从b+tree中查找按索引查找数据期望插入的leafPage。如果leafPage已满，触发页分裂
-        BTreeLeafPage leafPage = this.findLeafPage(rootPageID, row.getField(keyFieldIndex));
+        BTreeLeafPage leafPage = this.findLeafPageToPlaceRow(rootPageID, row.getField(keyFieldIndex));
         if (!leafPage.hasEmptySlot()) {
             leafPage = this.splitLeafPage(leafPage, row.getField(keyFieldIndex));
         }
@@ -149,14 +149,45 @@ public class BTreeFile implements TableFile {
     }
 
     /**
-     * 查找field应该放置的页面，不考虑是否已满
+     * 查找索引field应该放置的页面，不考虑是否已满
      *
-     * @param rootPageID
-     * @param field
+     * @param pageID
+     * @param field 索引字段值，在内部节点的查找过程中使用
      * @return 查找field应该放置的页面
      */
-    private BTreeLeafPage findLeafPage(BTreePageID rootPageID, Field field) {
-        throw new UnsupportedOperationException("todo");
+    private BTreeLeafPage findLeafPageToPlaceRow(BTreePageID pageID, Field field) throws IOException {
+
+        // 查找到树的最后一层--leafPage
+        if (pageID.getPageType() == BTreePageID.TYPE_LEAF) {
+            return (BTreeLeafPage) this.readPageFromDisk(pageID);
+        }
+
+        // 查找到树的内部节点，在这里递归直至查找到leafPage
+        BTreeInternalPage aInternalPage = (BTreeInternalPage) this.readPageFromDisk(pageID);
+        BTreeEntry entry;
+
+        // TODO 迭代器待实现
+        Iterator<BTreeEntry> iterator = aInternalPage.getIterator();
+        entry = iterator.next();
+
+        BTreePageID nextSearchPageId;
+        if (field == null) { // 特殊情况，对于null值，一律从左树中查找
+            nextSearchPageId = entry.getLeftChildPageID();
+        } else {
+            // 如果查找的值>节点值，判断树中下一个节点
+            while (field.compare(PredicateEnum.GREATER_THAN, entry.getKey()) && iterator.hasNext()) {
+                entry = iterator.next();
+            }
+
+            // 如果查找的值<=节点值，进入树的下一级，左子树
+            if (field.compare(PredicateEnum.LESS_THAN_OR_EQ, entry.getKey())) {
+                nextSearchPageId = entry.getLeftChildPageID();
+            } else {
+                // 如果查找的值>节点值，进入树的下一级，右子树
+                nextSearchPageId = entry.getRightChildPageID();
+            }
+        }
+        return this.findLeafPageToPlaceRow(nextSearchPageId, field);
     }
 
     @Override

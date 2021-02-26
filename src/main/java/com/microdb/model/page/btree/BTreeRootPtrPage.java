@@ -47,10 +47,10 @@ public class BTreeRootPtrPage implements Page {
     private int firstHeaderPageNo;
 
     /**
-     * TODO
+     * 初始化一块rootPtrPage页面大小的空间
      */
     public static byte[] createEmptyPageData() {
-        return new byte[0];
+        return new byte[rootPtrPageSizeInByte];
     }
 
     @Override

@@ -169,6 +169,9 @@ public class HeapPage implements Page {
         throw new DbException("insert row error: no empty slot");
     }
 
+    /**
+     * 反回迭代器，迭代该页的每一行
+     */
     @Override
     public Iterator<Row> getRowIterator() {
         return new RowIterator();

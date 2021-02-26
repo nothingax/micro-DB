@@ -53,7 +53,6 @@ public class IntField implements Field, Serializable {
             case LESS_THAN_OR_EQ:
                 return value <= operandValue.value;
         }
-
         return false;
     }
 

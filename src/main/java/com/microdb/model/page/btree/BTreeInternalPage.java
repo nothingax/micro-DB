@@ -45,4 +45,30 @@ public class BTreeInternalPage implements Page {
     public Iterator<Row> getRowIterator() {
         return null;
     }
+
+    /**
+     * 返回该页的迭代器
+     */
+    public BTreeInternalPageIterator getIterator() {
+        return new BTreeInternalPageIterator();
+    }
+
+    // =====================================迭代器==========================================
+
+    /**
+     * 查找B+树内部节点的迭代器
+     */
+    public class BTreeInternalPageIterator implements Iterator<BTreeEntry> {
+        public BTreeInternalPageIterator() {
+        }
+
+        public boolean hasNext() {
+            // todo
+            throw new UnsupportedOperationException("todo");
+        }
+
+        public BTreeEntry next() {// todo
+            throw new UnsupportedOperationException("todo");
+        }
+    }
 }

@@ -17,10 +17,10 @@ import java.util.Iterator;
 public class BTreeLeafPage implements Page {
 
     /**
-     * TODO
+     * 初始化一块leafPae页面默认大小的空间
      */
     public static byte[] createEmptyPageData() {
-        return new byte[0];
+        return new byte[Page.defaultPageSizeInByte];
     }
 
     @Override
@@ -46,6 +46,7 @@ public class BTreeLeafPage implements Page {
     @Override
     public void insertRow(Row row) {
 
+        // 更新rootPtr
     }
 
     @Override
