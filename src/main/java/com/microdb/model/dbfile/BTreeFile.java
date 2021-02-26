@@ -166,7 +166,6 @@ public class BTreeFile implements TableFile {
         BTreeInternalPage aInternalPage = (BTreeInternalPage) this.readPageFromDisk(pageID);
         BTreeEntry entry;
 
-        // TODO 迭代器待实现
         Iterator<BTreeEntry> iterator = aInternalPage.getIterator();
         entry = iterator.next();
 
@@ -179,11 +178,11 @@ public class BTreeFile implements TableFile {
                 entry = iterator.next();
             }
 
-            // 如果查找的值<=节点值，进入树的下一级，左子树
+            // 如果查找的值<=节点值，进入树的左子树
             if (field.compare(PredicateEnum.LESS_THAN_OR_EQ, entry.getKey())) {
                 nextSearchPageId = entry.getLeftChildPageID();
             } else {
-                // 如果查找的值>节点值，进入树的下一级，右子树
+                // 如果查找的值>节点值，进入树的右子树
                 nextSearchPageId = entry.getRightChildPageID();
             }
         }

@@ -28,6 +28,8 @@ public interface Page {
 
     boolean hasEmptySlot();
 
+    boolean isSlotUsed(int index);
+
     /**
      * 计算返回一页数据可存放的数据行数
      */

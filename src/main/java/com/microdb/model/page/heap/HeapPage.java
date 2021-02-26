@@ -119,7 +119,8 @@ public class HeapPage implements Page {
         dis.close();
     }
 
-    private boolean isSlotUsed(int i) {
+    @Override
+    public boolean isSlotUsed(int i) {
         return slotUsageStatusBitMap[i];
     }
 

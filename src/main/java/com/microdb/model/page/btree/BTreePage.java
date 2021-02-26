@@ -31,6 +31,11 @@ public class BTreePage implements Page {
     }
 
     @Override
+    public boolean isSlotUsed(int index) {
+        return false;
+    }
+
+    @Override
     public int calculateMaxSlotNum(TableDesc tableDesc) {
         return 0;
     }

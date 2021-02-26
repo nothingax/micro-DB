@@ -24,6 +24,13 @@ public class BTreeEntry {
      */
     private BTreePageID rightChildPageID;
 
+
+    /**
+     * 记录键元素，主要记录key的序号
+     */
+    private KeyItem keyItem;
+
+
     public BTreeEntry(Field key, BTreePageID leftChildPageID, BTreePageID rightChildPageID) {
         this.key = key;
         this.leftChildPageID = leftChildPageID;
@@ -52,5 +59,13 @@ public class BTreeEntry {
 
     public void setRightChildPageID(BTreePageID rightChildPageID) {
         this.rightChildPageID = rightChildPageID;
+    }
+
+    public KeyItem getKeyItem() {
+        return keyItem;
+    }
+
+    public void setKeyItem(KeyItem keyItem) {
+        this.keyItem = keyItem;
     }
 }
