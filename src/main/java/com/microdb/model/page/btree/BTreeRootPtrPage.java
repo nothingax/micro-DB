@@ -11,8 +11,8 @@ import java.io.IOException;
 import java.util.Iterator;
 
 /**
- * rootPage，单例，一个表文件只存在一个rootPage，
- * rootPage存储树的根节点所在的pageNo、page的类型（internal 或leaf）、第一个HeaderPage指针
+ * RootPtrPage，单例，一个表文件只有一个RootPtrPage，
+ * RootPtrPage存储树的根节点所在的pageNo、page的类型（internal 或leaf）、第一个HeaderPage指针
  *
  * @author zhangjw
  * @version 1.0
@@ -27,7 +27,7 @@ public class BTreeRootPtrPage implements Page {
      */
     public static int rootPtrPageSizeInByte = 9;
     /**
-     * 该BTreeRootPage的pageID
+     * 该BTreeRootPtrPage的pageID
      */
     private BTreePageID pageID;
 
