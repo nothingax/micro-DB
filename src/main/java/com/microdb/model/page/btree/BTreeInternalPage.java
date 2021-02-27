@@ -126,6 +126,10 @@ public class BTreeInternalPage implements Page {
     public BTreeInternalPageIterator getIterator() {
         return new BTreeInternalPageIterator(this);
     }
+
+    public void insertEntry(BTreeEntry entry) {
+
+    }
     // =====================================迭代器==========================================
 
     /**

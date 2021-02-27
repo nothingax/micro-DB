@@ -61,6 +61,10 @@ public class BTreeLeafPage implements Page {
      */
     private List<Row> rows;
 
+    /**
+     * 父节点pageNo
+     */
+    private int parentPageNo;
 
     /**
      * 左兄弟
@@ -206,5 +210,49 @@ public class BTreeLeafPage implements Page {
     @Override
     public Iterator<Row> getRowIterator() {
         return null;
+    }
+
+    public Iterator<Row> getReverseIterator() {
+        return null;
+    }
+
+    /**
+     * 当前页已经存储的行数
+     */
+    public int getExistRowCount() {
+        int cnt = 0;
+
+        for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
+            cnt += slotUsageStatusBitMap[i] ? 1 : 0;
+        }
+
+        return cnt;
+    }
+
+    public void deleteRow(Row row) {
+
+    }
+
+    public BTreePageID getParentPageID() {
+        if (parentPageNo == 0) { // 没有内部节点
+            new BTreePageID(this.pageID.getTableId(), parentPageNo, BTreePageID.TYPE_ROOT_PTR);
+        }
+        return new BTreePageID(this.pageID.getTableId(), parentPageNo, BTreePageID.TYPE_INTERNAL);
+    }
+
+    public BTreePageID getRightSibPageID() {
+        return null;
+    }
+
+    public void setRightSibPageId(BTreePageID oldRightSibId) {
+
+    }
+
+    public void setLeftSibPageId(BTreePageID pageID) {
+
+    }
+
+    public void setParentPageID(PageID pageID) {
+
     }
 }
