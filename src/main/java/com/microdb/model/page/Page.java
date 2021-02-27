@@ -17,7 +17,7 @@ public interface Page {
     /**
      * 默认每页4KB
      */
-    public static int defaultPageSizeInByte = 4096;
+    int defaultPageSizeInByte = 4096;
 
     PageID getPageID();
 
@@ -25,6 +25,11 @@ public interface Page {
      * 序列化page数据
      */
     byte[] serialize() throws IOException;
+
+    /**
+     * 反序列化pageData到page对象
+     */
+    void deserialize(byte[] pageData) throws IOException;
 
     boolean hasEmptySlot();
 

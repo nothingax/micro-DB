@@ -94,7 +94,7 @@ public class HeapPage implements Page {
      * 反序列化文件数据到page
      * 将 slotUsageStatusBitMap 、rows 字节反序列化到对象
      */
-    private void deserialize(byte[] pageData) throws IOException {
+    public void deserialize(byte[] pageData) throws IOException {
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(pageData));
         // slot状态位反序列化
         for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
@@ -147,6 +147,8 @@ public class HeapPage implements Page {
      * 计算返回一页数据可存放的数据行数
      * 页字节数容量（4KB）/(表一行占用字节+行的状态标识占用字节），向下取整
      * 行的状态标识占用位数：每行占用1byte
+     *
+     * TODO 改成抽象方法
      */
     @Override
     public int calculateMaxSlotNum(TableDesc tableDesc) {

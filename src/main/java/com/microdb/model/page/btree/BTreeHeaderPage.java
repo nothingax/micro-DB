@@ -26,6 +26,11 @@ public class BTreeHeaderPage implements Page {
     }
 
     @Override
+    public void deserialize(byte[] pageData) throws IOException {
+
+    }
+
+    @Override
     public boolean hasEmptySlot() {
         return false;
     }
