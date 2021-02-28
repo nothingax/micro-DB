@@ -68,4 +68,8 @@ public class BTreeEntry {
     public void setKeyItem(KeyItem keyItem) {
         this.keyItem = keyItem;
     }
+
+    public BTreePageID getRightChild() {
+        return null;
+    }
 }

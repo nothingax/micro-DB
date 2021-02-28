@@ -3,7 +3,6 @@ package com.microdb.model.page.btree;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
 import com.microdb.model.page.Page;
-import com.microdb.model.page.PageID;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -14,16 +13,12 @@ import java.util.Iterator;
  * @author zhangjw
  * @version 1.0
  */
-public class BTreeHeaderPage implements Page {
+public class BTreeHeaderPage extends BTreePage {
     /**
      * prevHeaderPageNo 和 nextHeaderPageNo的空间
      */
     public static final int POINTER_SIZE_IN_BYTE = 4;
 
-    /**
-     * 该页的PageID
-     */
-    private BTreePageID pageID;
 
     /**
      * 上一页
@@ -48,11 +43,6 @@ public class BTreeHeaderPage implements Page {
      */
     public static final int maxSlotNum = Page.defaultPageSizeInByte - 2 * BTreeHeaderPage.POINTER_SIZE_IN_BYTE;
 
-
-    @Override
-    public PageID getPageID() {
-        return pageID;
-    }
 
     @Override
     public byte[] serialize() throws IOException {

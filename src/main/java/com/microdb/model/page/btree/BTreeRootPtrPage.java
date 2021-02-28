@@ -2,7 +2,6 @@ package com.microdb.model.page.btree;
 
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
-import com.microdb.model.page.Page;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -16,7 +15,7 @@ import java.util.Iterator;
  * @author zhangjw
  * @version 1.0
  */
-public class BTreeRootPtrPage implements Page {
+public class BTreeRootPtrPage extends BTreePage {
 
     /**
      * 9字节 4+1+4
@@ -25,10 +24,6 @@ public class BTreeRootPtrPage implements Page {
      * 4:第一个HeaderPage的pageNo
      */
     public static int rootPtrPageSizeInByte = 9;
-    /**
-     * 该BTreeRootPtrPage的pageID
-     */
-    private BTreePageID pageID;
 
     /**
      * 根节点所在的pageNo
@@ -138,5 +133,8 @@ public class BTreeRootPtrPage implements Page {
             return null;
         }
         return new BTreePageID(pageID.getTableId(), firstHeaderPageNo, BTreePageID.TYPE_HEADER);
+    }
+
+    public void setRootNodePageID(BTreePageID pageID) {
     }
 }

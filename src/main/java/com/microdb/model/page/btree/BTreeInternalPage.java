@@ -3,8 +3,6 @@ package com.microdb.model.page.btree;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
 import com.microdb.model.field.Field;
-import com.microdb.model.page.Page;
-import com.microdb.model.page.PageID;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -14,16 +12,12 @@ import java.util.NoSuchElementException;
 
 /**
  * BTreeInternalPage 存储索引Key
+ * 格式：slotBitMap + 索引键值（m+1个位置，位置0不存储）+子节点指针(m+1个)+子节点page类型
  *
  * @author zhangjw
  * @version 1.0
  */
-public class BTreeInternalPage implements Page {
-
-    /**
-     * 该页的pageID
-     */
-    private BTreePageID pageID;
+public class BTreeInternalPage extends BTreePage {
 
     /**
      * 所有子节点的page编号
@@ -51,11 +45,6 @@ public class BTreeInternalPage implements Page {
     private boolean[] slotUsageStatusBitMap;
 
     @Override
-    public PageID getPageID() {
-        return null;
-    }
-
-    @Override
     public byte[] serialize() throws IOException {
         return new byte[0];
     }
@@ -67,6 +56,11 @@ public class BTreeInternalPage implements Page {
 
     @Override
     public boolean hasEmptySlot() {
+        for (boolean b : this.slotUsageStatusBitMap) {
+            if (!b) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -96,6 +90,19 @@ public class BTreeInternalPage implements Page {
     @Override
     public Iterator<Row> getRowIterator() {
         return null;
+    }
+
+    /**
+     * 已存在的数量
+     */
+    public int getExistCount() {
+        int cnt = 0;
+
+        for (boolean b : slotUsageStatusBitMap) {
+            cnt += b ? 1 : 0;
+        }
+
+        return cnt;
     }
 
     /**
@@ -133,6 +140,14 @@ public class BTreeInternalPage implements Page {
     }
 
     public void insertEntry(BTreeEntry entry) {
+
+    }
+
+    public Iterator<BTreeEntry> getReverseIterator() {
+        return new BTreeInternalPageReverseIterator(this);
+    }
+
+    public void deleteEntryAndRightChild(BTreeEntry entry) {
 
     }
     // =====================================迭代器==========================================
@@ -199,6 +214,41 @@ public class BTreeInternalPage implements Page {
                 nextEntryToReturn = null;
                 return next;
             }
+        }
+    }
+
+
+    /**
+     * 反向迭代器
+     */
+    public class BTreeInternalPageReverseIterator implements Iterator<BTreeEntry> {
+        /**
+         * 当前遍历的key和children的下标
+         */
+        int curIndex = getMaxSlotNum() - 1;
+
+        /**
+         * 暂存上一次取得的childPageID，在构造BtreeEntry时做临时变量使用
+         */
+        BTreePageID prevChildPageID = null;
+
+        /**
+         * 做临时变量使用，在next()中返回
+         */
+        BTreeEntry nextEntryToReturn = null;
+
+        BTreeInternalPage internalPage;
+
+        public BTreeInternalPageReverseIterator(BTreeInternalPage internalPage) {
+            this.internalPage = internalPage;
+        }
+
+        public boolean hasNext() {
+            throw new UnsupportedOperationException("todo");
+        }
+
+        public BTreeEntry next() {
+            throw new UnsupportedOperationException("todo");
         }
     }
 }

@@ -2,6 +2,8 @@ package com.microdb.model.page.btree;
 
 import com.microdb.model.page.PageID;
 
+import java.util.Objects;
+
 /**
  * B+Tree pageID
  *
@@ -50,15 +52,30 @@ public class BTreePageID implements PageID {
 
     @Override
     public int getTableId() {
-        return 0;
+        return tableId;
     }
 
     @Override
     public int getPageNo() {
-        return 0;
+        return pageNo;
     }
 
     public int getPageType() {
         return pageType;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BTreePageID that = (BTreePageID) o;
+        return tableId == that.tableId &&
+                pageNo == that.pageNo &&
+                pageType == that.pageType;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tableId, pageNo, pageType);
     }
 }

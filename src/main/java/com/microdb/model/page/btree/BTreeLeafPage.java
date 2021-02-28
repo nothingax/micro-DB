@@ -6,32 +6,28 @@ import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
 import com.microdb.model.field.Field;
 import com.microdb.model.page.Page;
-import com.microdb.model.page.PageID;
 import com.microdb.operator.PredicateEnum;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 
 /**
  * B+ Tree 叶页
+ * 格式：slotStatusBitMap + rows + 三个指针（父节点、左右、兄弟节点）
  *
  * @author zhangjw
  * @version 1.0
  */
-public class BTreeLeafPage implements Page {
+public class BTreeLeafPage extends BTreePage {
 
     /**
      * 该页的左右兄弟page指针、父page指针
      */
     public static final int POINTER_SIZE_IN_BYTE = 4;
-
-    /**
-     * 该页ID
-     */
-    private BTreePageID pageID;
 
     /**
      * 结构
@@ -61,20 +57,20 @@ public class BTreeLeafPage implements Page {
      */
     private List<Row> rows;
 
-    /**
-     * 父节点pageNo
-     */
-    private int parentPageNo;
+    // /**
+    //  * 父节点pageNo,可能是internal节点或者是rootPtr节点
+    //  */
+    // private int parentPageNo;
 
     /**
      * 左兄弟
      */
-    private int leftSibling;
+    private int leftSiblingPageNo;
 
     /**
      * 右兄弟
      */
-    private int rightSibling;
+    private int rightSiblingPageNo;
 
 
     public TableDesc getTableDesc() {
@@ -87,7 +83,6 @@ public class BTreeLeafPage implements Page {
         this.pageID = pageID;
         this.tableDesc = DataBase.getInstance().getDbTableById(pageID.getTableId()).getTableDesc();
         this.keyFieldIndex = keyFieldIndex;
-        this.maxSlotNum = 0;// TODO 获取最大承载量
         this.maxSlotNum = this.calculateMaxSlotNum(this.tableDesc);
         deserialize(pageData);
     }
@@ -107,7 +102,7 @@ public class BTreeLeafPage implements Page {
 
     @Override
     public BTreePageID getPageID() {
-        return null;
+        return pageID;
     }
 
     @Override
@@ -147,7 +142,7 @@ public class BTreeLeafPage implements Page {
 
     @Override
     public int getMaxSlotNum() {
-        return 0;
+        return this.maxSlotNum;
     }
 
     @Override
@@ -218,7 +213,7 @@ public class BTreeLeafPage implements Page {
     }
 
     public Iterator<Row> getReverseIterator() {
-        return null;
+        return new BTreeLeafPageReverseIterator(this);
     }
 
     /**
@@ -238,26 +233,104 @@ public class BTreeLeafPage implements Page {
 
     }
 
-    public BTreePageID getParentPageID() {
-        if (parentPageNo == 0) { // 没有内部节点
-            new BTreePageID(this.pageID.getTableId(), parentPageNo, BTreePageID.TYPE_ROOT_PTR);
+    private BTreePageID pageNoToPageID(int pageNo) {
+        if (pageNo == 0) {
+            return null;
         }
-        return new BTreePageID(this.pageID.getTableId(), parentPageNo, BTreePageID.TYPE_INTERNAL);
+        return new BTreePageID(pageID.getTableId(), pageNo, BTreePageID.TYPE_INTERNAL);
     }
 
     public BTreePageID getRightSibPageID() {
-        return null;
+        return this.pageNoToPageID(rightSiblingPageNo);
     }
 
-    public void setRightSibPageId(BTreePageID oldRightSibId) {
-
+    public BTreePageID getLeftSibPageID() {
+        return this.pageNoToPageID(leftSiblingPageNo);
     }
 
-    public void setLeftSibPageId(BTreePageID pageID) {
-
+    public void setRightSibPageID(BTreePageID rightSibPageID) {
+        if (rightSibPageID == null) {
+            rightSiblingPageNo = 0;
+        } else {
+            if (rightSibPageID.getTableId() != pageID.getTableId()) {
+                throw new DbException("tableID mismatch");
+            }
+            if (rightSibPageID.getPageType() != BTreePageID.TYPE_LEAF) {
+                throw new DbException("rightSibPage must be leaf");
+            }
+            rightSiblingPageNo = rightSibPageID.getPageNo();
+        }
     }
 
-    public void setParentPageID(PageID pageID) {
-
+    public void setLeftSibPageID(BTreePageID leftSibPageID) {
+        if (leftSibPageID == null) {
+            leftSiblingPageNo = 0;
+        } else {
+            if (leftSibPageID.getTableId() != pageID.getTableId()) {
+                throw new DbException("tableID mismatch");
+            }
+            if (leftSibPageID.getPageType() != BTreePageID.TYPE_LEAF) {
+                throw new DbException("leftSibPage must be leaf");
+            }
+            leftSiblingPageNo = leftSibPageID.getPageNo();
+        }
     }
+
+    protected Row getRow(int index) {
+        if (index < 0 || index >= rows.size()) {
+            throw new NoSuchElementException(String.format("不存在索引为%s的元素", index));
+        }
+        if (!isSlotUsed(index)) {
+            return null;
+        }
+        return rows.get(index);
+    }
+
+    // ===============================迭代器=========================================
+    public static class BTreeLeafPageReverseIterator implements Iterator<Row> {
+        int curIndex;
+        Row nextRowToReturn = null;
+        BTreeLeafPage leafPage;
+
+        public BTreeLeafPageReverseIterator(BTreeLeafPage leafPage) {
+            this.leafPage = leafPage;
+            this.curIndex = leafPage.getMaxSlotNum() - 1;
+        }
+
+        public boolean hasNext() {
+            if (nextRowToReturn != null) {
+                return true;
+            }
+
+            try {
+                while (curIndex >= 0) {
+                    nextRowToReturn = leafPage.getRow(curIndex--);
+                    if (nextRowToReturn != null) {
+                        return true;
+                    }
+                }
+                return false;
+            } catch (NoSuchElementException e) {
+                return false;
+            }
+        }
+
+        public Row next() {
+            Row next = nextRowToReturn;
+            if (next == null) {
+                if (hasNext()) {
+                    next = nextRowToReturn;
+                    nextRowToReturn = null;
+                    return next;
+                } else {
+                    throw new NoSuchElementException();
+                }
+            } else {
+                nextRowToReturn = null;
+                return next;
+            }
+        }
+    }
+
+
 }
