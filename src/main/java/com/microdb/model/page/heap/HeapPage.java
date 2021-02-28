@@ -142,7 +142,6 @@ public class HeapPage implements Page {
         return false;
     }
 
-
     /**
      * 计算返回一页数据可存放的数据行数
      * 页字节数容量（4KB）/(表一行占用字节+行的状态标识占用字节），向下取整
@@ -155,6 +154,11 @@ public class HeapPage implements Page {
         // slot状态位占用空间=1byte
         int slotStatusSizeInByte = 1;
         return HeapPage.defaultPageSizeInByte / (tableDesc.getRowMaxSizeInBytes() + slotStatusSizeInByte);
+    }
+
+    @Override
+    public int getMaxSlotNum() {
+        return maxSlotNum;
     }
 
     @Override

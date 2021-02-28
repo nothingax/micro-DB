@@ -3,7 +3,6 @@ package com.microdb.model.page.btree;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
 import com.microdb.model.page.Page;
-import com.microdb.model.page.PageID;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -54,9 +53,17 @@ public class BTreeRootPtrPage implements Page {
     }
 
     @Override
-    public PageID getPageID() {
-        return null;
+    public BTreePageID getPageID() {
+        return pageID;
     }
+
+    public BTreePageID getRootNodePageID() {
+        if (rootNodePageNo == 0) {
+            return null;
+        }
+        return new BTreePageID(pageID.getTableId(),rootNodePageNo,rootNodePageType);
+    }
+
 
     /**
      * 序列化
@@ -95,6 +102,11 @@ public class BTreeRootPtrPage implements Page {
     }
 
     @Override
+    public int getMaxSlotNum() {
+        return 0;
+    }
+
+    @Override
     public void insertRow(Row row) {
 
     }
@@ -119,5 +131,12 @@ public class BTreeRootPtrPage implements Page {
         }
         this.rootNodePageType = bTreePageID.getPageType();
         this.rootNodePageNo = bTreePageID.getPageNo();
+    }
+
+    public BTreePageID getFirstHeaderPageID() {
+        if ((firstHeaderPageNo == 0)) {
+            return null;
+        }
+        return new BTreePageID(pageID.getTableId(), firstHeaderPageNo, BTreePageID.TYPE_HEADER);
     }
 }

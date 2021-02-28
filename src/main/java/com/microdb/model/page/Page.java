@@ -31,14 +31,19 @@ public interface Page {
      */
     void deserialize(byte[] pageData) throws IOException;
 
-    boolean hasEmptySlot();
-
-    boolean isSlotUsed(int index);
-
     /**
      * 计算返回一页数据可存放的数据行数
      */
     int calculateMaxSlotNum(TableDesc tableDesc);
+
+    /**
+     * 一页数据最多可存放的数据行数
+     */
+    int getMaxSlotNum();
+
+    boolean isSlotUsed(int index);
+
+    boolean hasEmptySlot();
 
     void insertRow(Row row);
 

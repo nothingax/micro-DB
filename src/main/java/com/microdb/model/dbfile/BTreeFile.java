@@ -41,6 +41,7 @@ public class BTreeFile implements TableFile {
      */
     private int keyFieldIndex;
 
+
     public BTreeFile(File file, TableDesc tableDesc, int keyFieldIndex) {
         this.file = file;
         this.tableDesc = tableDesc;
@@ -81,7 +82,7 @@ public class BTreeFile implements TableFile {
 
     @Override
     public int getExistPageCount() {
-        throw new UnsupportedOperationException("todo");
+        return (int) ((file.length() - BTreeRootPtrPage.rootPtrPageSizeInByte) / Page.defaultPageSizeInByte);
     }
 
     /**
@@ -93,22 +94,7 @@ public class BTreeFile implements TableFile {
      */
     @Override
     public void insertRow(Row row) throws IOException {
-        // 首次在该页插入数据时，写入空数据
-        if (file.length() == 0) {
-            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file, true));
-            byte[] emptyRootPtrData = BTreeRootPtrPage.createEmptyPageData();
-            byte[] emptyLeafData = BTreeLeafPage.createEmptyPageData();
-            bos.write(emptyRootPtrData);
-            bos.write(emptyLeafData);
-            bos.close();
-        }
-
-        // 获取单例的rootPage,如果不存在则新增
-        BTreePageID rootPageID = new BTreePageID(this.tableId, 0, BTreePageID.TYPE_ROOT_PTR);
-
-        // 从磁盘中读取rootPage
-        BTreeRootPtrPage rootPtrPage = (BTreeRootPtrPage) this.readPageFromDisk(rootPageID);
-
+        BTreeRootPtrPage rootPtrPage = getRootPrtPage();
         // 从rootPage中解析根节点所在页的pageID
         int rootNodePageNo = rootPtrPage.getRootNodePageNo();
         BTreePageID rootNodePageID = null;
@@ -125,13 +111,34 @@ public class BTreeFile implements TableFile {
         }
 
         // 从b+tree中查找按索引查找数据期望插入的leafPage。如果leafPage已满，触发页分裂
-        BTreeLeafPage leafPage = this.findLeafPageToPlaceRow(rootPageID, row.getField(keyFieldIndex));
+        BTreeLeafPage leafPage = this.findLeafPageToPlaceRow(rootPtrPage.getRootNodePageID(), row.getField(keyFieldIndex));
         if (!leafPage.hasEmptySlot()) {
             leafPage = this.splitLeafPage(leafPage, row.getField(keyFieldIndex));
         }
 
         leafPage.insertRow(row);
         writePageToDisk(leafPage);
+    }
+
+    /**
+     * 获取rootPtr
+     */
+    private BTreeRootPtrPage getRootPrtPage() throws IOException {
+        // 首次在该页插入数据时，写入空数据
+        if (file.length() == 0) {
+            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file, true));
+            byte[] emptyRootPtrData = BTreeRootPtrPage.createEmptyPageData();
+            byte[] emptyLeafData = BTreeLeafPage.createEmptyPageData();
+            bos.write(emptyRootPtrData);
+            bos.write(emptyLeafData);
+            bos.close();
+        }
+
+        // 获取单例的rootPage,如果不存在则新增
+        BTreePageID rootPtrPageID = new BTreePageID(this.tableId, 0, BTreePageID.TYPE_ROOT_PTR);
+
+        // 从磁盘中读取rootPage
+        return (BTreeRootPtrPage) this.readPageFromDisk(rootPtrPageID);
     }
 
     /**
@@ -151,7 +158,6 @@ public class BTreeFile implements TableFile {
     private BTreeLeafPage splitLeafPage(BTreeLeafPage leafPageNeedSplit, Field fieldToInsert) throws IOException {
 
         // 获取一个空页作为新的右兄弟
-        // TODO
         BTreeLeafPage newRightSibPage = (BTreeLeafPage) getEmptyLeafPage(BTreePageID.TYPE_LEAF);
 
         // TODO 迭代器
@@ -204,6 +210,7 @@ public class BTreeFile implements TableFile {
     /**
      * 找到一个放置midKey的页
      * 可能触发页分裂
+     *
      * @param internalPageID
      * @param midKey
      * @return
@@ -212,8 +219,74 @@ public class BTreeFile implements TableFile {
         return null;
     }
 
-    private Page getEmptyLeafPage(int typeLeaf) {
-        return (Page) new Object();
+    /**
+     * 返回一个空叶页
+     */
+    private Page getEmptyLeafPage(int pageType) throws IOException {
+        int emptyPageNo = getEmptyPageNo();
+        // 写入一个空的leafPage
+        this.writeEmptyPageToDisk(emptyPageNo, pageType);
+        BTreePageID bTreePageID = new BTreePageID(tableId, emptyPageNo, pageType);
+        return this.readPageFromDisk(bTreePageID);
+    }
+
+    private void writeEmptyPageToDisk(int pageNo, int pageType) throws IOException {
+        // TODO opt
+        int pageSizeInByte = Page.defaultPageSizeInByte;
+        if (pageType == BTreePageID.TYPE_ROOT_PTR) {
+            pageSizeInByte = BTreeRootPtrPage.rootPtrPageSizeInByte;
+        }
+        RandomAccessFile rf = new RandomAccessFile(file, "rw");
+        rf.seek(BTreeRootPtrPage.defaultPageSizeInByte + (pageNo - 1) * pageSizeInByte);
+        rf.write(new byte[pageSizeInByte]);
+        rf.close();
+    }
+
+    /**
+     * 返回一个空的pageNo
+     * 获取本文件的根page，找到第一个header page id
+     */
+    private int getEmptyPageNo() throws IOException {
+        BTreeRootPtrPage rootPrtPage = getRootPrtPage();
+        BTreePageID headerPageID = rootPrtPage.getFirstHeaderPageID();
+
+        int emptyPageNo = 0;
+        if (headerPageID != null) {
+            // 读取第一个headerPage
+            BTreeHeaderPage headerPage = (BTreeHeaderPage) this.readPageFromDisk(headerPageID);
+            int headerPageCount = 0;
+            // 遍历headerPage，找到一个含有空槽位的page
+            while (headerPage != null && !headerPage.hasEmptySlot()) { // header页存在，但没有空槽位
+                headerPageID = headerPage.getNextPageID();
+                if (headerPageID != null) {
+                    headerPage = (BTreeHeaderPage) this.readPageFromDisk(headerPageID);
+                    headerPageCount++;
+                } else {
+                    break; //遍历完现有的headerPage，全都没有空槽位。
+                }
+            }
+
+            // 如果headerPage != null，一定存在空的slot
+            if (headerPage != null) {
+                headerPage = (BTreeHeaderPage) this.readPageFromDisk(headerPageID);
+                int emptySlot = headerPage.getFirstEmptySlot();
+                headerPage.markSlotUsed(emptySlot, true);
+                emptyPageNo = headerPageCount * BTreeHeaderPage.maxSlotNum + emptySlot;
+            }
+        }
+
+        // 没有headerPage或现有的HeaderPage均没有空槽位，则新增一个headerPage
+        if (headerPageID == null) {
+            synchronized (this) {
+                BufferedOutputStream bw = new BufferedOutputStream(new FileOutputStream(file, true));
+                byte[] emptyData = new byte[Page.defaultPageSizeInByte];
+                bw.write(emptyData);
+                bw.close();
+                emptyPageNo = getExistPageCount();
+            }
+        }
+
+        return emptyPageNo;
     }
 
     /**

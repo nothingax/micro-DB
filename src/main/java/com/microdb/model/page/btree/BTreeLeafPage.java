@@ -146,6 +146,11 @@ public class BTreeLeafPage implements Page {
     }
 
     @Override
+    public int getMaxSlotNum() {
+        return 0;
+    }
+
+    @Override
     public void insertRow(Row row) {
         // 校验表结构
         if (!Objects.equals(row.getTableDesc(), this.tableDesc)) {

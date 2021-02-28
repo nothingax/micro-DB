@@ -84,6 +84,11 @@ public class BTreeInternalPage implements Page {
     }
 
     @Override
+    public int getMaxSlotNum() {
+        return 0;
+    }
+
+    @Override
     public void insertRow(Row row) {
 
     }
