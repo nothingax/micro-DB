@@ -145,7 +145,6 @@ public class BTreeLeafPage extends BTreePage {
         return this.maxSlotNum;
     }
 
-    @Override
     public void insertRow(Row row) {
         // 校验表结构
         if (!Objects.equals(row.getTableDesc(), this.tableDesc)) {
@@ -194,12 +193,6 @@ public class BTreeLeafPage extends BTreePage {
         // 将新数据插入到正确位置上
         slotUsageStatusBitMap[matchedSlot] = true;
         rows.set(matchedSlot, row);
-    }
-
-
-    @Override
-    public void deleteRow(Row row) {
-
     }
 
     @Override
@@ -285,6 +278,13 @@ public class BTreeLeafPage extends BTreePage {
             return null;
         }
         return rows.get(index);
+    }
+
+    /**
+     * 删除行
+     */
+    public void deleteRow(Row row) {
+        // TODO
     }
 
     // ===============================迭代器=========================================

@@ -114,16 +114,6 @@ public class BTreeInternalPage extends BTreePage {
     }
 
     @Override
-    public void insertRow(Row row) {
-
-    }
-
-    @Override
-    public void deleteRow(Row row) {
-
-    }
-
-    @Override
     public Iterator<Row> getRowIterator() {
         return null;
     }

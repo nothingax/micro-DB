@@ -106,7 +106,7 @@ public class HeapTableFile implements TableFile {
     @Override
     public void insertRow(Row row) throws IOException {
         int existPageCount = this.getExistPageCount();
-        Page availablePage = getFirstPageHasEmptySlot(existPageCount);
+        HeapPage availablePage = (HeapPage) getFirstPageHasEmptySlot(existPageCount);
 
         // 现有所有页面均没有空slot,新建立一个页面
         if (null == availablePage) {

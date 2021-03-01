@@ -32,10 +32,6 @@ public abstract class BTreePage implements Page {
         return pageID;
     }
 
-    public abstract void insertRow(Row row);
-
-    public abstract void deleteRow(Row row);
-
     public abstract byte[] serialize() throws IOException;
 
     public abstract void deserialize(byte[] pageData) throws IOException;

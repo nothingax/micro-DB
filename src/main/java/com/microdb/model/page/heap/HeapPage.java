@@ -161,7 +161,6 @@ public class HeapPage implements Page {
         return maxSlotNum;
     }
 
-    @Override
     public void insertRow(Row row) {
         if (row == null) {
             throw new DbException("insert row error: row can not be null");
@@ -174,11 +173,6 @@ public class HeapPage implements Page {
             }
         }
         throw new DbException("insert row error: no empty slot");
-    }
-
-    @Override
-    public void deleteRow(Row row) {
-        // TODO
     }
 
     /**
