@@ -237,7 +237,7 @@ public class BTreeLeafPage extends BTreePage {
         if (pageNo == 0) {
             return null;
         }
-        return new BTreePageID(pageID.getTableId(), pageNo, BTreePageID.TYPE_INTERNAL);
+        return new BTreePageID(pageID.getTableId(), pageNo, BTreePageType.INTERNAL);
     }
 
     public BTreePageID getRightSibPageID() {
@@ -255,7 +255,7 @@ public class BTreeLeafPage extends BTreePage {
             if (rightSibPageID.getTableId() != pageID.getTableId()) {
                 throw new DbException("tableID mismatch");
             }
-            if (rightSibPageID.getPageType() != BTreePageID.TYPE_LEAF) {
+            if (rightSibPageID.getPageType() != BTreePageType.LEAF) {
                 throw new DbException("rightSibPage must be leaf");
             }
             rightSiblingPageNo = rightSibPageID.getPageNo();
@@ -269,7 +269,7 @@ public class BTreeLeafPage extends BTreePage {
             if (leftSibPageID.getTableId() != pageID.getTableId()) {
                 throw new DbException("tableID mismatch");
             }
-            if (leftSibPageID.getPageType() != BTreePageID.TYPE_LEAF) {
+            if (leftSibPageID.getPageType() != BTreePageType.LEAF) {
                 throw new DbException("leftSibPage must be leaf");
             }
             leftSiblingPageNo = leftSibPageID.getPageNo();

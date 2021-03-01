@@ -91,7 +91,7 @@ public class BTreeHeaderPage extends BTreePage {
         if (nextHeaderPageNo == 0) {
             return null;
         }
-        return new BTreePageID(pageID.getTableId(), nextHeaderPageNo, BTreePageID.TYPE_HEADER);
+        return new BTreePageID(pageID.getTableId(), nextHeaderPageNo, BTreePageType.HEADER);
     }
 
     /**

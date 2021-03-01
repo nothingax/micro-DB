@@ -65,7 +65,7 @@ public class BTreeFile implements TableFile {
             byte[] pageData = page.serialize();
             RandomAccessFile rf = new RandomAccessFile(file, "rw");
             BTreePageID pageID = (BTreePageID) page.getPageID();
-            if (pageID.getPageType() != BTreePageID.TYPE_ROOT_PTR) {
+            if (pageID.getPageType() != BTreePageType.ROOT_PTR) {
                 rf.seek(BTreeRootPtrPage.rootPtrPageSizeInByte + (page.getPageID().getPageNo() - 1) * Page.defaultPageSizeInByte);
             }
             rf.write(pageData);
@@ -99,7 +99,7 @@ public class BTreeFile implements TableFile {
         // 首次插入数据，初始化rootPage维护第一个leafPage的指针，写入磁盘
         if (rootPtrPage.getRootNodePageID() == null) {
             // 该表尚未插入数据，获取文件中最后一个LeafPage，也是第一个LeafPage，因为上面代码中写入了的leafPage的空数据空间
-            BTreePageID firstLeafPageID = new BTreePageID(tableId, getExistPageCount(), BTreePageID.TYPE_LEAF);
+            BTreePageID firstLeafPageID = new BTreePageID(tableId, getExistPageCount(), BTreePageType.LEAF);
 
             rootPtrPage.setRootPageID(firstLeafPageID);
             // rootPtr更新后刷盘，TODO rootPtr header需要设置
@@ -132,7 +132,7 @@ public class BTreeFile implements TableFile {
             }
         }
         // 获取单例的rootPage,如果不存在则新增
-        BTreePageID rootPtrPageID = new BTreePageID(this.tableId, 0, BTreePageID.TYPE_ROOT_PTR);
+        BTreePageID rootPtrPageID = new BTreePageID(this.tableId, 0, BTreePageType.ROOT_PTR);
 
         // 从磁盘中读取rootPage
         return (BTreeRootPtrPage) this.readPageFromDisk(rootPtrPageID);
@@ -155,7 +155,7 @@ public class BTreeFile implements TableFile {
     private BTreeLeafPage splitLeafPage(BTreeLeafPage leafPageNeedSplit, Field fieldToInsert) throws IOException {
 
         // 获取一个空页作为新的右兄弟
-        BTreeLeafPage newRightSibPage = (BTreeLeafPage) getEmptyPage(BTreePageID.TYPE_LEAF);
+        BTreeLeafPage newRightSibPage = (BTreeLeafPage) getEmptyPage(BTreePageType.LEAF);
 
         Iterator<Row> it = leafPageNeedSplit.getReverseIterator();
         // 原page中的一半数据移动到新页中
@@ -208,9 +208,9 @@ public class BTreeFile implements TableFile {
     private BTreeInternalPage findParentPageToPlaceEntry(BTreePageID parentPageID, Field keyToInsert) throws IOException {
         BTreeInternalPage parentPage;
         // 如果原父节点是rootPtr，则新增一个internal page，并设置为新的rootNode
-        if (parentPageID.getPageType() == BTreePageID.TYPE_ROOT_PTR) {
+        if (parentPageID.getPageType() == BTreePageType.ROOT_PTR) {
             // 设置新的rootNode
-            parentPage = (BTreeInternalPage) getEmptyPage(BTreePageID.TYPE_INTERNAL);
+            parentPage = (BTreeInternalPage) getEmptyPage(BTreePageType.INTERNAL);
             BTreeRootPtrPage rootPrtPage = getRootPrtPage();
             rootPrtPage.setRootNodePageID(parentPage.getPageID());
         } else {
@@ -236,7 +236,7 @@ public class BTreeFile implements TableFile {
     private BTreeInternalPage splitInternalPage(BTreeInternalPage internalPageNeedSplit, Field keyToInsert) throws IOException {
 
         // 获取一个可用的页
-        BTreeInternalPage newInternalPage = (BTreeInternalPage) getEmptyPage(BTreePageID.TYPE_INTERNAL);
+        BTreeInternalPage newInternalPage = (BTreeInternalPage) getEmptyPage(BTreePageType.INTERNAL);
 
         // TODO getReverseIterator
         Iterator<BTreeEntry> it = internalPageNeedSplit.getReverseIterator();
@@ -318,7 +318,7 @@ public class BTreeFile implements TableFile {
     private void writeEmptyPageToDisk(int pageNo, int pageType) throws IOException {
         // TODO opt
         int pageSizeInByte = Page.defaultPageSizeInByte; // 除 ROOT_PTR之外的页大小
-        if (pageType == BTreePageID.TYPE_ROOT_PTR) {
+        if (pageType == BTreePageType.ROOT_PTR) {
             pageSizeInByte = BTreeRootPtrPage.rootPtrPageSizeInByte;
         }
 
@@ -385,7 +385,7 @@ public class BTreeFile implements TableFile {
     private BTreeLeafPage findLeafPageToPlaceRow(BTreePageID pageID, Field field) throws IOException {
 
         // 查找到树的最后一层--leafPage
-        if (pageID.getPageType() == BTreePageID.TYPE_LEAF) {
+        if (pageID.getPageType() == BTreePageType.LEAF) {
             return (BTreeLeafPage) this.readPageFromDisk(pageID);
         }
 

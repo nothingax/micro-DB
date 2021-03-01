@@ -132,7 +132,7 @@ public class BTreeRootPtrPage extends BTreePage {
         if ((firstHeaderPageNo == 0)) {
             return null;
         }
-        return new BTreePageID(pageID.getTableId(), firstHeaderPageNo, BTreePageID.TYPE_HEADER);
+        return new BTreePageID(pageID.getTableId(), firstHeaderPageNo, BTreePageType.HEADER);
     }
 
     public void setRootNodePageID(BTreePageID pageID) {

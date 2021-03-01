@@ -35,9 +35,9 @@ public abstract class BTreePage implements Page {
             throw new DbException("table id mismatch");
         }
 
-        if (parentPageID.getPageType() != BTreePageID.TYPE_ROOT_PTR) {
+        if (parentPageID.getPageType() != BTreePageType.ROOT_PTR) {
             parentPageNo = 0;
-        } else if (parentPageID.getPageType() != BTreePageID.TYPE_INTERNAL) {
+        } else if (parentPageID.getPageType() != BTreePageType.INTERNAL) {
             parentPageNo = parentPageID.getPageNo();
         } else {
             throw new DbException("parent must be internal or root node");
@@ -46,9 +46,9 @@ public abstract class BTreePage implements Page {
 
     public BTreePageID getParentPageID() {
         if (parentPageNo == 0) { // 没有内部节点时，父节点是RootPtr
-            new BTreePageID(this.pageID.getTableId(), 0, BTreePageID.TYPE_ROOT_PTR);
+            new BTreePageID(this.pageID.getTableId(), 0, BTreePageType.ROOT_PTR);
         }
-        return new BTreePageID(this.pageID.getTableId(), parentPageNo, BTreePageID.TYPE_INTERNAL);
+        return new BTreePageID(this.pageID.getTableId(), parentPageNo, BTreePageType.INTERNAL);
     }
 
     @Override
