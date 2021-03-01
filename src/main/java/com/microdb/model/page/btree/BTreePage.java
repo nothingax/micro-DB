@@ -27,6 +27,28 @@ public abstract class BTreePage implements Page {
      */
     protected int parentPageNo;
 
+    @Override
+    public BTreePageID getPageID() {
+        return pageID;
+    }
+
+    public abstract void insertRow(Row row);
+
+    public abstract void deleteRow(Row row);
+
+    public abstract byte[] serialize() throws IOException;
+
+    public abstract void deserialize(byte[] pageData) throws IOException;
+
+    public abstract boolean hasEmptySlot();
+
+    public abstract boolean isSlotUsed(int index);
+
+    public abstract int calculateMaxSlotNum(TableDesc tableDesc);
+
+    public abstract Iterator<Row> getRowIterator();
+
+
     public void setParentPageID(BTreePageID parentPageID) {
         if (parentPageID == null) {
             throw new DbException("parent id must not be null");
@@ -51,28 +73,4 @@ public abstract class BTreePage implements Page {
         return new BTreePageID(this.pageID.getTableId(), parentPageNo, BTreePageType.INTERNAL);
     }
 
-    @Override
-    public BTreePageID getPageID() {
-        return pageID;
-    }
-
-    public abstract byte[] serialize() throws IOException;
-
-    public abstract void deserialize(byte[] pageData) throws IOException;
-
-    @Override
-    public boolean hasEmptySlot() {
-        return false;
-    }
-
-    @Override
-    public boolean isSlotUsed(int index) {
-        return false;
-    }
-
-    public abstract int calculateMaxSlotNum(TableDesc tableDesc);
-
-    public abstract void insertRow(Row row);
-
-    public abstract Iterator<Row> getRowIterator();
 }

@@ -118,6 +118,11 @@ public class HeapTableFile implements TableFile {
         this.writePageToDisk(availablePage);
     }
 
+    @Override
+    public void deleteRow(Row row) {
+
+    }
+
     private Page getFirstPageHasEmptySlot(int existPageCount) throws IOException {
         // 当前文件还没有插入数据，返回空
         if (existPageCount == 0) {

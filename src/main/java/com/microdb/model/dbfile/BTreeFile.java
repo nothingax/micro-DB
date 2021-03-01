@@ -49,9 +49,47 @@ public class BTreeFile implements TableFile {
         this.keyFieldIndex = keyFieldIndex;
     }
 
+    /**
+     * 新增一行，如果当前page已满，需要分裂page
+     * 分裂page过程中，生成新的page，需要更新新旧page的兄弟指针、父指针、可能触发树上层的内部节点页面分裂甚至递归分裂，需要更新各指针
+     *
+     * @param row 新的行
+     * @throws IOException e
+     */
+    @Override
+    public void insertRow(Row row) throws IOException {
+        // 查找B+树的根节点Page，如果为不存在，则新增一个leafPage，设置为树的根节点
+        BTreeRootPtrPage rootPtrPage = getRootPrtPage();
+        // 首次插入数据，初始化rootPage维护第一个leafPage的指针，写入磁盘
+        if (rootPtrPage.getRootNodePageID() == null) {
+            // 该表尚未插入数据，获取文件中最后一个LeafPage，也是第一个LeafPage，因为上面代码中写入了的leafPage的空数据空间
+            BTreePageID firstLeafPageID = new BTreePageID(tableId, getExistPageCount(), BTreePageType.LEAF);
+
+            rootPtrPage.setRootPageID(firstLeafPageID);
+            // rootPtr更新后刷盘，TODO rootPtr header需要设置
+            writePageToDisk(rootPtrPage);
+        }
+
+        // 从b+tree中查找按索引查找数据期望插入的leafPage。如果leafPage已满，触发页分裂
+        BTreeLeafPage leafPage = this.findLeafPageToPlaceRow(rootPtrPage.getRootNodePageID(), row.getField(keyFieldIndex));
+        if (!leafPage.hasEmptySlot()) {
+            leafPage = this.splitLeafPage(leafPage, row.getField(keyFieldIndex));
+        }
+
+        leafPage.insertRow(row);
+        writePageToDisk(leafPage);
+    }
+
+    /**
+     * 删除一行，当本页没有足够的数据，会触发与兄弟页合并或者与兄弟页一起重分布元素
+     */
+    @Override
+    public void deleteRow(Row row) {
+    }
+
     @Override
     public TableDesc getTableDesc() {
-        return null;
+        return tableDesc;
     }
 
     @Override
@@ -83,37 +121,6 @@ public class BTreeFile implements TableFile {
     @Override
     public int getExistPageCount() {
         return (int) ((file.length() - BTreeRootPtrPage.rootPtrPageSizeInByte) / Page.defaultPageSizeInByte);
-    }
-
-    /**
-     * 新增一行，如果当前page已满，需要分裂page
-     * 分裂page过程中，生成新的page，需要更新新旧page的兄弟指针、父指针、可能触发树上层的内部节点页面分裂甚至递归分裂，需要更新各指针
-     *
-     * @param row 新的行
-     * @throws IOException e
-     */
-    @Override
-    public void insertRow(Row row) throws IOException {
-        // 查找B+树的根节点Page，如果为不存在，则新增一个leafPage，设置为树的根节点
-        BTreeRootPtrPage rootPtrPage = getRootPrtPage();
-        // 首次插入数据，初始化rootPage维护第一个leafPage的指针，写入磁盘
-        if (rootPtrPage.getRootNodePageID() == null) {
-            // 该表尚未插入数据，获取文件中最后一个LeafPage，也是第一个LeafPage，因为上面代码中写入了的leafPage的空数据空间
-            BTreePageID firstLeafPageID = new BTreePageID(tableId, getExistPageCount(), BTreePageType.LEAF);
-
-            rootPtrPage.setRootPageID(firstLeafPageID);
-            // rootPtr更新后刷盘，TODO rootPtr header需要设置
-            writePageToDisk(rootPtrPage);
-        }
-
-        // 从b+tree中查找按索引查找数据期望插入的leafPage。如果leafPage已满，触发页分裂
-        BTreeLeafPage leafPage = this.findLeafPageToPlaceRow(rootPtrPage.getRootNodePageID(), row.getField(keyFieldIndex));
-        if (!leafPage.hasEmptySlot()) {
-            leafPage = this.splitLeafPage(leafPage, row.getField(keyFieldIndex));
-        }
-
-        leafPage.insertRow(row);
-        writePageToDisk(leafPage);
     }
 
     /**

@@ -176,6 +176,11 @@ public class HeapPage implements Page {
         throw new DbException("insert row error: no empty slot");
     }
 
+    @Override
+    public void deleteRow(Row row) {
+        // TODO
+    }
+
     /**
      * 反回迭代器，迭代该页的每一行
      */

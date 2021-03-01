@@ -83,6 +83,11 @@ public class BTreeHeaderPage extends BTreePage {
     }
 
     @Override
+    public void deleteRow(Row row) {
+
+    }
+
+    @Override
     public Iterator<Row> getRowIterator() {
         return null;
     }

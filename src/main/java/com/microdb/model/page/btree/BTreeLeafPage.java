@@ -196,15 +196,10 @@ public class BTreeLeafPage extends BTreePage {
         rows.set(matchedSlot, row);
     }
 
-    /**
-     * 将from数据移动到to位置，清空from
-     */
-    private void shift(int from, int to) {
-        if (!isSlotUsed(to) && isSlotUsed(from)) {
-            slotUsageStatusBitMap[to] = true;
-            rows.set(to, rows.get(from));
-            slotUsageStatusBitMap[from] = false;
-        }
+
+    @Override
+    public void deleteRow(Row row) {
+
     }
 
     @Override
@@ -228,9 +223,15 @@ public class BTreeLeafPage extends BTreePage {
 
         return cnt;
     }
-
-    public void deleteRow(Row row) {
-
+    /**
+     * 将from数据移动到to位置，清空from
+     */
+    private void shift(int from, int to) {
+        if (!isSlotUsed(to) && isSlotUsed(from)) {
+            slotUsageStatusBitMap[to] = true;
+            rows.set(to, rows.get(from));
+            slotUsageStatusBitMap[from] = false;
+        }
     }
 
     private BTreePageID pageNoToPageID(int pageNo) {

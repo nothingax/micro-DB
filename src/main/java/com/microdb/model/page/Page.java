@@ -32,6 +32,16 @@ public interface Page {
     void deserialize(byte[] pageData) throws IOException;
 
     /**
+     * 插入行
+     */
+    void insertRow(Row row);
+
+    /**
+     * 删除行
+     */
+    void deleteRow(Row row);
+
+    /**
      * 计算返回一页数据可存放的数据行数
      */
     int calculateMaxSlotNum(TableDesc tableDesc);
@@ -44,8 +54,6 @@ public interface Page {
     boolean isSlotUsed(int index);
 
     boolean hasEmptySlot();
-
-    void insertRow(Row row);
 
     Iterator<Row> getRowIterator();
 }
