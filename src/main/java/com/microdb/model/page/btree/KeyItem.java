@@ -1,7 +1,5 @@
 package com.microdb.model.page.btree;
 
-import com.microdb.model.page.PageID;
-
 /**
  * 内部页中键元素
  * 封装键的编号和所在page
@@ -13,15 +11,23 @@ public class KeyItem {
     /**
      * pageID
      */
-    private PageID pageId;
+    private BTreePageID pageID;
 
     /**
-     * key编号，从1开始，区别与index
+     * key编号，从1开始
      */
-    int keyItemNo;
+    private int keyItemNo;
 
-    public KeyItem(PageID pageId, int keyItemNo) {
-        this.pageId = pageId;
+    public KeyItem(BTreePageID pageID, int keyItemNo) {
+        this.pageID = pageID;
         this.keyItemNo = keyItemNo;
+    }
+
+    public BTreePageID getPageID() {
+        return pageID;
+    }
+
+    public int getKeyItemNo() {
+        return keyItemNo;
     }
 }

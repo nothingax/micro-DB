@@ -70,10 +70,7 @@ public abstract class BTreePage implements Page {
         return false;
     }
 
-    @Override
-    public int calculateMaxSlotNum(TableDesc tableDesc) {
-        return 0;
-    }
+    public abstract int calculateMaxSlotNum(TableDesc tableDesc);
 
     public abstract void insertRow(Row row);
 

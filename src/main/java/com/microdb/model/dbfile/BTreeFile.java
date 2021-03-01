@@ -171,7 +171,6 @@ public class BTreeFile implements TableFile {
 
         // 新页的首元素作为键，获取midKey应该插入的父节点page，可能触发父节点分裂，甚至递归分裂
         Field midKey = rowToMove[0].getField(keyFieldIndex);
-        // TODO findParentPageToPlaceEntry
         BTreeInternalPage parentInternalPage = findParentPageToPlaceEntry(leafPageNeedSplit.getParentPageID(), midKey);
         BTreePageID oldRightSibPageID = leafPageNeedSplit.getRightSibPageID();
 
@@ -186,7 +185,6 @@ public class BTreeFile implements TableFile {
 
         // 父节点Page，插入midKey元素
         BTreeEntry newParentEntry = new BTreeEntry(midKey, leafPageNeedSplit.getPageID(), newRightSibPage.getPageID());
-        // TODO
         parentInternalPage.insertEntry(newParentEntry);
 
         // 刷盘
@@ -219,7 +217,6 @@ public class BTreeFile implements TableFile {
 
         // 父节点没有空槽位则分裂
         if (parentPage.hasEmptySlot()) {
-            // TODO
             parentPage = splitInternalPage(parentPage, keyToInsert);
         }
 
@@ -238,7 +235,6 @@ public class BTreeFile implements TableFile {
         // 获取一个可用的页
         BTreeInternalPage newInternalPage = (BTreeInternalPage) getEmptyPage(BTreePageType.INTERNAL);
 
-        // TODO getReverseIterator
         Iterator<BTreeEntry> it = internalPageNeedSplit.getReverseIterator();
         BTreeEntry[] entryToMove = new BTreeEntry[(internalPageNeedSplit.getExistCount() + 1) / 2];
         int moveCnt = entryToMove.length - 1;
@@ -250,12 +246,10 @@ public class BTreeFile implements TableFile {
         // 将原页中右半部分的数据移入到新页中，右半部分的首个元素midEntry升级为上级索引
         for (int i = entryToMove.length - 1; i >= 0; --i) {
             if (i == 0) {
-                // TODO
                 internalPageNeedSplit.deleteEntryAndRightChild(entryToMove[i]);
                 midEntry = entryToMove[0];
             } else {
                 internalPageNeedSplit.deleteEntryAndRightChild(entryToMove[i]);
-                // TODO
                 newInternalPage.insertEntry(entryToMove[i]);
             }
             // 更新被移动节点的右孩子的父指针

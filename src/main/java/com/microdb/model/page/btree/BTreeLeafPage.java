@@ -35,7 +35,7 @@ public class BTreeLeafPage extends BTreePage {
     private TableDesc tableDesc;
 
     /**
-     * 键在表结构中的下标
+     * 索引字段在表结构中的下标
      */
     private int keyFieldIndex;
 
