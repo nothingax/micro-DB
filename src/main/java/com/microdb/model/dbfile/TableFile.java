@@ -48,5 +48,7 @@ public interface TableFile {
 
     void insertRow(Row row) throws IOException;
 
+    void deleteRow(Row row);
+
     ITableFileIterator getIterator();
 }
