@@ -141,18 +141,18 @@ public class HeapTableFile implements TableFile {
 
     @Override
     public ITableFileIterator getIterator() {
-        return new TableFileIterator();
+        return new HeapTableFileIterator();
     }
 
     //====================================迭代器======================================
 
-    private class TableFileIterator implements ITableFileIterator {
+    private class HeapTableFileIterator implements ITableFileIterator {
         private Integer pageNo;
         private int tableId;
         private int existPageCount;
         private Iterator<Row> rowIterator;
 
-        public TableFileIterator() {
+        public HeapTableFileIterator() {
             this.pageNo = null;
             this.tableId = getTableId();
             this.existPageCount = getExistPageCount();

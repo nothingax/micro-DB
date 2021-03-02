@@ -47,6 +47,10 @@ public class BTreeRootPtrPage extends BTreePage {
         return new byte[rootPtrPageSizeInByte];
     }
 
+    public static BTreePageID getRootNodePageID(int tableId) {
+        return new BTreePageID(tableId, 0, BTreePageType.ROOT_PTR);
+    }
+
     @Override
     public BTreePageID getPageID() {
         return pageID;
@@ -56,7 +60,7 @@ public class BTreeRootPtrPage extends BTreePage {
         if (rootNodePageNo == 0) {
             return null;
         }
-        return new BTreePageID(pageID.getTableId(),rootNodePageNo,rootNodePageType);
+        return new BTreePageID(pageID.getTableId(), rootNodePageNo, rootNodePageType);
     }
 
 

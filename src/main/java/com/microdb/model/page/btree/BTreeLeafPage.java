@@ -74,8 +74,7 @@ public class BTreeLeafPage extends BTreePage {
 
 
     public TableDesc getTableDesc() {
-
-        return null;
+        return tableDesc;
     }
 
 
@@ -148,7 +147,7 @@ public class BTreeLeafPage extends BTreePage {
     public void insertRow(Row row) {
         // 校验表结构
         if (!Objects.equals(row.getTableDesc(), this.tableDesc)) {
-            throw new DbException("tableDesc mismatch");
+            throw new DbException("table desc mismatch");
         }
 
         // 查找空位
@@ -197,7 +196,7 @@ public class BTreeLeafPage extends BTreePage {
 
     @Override
     public Iterator<Row> getRowIterator() {
-        return null;
+        return new BTreeLeafPageIterator(this);
     }
 
     public Iterator<Row> getReverseIterator() {
@@ -333,5 +332,49 @@ public class BTreeLeafPage extends BTreePage {
         }
     }
 
+    public static class BTreeLeafPageIterator implements Iterator<Row> {
+        int curIndex;
+        Row nextRowToReturn = null;
+        BTreeLeafPage leafPage;
+
+        public BTreeLeafPageIterator(BTreeLeafPage leafPage) {
+            this.leafPage = leafPage;
+            this.curIndex = leafPage.getMaxSlotNum() - 1;
+        }
+
+        public boolean hasNext() {
+            if (nextRowToReturn != null) {
+                return true;
+            }
+
+            try {
+                while (curIndex >= 0) {
+                    nextRowToReturn = leafPage.getRow(curIndex--);
+                    if (nextRowToReturn != null) {
+                        return true;
+                    }
+                }
+                return false;
+            } catch (NoSuchElementException e) {
+                return false;
+            }
+        }
+
+        public Row next() {
+            Row next = nextRowToReturn;
+            if (next == null) {
+                if (hasNext()) {
+                    next = nextRowToReturn;
+                    nextRowToReturn = null;
+                    return next;
+                } else {
+                    throw new NoSuchElementException();
+                }
+            } else {
+                nextRowToReturn = null;
+                return next;
+            }
+        }
+    }
 
 }

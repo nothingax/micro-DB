@@ -1,6 +1,7 @@
 package com.microdb.model.dbfile;
 
 import com.microdb.exception.DbException;
+import com.microdb.model.DataBase;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
 import com.microdb.model.field.Field;
@@ -12,6 +13,7 @@ import com.microdb.operator.PredicateEnum;
 
 import java.io.*;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * 基于B+tree的文件组织
@@ -71,7 +73,7 @@ public class BTreeFile implements TableFile {
         }
 
         // 从b+tree中查找按索引查找数据期望插入的leafPage。如果leafPage已满，触发页分裂
-        BTreeLeafPage leafPage = this.findLeafPageToPlaceRow(rootPtrPage.getRootNodePageID(), row.getField(keyFieldIndex));
+        BTreeLeafPage leafPage = this.findLeafPage(rootPtrPage.getRootNodePageID(), row.getField(keyFieldIndex));
         if (!leafPage.hasEmptySlot()) {
             leafPage = this.splitLeafPage(leafPage, row.getField(keyFieldIndex));
         }
@@ -378,12 +380,13 @@ public class BTreeFile implements TableFile {
 
     /**
      * 查找索引field应该放置的页面，不考虑是否已满
+     * 根据pageID和索引查找叶子页
      *
      * @param pageID 数据的根节点PageID
-     * @param field  索引字段值，在内部节点的查找过程中使用
+     * @param indexField  索引字段值，在内部节点的查找过程中使用,null 时返回最左page
      * @return 查找field应该放置的页面
      */
-    private BTreeLeafPage findLeafPageToPlaceRow(BTreePageID pageID, Field field) throws IOException {
+    private BTreeLeafPage findLeafPage(BTreePageID pageID, Field indexField) throws IOException {
 
         // 查找到树的最后一层--leafPage
         if (pageID.getPageType() == BTreePageType.LEAF) {
@@ -398,27 +401,120 @@ public class BTreeFile implements TableFile {
         entry = iterator.next();
 
         BTreePageID nextSearchPageId;
-        if (field == null) { // 特殊情况，对于null值，一律从左树中查找
+        if (indexField == null) { // 特殊情况，对于null值，一律从左树中查找
             nextSearchPageId = entry.getLeftChildPageID();
         } else {
             // 如果查找的值>节点值，判断树中下一个节点
-            while (field.compare(PredicateEnum.GREATER_THAN, entry.getKey()) && iterator.hasNext()) {
+            while (indexField.compare(PredicateEnum.GREATER_THAN, entry.getKey()) && iterator.hasNext()) {
                 entry = iterator.next();
             }
 
             // 如果查找的值<=节点值，进入树的左子树
-            if (field.compare(PredicateEnum.LESS_THAN_OR_EQ, entry.getKey())) {
+            if (indexField.compare(PredicateEnum.LESS_THAN_OR_EQ, entry.getKey())) {
                 nextSearchPageId = entry.getLeftChildPageID();
             } else {
                 // 如果查找的值>节点值，进入树的右子树
                 nextSearchPageId = entry.getRightChildPageID();
             }
         }
-        return this.findLeafPageToPlaceRow(nextSearchPageId, field);
+        return this.findLeafPage(nextSearchPageId, indexField);
     }
 
     @Override
     public ITableFileIterator getIterator() {
         return null;
     }
+
+
+    //====================================迭代器======================================
+    private class BtreeTableFileIterator implements ITableFileIterator {
+
+        /**
+         * 当前页
+         */
+        private BTreeLeafPage curPage;
+        /**
+         * 行迭代器
+         */
+        private Iterator<Row> rowIterator;
+
+        /**
+         * 文件
+         */
+        private BTreeFile bTreeFile;
+
+        private Row next = null;
+
+        public BtreeTableFileIterator(BTreeFile bTreeFile) {
+            this.bTreeFile = bTreeFile;
+        }
+
+        @Override
+        public void open() throws DbException{
+            // 找到文件的根指针页，拿到根节点页ID，从根节点找到第一个叶子页面
+            BTreeRootPtrPage page = (BTreeRootPtrPage) DataBase.getInstance()
+                    .getPage(BTreeRootPtrPage.getRootNodePageID(bTreeFile.getTableId()));
+            try {
+                this.curPage = bTreeFile.findLeafPage(page.getRootNodePageID(), null);
+            } catch (IOException e) {
+                throw new DbException("findLeafPage error", e);
+            }
+            this.rowIterator = curPage.getRowIterator();
+        }
+
+        @Override
+        public boolean hasNext() throws DbException {
+            if (next == null) {
+                next = readNext();
+            }
+            return next != null;
+        }
+
+        @Override
+        public Row next() throws DbException, NoSuchElementException {
+            if (next == null) {
+                next = readNext();
+                if (next == null) {
+                    throw new NoSuchElementException();
+                }
+            }
+            Row result = next;
+            next = null;
+            return result;
+        }
+
+        @Override
+        public void close() {
+            rowIterator = null;
+            curPage = null;
+        }
+
+        private Row readNext() {
+            // 本页读取完
+            if (rowIterator != null && !rowIterator.hasNext()) {
+                rowIterator = null;
+            }
+
+            // 本页读取完后，读取下一页,在叶子节点层读取，读取右兄弟获取下一页pageID
+            while (rowIterator == null && curPage != null) {
+                BTreePageID nextPageID = curPage.getRightSibPageID();
+                if (nextPageID == null) {
+                    curPage = null;
+                } else {
+                    curPage = (BTreeLeafPage) DataBase.getInstance().getPage(nextPageID);
+                    rowIterator = curPage.getRowIterator();
+                    if (!rowIterator.hasNext()) {
+                        rowIterator = null;
+                    }
+                }
+            }
+
+            // 文件中没有数据
+            if (rowIterator == null) {
+                return null;
+            }
+            return rowIterator.next();
+        }
+    }
+
 }
