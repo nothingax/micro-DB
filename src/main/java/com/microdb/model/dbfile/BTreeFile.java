@@ -422,12 +422,11 @@ public class BTreeFile implements TableFile {
 
     @Override
     public ITableFileIterator getIterator() {
-        return null;
+        return new BtreeTableFileIterator(this);
     }
 
-
     //====================================迭代器======================================
-    private class BtreeTableFileIterator implements ITableFileIterator {
+    private static class BtreeTableFileIterator implements ITableFileIterator {
 
         /**
          * 当前页

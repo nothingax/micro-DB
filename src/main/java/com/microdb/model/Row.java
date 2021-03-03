@@ -1,6 +1,7 @@
 package com.microdb.model;
 
 import com.microdb.model.field.Field;
+import com.microdb.model.page.btree.KeyItem;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -24,6 +25,16 @@ public class Row implements Serializable {
     private Field[] fields;
 
     private TableDesc tableDesc;
+
+    /**
+     * 引用pageID
+     */
+    private KeyItem keyItem;
+
+    public Row(TableDesc tableDesc, KeyItem keyItem) {
+        this.tableDesc = tableDesc;
+        this.keyItem = keyItem;
+    }
 
     public Row(TableDesc tableDesc) {
         this.tableDesc = tableDesc;
