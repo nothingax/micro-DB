@@ -86,7 +86,23 @@ public class BTreeFile implements TableFile {
      * 删除一行，当本页没有足够的数据，会触发与兄弟页合并或者与兄弟页一起重分布元素
      */
     @Override
-    public void deleteRow(Row row) {
+    public void deleteRow(Row row) throws IOException {
+        BTreePageID bTreePageID = new BTreePageID(tableId, row.getKeyItem().getPageID().getPageNo(), BTreePageType.LEAF);
+        BTreeLeafPage page = (BTreeLeafPage) readPageFromDisk(bTreePageID);
+        //TODO
+        page.deleteRow(row);
+
+        // 数量不足一半时，与兄弟节点重新分布元素
+        if (page.getExistRowCount() > page.getMaxSlotNum() / 2) {
+            // todo
+            redistributePage(page);
+        }
+
+        writePageToDisk(page);
+    }
+
+    private void redistributePage(BTreeLeafPage page) {
+
     }
 
     @Override
@@ -382,8 +398,8 @@ public class BTreeFile implements TableFile {
      * 查找索引field应该放置的页面，不考虑是否已满
      * 根据pageID和索引查找叶子页
      *
-     * @param pageID 数据的根节点PageID
-     * @param indexField  索引字段值，在内部节点的查找过程中使用,null 时返回最左page
+     * @param pageID     数据的根节点PageID
+     * @param indexField 索引字段值，在内部节点的查找过程中使用,null 时返回最左page
      * @return 查找field应该放置的页面
      */
     private BTreeLeafPage findLeafPage(BTreePageID pageID, Field indexField) throws IOException {
@@ -449,7 +465,7 @@ public class BTreeFile implements TableFile {
         }
 
         @Override
-        public void open() throws DbException{
+        public void open() throws DbException {
             // 找到文件的根指针页，拿到根节点页ID，从根节点找到第一个叶子页面
             BTreeRootPtrPage page = (BTreeRootPtrPage) DataBase.getInstance()
                     .getPage(BTreeRootPtrPage.getRootNodePageID(bTreeFile.getTableId()));
