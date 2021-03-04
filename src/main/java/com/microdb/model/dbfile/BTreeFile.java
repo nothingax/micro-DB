@@ -101,7 +101,43 @@ public class BTreeFile implements TableFile {
         writePageToDisk(page);
     }
 
-    private void redistributePage(BTreeLeafPage page) {
+    /**
+     * 重分配页中的元素
+     * 通过page的父节点找page的左右兄弟，保证他们在同一个页上、有同一个父节点。
+     * 在父节点中找到相关的entry
+     */
+    private void redistributePage(BTreePage page) throws IOException {
+        BTreePageID parentPageID = page.getParentPageID();
+        BTreeInternalPage parentPage = null;
+        BTreeEntry leftEntry = null;
+        BTreeEntry rightEntry = null;
+
+        if (parentPageID.getPageType() != BTreePageType.ROOT_PTR) {
+            parentPage = (BTreeInternalPage) readPageFromDisk(parentPageID);
+            Iterator<BTreeEntry> iterator = parentPage.getIterator();
+            while (iterator.hasNext()) {
+                BTreeEntry entry = iterator.next();
+                if (entry.getLeftChildPageID().equals(page.getPageID())) {
+                    rightEntry = entry;
+                    break;
+                } else if (entry.getRightChildPageID().equals(page.getPageID())) {
+                    leftEntry = entry;
+                }
+            }
+        }
+
+        if (page.getParentPageID().getPageType() == BTreePageType.LEAF) {
+            redistributeLeafPage((BTreeLeafPage) page, parentPage, leftEntry, rightEntry);
+        } else {
+            redistributeInternalPage((BTreeInternalPage) page, parentPage, leftEntry, rightEntry);
+        }
+    }
+
+    private void redistributeInternalPage(BTreeInternalPage page, BTreeInternalPage parentPage, BTreeEntry leftEntry, BTreeEntry rightEntry) {
+
+    }
+
+    private void redistributeLeafPage(BTreeLeafPage page, BTreeInternalPage parentPage, BTreeEntry leftEntry, BTreeEntry rightEntry) {
 
     }
 

@@ -69,7 +69,4 @@ public class BTreeEntry {
         this.keyItem = keyItem;
     }
 
-    public BTreePageID getRightChild() {
-        return null;
-    }
 }
