@@ -93,7 +93,7 @@ public class BTreeFile implements TableFile {
         page.deleteRow(row);
 
         // 数量不足一半时，与兄弟节点重新分布元素
-        if (page.getExistRowCount() > page.getMaxSlotNum() / 2) {
+        if (page.getExistRowCount() < page.getMaxSlotNum() / 2) {
             // todo
             redistributePage(page);
         }
