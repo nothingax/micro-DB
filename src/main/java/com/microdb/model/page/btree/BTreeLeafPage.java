@@ -72,6 +72,10 @@ public class BTreeLeafPage extends BTreePage {
      */
     private int rightSiblingPageNo;
 
+    public BTreeLeafPage(BTreePageID bTreePageID, byte[] pageData) {
+        super();
+    }
+
 
     public TableDesc getTableDesc() {
         return tableDesc;

@@ -150,23 +150,54 @@ public class BTreeFile implements TableFile {
     }
 
     @Override
-    public BTreePage readPageFromDisk(PageID pageID) throws IOException {
+    public BTreePage readPageFromDisk(PageID pageID) {
         BTreePageID bTreePageID = (BTreePageID) pageID;
-        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
-        if (bTreePageID.getPageType() == BTreePageType.ROOT_PTR) {
-            byte[] bytes = new byte[BTreeRootPtrPage.rootPtrPageSizeInByte];
-            int read = bis.read(bytes, 0, BTreeRootPtrPage.rootPtrPageSizeInByte);
-            return new BTreeRootPtrPage(bTreePageID, bytes);
-        } else if (bTreePageID.getPageType() == BTreePageType.HEADER) {
 
-        } else if (bTreePageID.getPageType() == BTreePageType.INTERNAL) {
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
+            if (bTreePageID.getPageType() == BTreePageType.ROOT_PTR) {
+                byte[] bytes = new byte[BTreeRootPtrPage.rootPtrPageSizeInByte];
+                int bytesRead = bis.read(bytes, 0, BTreeRootPtrPage.rootPtrPageSizeInByte);
+                if (bytesRead == -1) {
+                    throw new IllegalArgumentException("btree file read from disk error：reach the end of the file");
+                }
+                if (bytesRead < BTreeRootPtrPage.rootPtrPageSizeInByte) {
+                    throw new IllegalArgumentException("未从btree file 中读取到" + BTreeRootPtrPage.rootPtrPageSizeInByte + "字节");
+                }
+                System.out.println("btree file read  page ,pageNo=" + bTreePageID.getPageNo());
+                return new BTreeRootPtrPage(bTreePageID, bytes);
+            } else {
+                byte[] pageData = new byte[Page.defaultPageSizeInByte];
+                long size = BTreeRootPtrPage.rootPtrPageSizeInByte + (bTreePageID.getPageNo() - 1) * Page.defaultPageSizeInByte;
 
-        } else if (bTreePageID.getPageType() == BTreePageType.LEAF) {
+                if (bis.skip(size) != size) {
+                    throw new IllegalArgumentException("btree file read from disk error:寻址错误");
+                }
+                int bytesRead = bis.read(pageData, 0, Page.defaultPageSizeInByte);
+                if (bytesRead == -1) {
+                    throw new IllegalArgumentException("btree file read from disk error：reach the end of the file");
+                }
+                if (bytesRead < BTreeRootPtrPage.rootPtrPageSizeInByte) {
+                    throw new IllegalArgumentException("未从btree file 中读取到" + BTreeRootPtrPage.rootPtrPageSizeInByte + "字节");
+                }
 
+                System.out.println("btree file read  page ,pageNo=" + bTreePageID.getPageNo());
+
+                if (bTreePageID.getPageType() == BTreePageType.HEADER) {
+                    return new BTreeHeaderPage(bTreePageID, pageData);
+                } else if (bTreePageID.getPageType() == BTreePageType.INTERNAL) {
+                    return new BTreeInternalPage(bTreePageID, pageData);
+                } else if (bTreePageID.getPageType() == BTreePageType.LEAF) {
+                    return new BTreeLeafPage(bTreePageID, pageData);
+                }
+            }
+        } catch (FileNotFoundException e) {
+            throw new DbException("btree file not found", e);
+        } catch (IOException e) {
+            throw new DbException("btree file read page from disk error", e);
         }
 
 
-        throw new UnsupportedOperationException("todo");
+        throw new DbException("btree file read page from disk error");
     }
 
     @Override

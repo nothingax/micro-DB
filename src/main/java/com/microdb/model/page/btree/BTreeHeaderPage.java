@@ -44,6 +44,10 @@ public class BTreeHeaderPage extends BTreePage {
     public static final int maxSlotNum = Page.defaultPageSizeInByte - 2 * BTreeHeaderPage.POINTER_SIZE_IN_BYTE;
 
 
+    public BTreeHeaderPage(BTreePageID bTreePageID, byte[] pageData) {
+
+    }
+
     @Override
     public byte[] serialize() throws IOException {
         return new byte[0];

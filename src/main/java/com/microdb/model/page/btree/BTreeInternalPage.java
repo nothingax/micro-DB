@@ -58,7 +58,7 @@ public class BTreeInternalPage extends BTreePage {
      */
     private int maxSlotNum;
 
-    public BTreeInternalPage() {
+    public BTreeInternalPage(BTreePageID bTreePageID, byte[] pageData) {
         this.maxSlotNum = calculateMaxSlotNum(tableDesc);
     }
 
