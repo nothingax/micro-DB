@@ -3,9 +3,7 @@ package com.microdb.model.page.btree;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.Iterator;
 
 /**
@@ -39,6 +37,12 @@ public class BTreeRootPtrPage extends BTreePage {
      * 第一个headerPage的PageNo
      */
     private int firstHeaderPageNo;
+
+
+    public BTreeRootPtrPage(BTreePageID pageID, byte[] pageData) throws IOException {
+        this.pageID = pageID;
+        deserialize(pageData);
+    }
 
     /**
      * 初始化一块rootPtrPage页面大小的空间
@@ -80,9 +84,18 @@ public class BTreeRootPtrPage extends BTreePage {
         return baos.toByteArray();
     }
 
+    /**
+     * 反序列化，按序读取9个字节
+     */
     @Override
     public void deserialize(byte[] pageData) throws IOException {
-
+        DataInputStream dataInputStream = new DataInputStream(new ByteArrayInputStream(pageData));
+        // 4
+        this.rootNodePageNo = dataInputStream.readInt();
+        // 1
+        this.rootNodePageType = dataInputStream.readByte();
+        // 4
+        this.firstHeaderPageNo = dataInputStream.readInt();
     }
 
     @Override

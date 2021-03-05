@@ -27,17 +27,17 @@ public interface Page {
     byte[] serialize() throws IOException;
 
     /**
-     * 反序列化pageData到page对象
+     * 反序列化pageData
      */
     void deserialize(byte[] pageData) throws IOException;
 
     /**
-     * 计算返回一页数据可存放的数据行数
+     * 计算每页可存放的行数
      */
     int calculateMaxSlotNum(TableDesc tableDesc);
 
     /**
-     * 一页数据最多可存放的数据行数
+     * 返回每页可存放的行数
      */
     int getMaxSlotNum();
 

@@ -18,7 +18,7 @@ public abstract class BTreePage implements Page {
 
 
     /**
-     * 该页ID
+     * 页ID
      */
     protected BTreePageID pageID;
 

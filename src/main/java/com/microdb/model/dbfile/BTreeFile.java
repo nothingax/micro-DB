@@ -88,6 +88,7 @@ public class BTreeFile implements TableFile {
     @Override
     public void deleteRow(Row row) throws IOException {
         BTreePageID bTreePageID = new BTreePageID(tableId, row.getKeyItem().getPageID().getPageNo(), BTreePageType.LEAF);
+        // TODO
         BTreeLeafPage page = (BTreeLeafPage) readPageFromDisk(bTreePageID);
         //TODO
         page.deleteRow(row);
@@ -107,11 +108,13 @@ public class BTreeFile implements TableFile {
      * 在父节点中找到相关的entry
      */
     private void redistributePage(BTreePage page) throws IOException {
+        // 获取待分配页的父节点
         BTreePageID parentPageID = page.getParentPageID();
         BTreeInternalPage parentPage = null;
         BTreeEntry leftEntry = null;
         BTreeEntry rightEntry = null;
 
+        // 判断父节点的类型，如果不是ptr，获取其ptr页面
         if (parentPageID.getPageType() != BTreePageType.ROOT_PTR) {
             parentPage = (BTreeInternalPage) readPageFromDisk(parentPageID);
             Iterator<BTreeEntry> iterator = parentPage.getIterator();
@@ -147,7 +150,22 @@ public class BTreeFile implements TableFile {
     }
 
     @Override
-    public Page readPageFromDisk(PageID pageID) throws IOException {
+    public BTreePage readPageFromDisk(PageID pageID) throws IOException {
+        BTreePageID bTreePageID = (BTreePageID) pageID;
+        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
+        if (bTreePageID.getPageType() == BTreePageType.ROOT_PTR) {
+            byte[] bytes = new byte[BTreeRootPtrPage.rootPtrPageSizeInByte];
+            int read = bis.read(bytes, 0, BTreeRootPtrPage.rootPtrPageSizeInByte);
+            return new BTreeRootPtrPage(bTreePageID, bytes);
+        } else if (bTreePageID.getPageType() == BTreePageType.HEADER) {
+
+        } else if (bTreePageID.getPageType() == BTreePageType.INTERNAL) {
+
+        } else if (bTreePageID.getPageType() == BTreePageType.LEAF) {
+
+        }
+
+
         throw new UnsupportedOperationException("todo");
     }
 

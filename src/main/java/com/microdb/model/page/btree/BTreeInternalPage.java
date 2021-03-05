@@ -231,7 +231,7 @@ public class BTreeInternalPage extends BTreePage {
         // 将 entry 插入匹配的位置
         markSlotUsed(matchedSlot, true);
         keyList[matchedSlot] = entry.getKey();
-        childrenPageNos[matchedSlot] = entry.getRightChild().getPageNo();
+        childrenPageNos[matchedSlot] = entry.getRightChildPageID().getPageNo();
         entry.setKeyItem(new KeyItem(pageID, matchedSlot));
     }
 
