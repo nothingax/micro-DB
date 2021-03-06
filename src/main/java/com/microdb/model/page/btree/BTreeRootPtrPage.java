@@ -21,7 +21,7 @@ public class BTreeRootPtrPage extends BTreePage {
      * 1:rootNode的page的类型
      * 4:第一个HeaderPage的pageNo
      */
-    public static int rootPtrPageSizeInByte = 9;
+    public static final int rootPtrPageSizeInByte = 9;
 
     /**
      * 根节点所在的pageNo
@@ -108,7 +108,6 @@ public class BTreeRootPtrPage extends BTreePage {
         return false;
     }
 
-    @Override
     public int calculateMaxSlotNum(TableDesc tableDesc) {
         return 0;
     }

@@ -16,7 +16,6 @@ import java.util.Iterator;
  */
 public abstract class BTreePage implements Page {
 
-
     /**
      * 页ID
      */
@@ -26,6 +25,16 @@ public abstract class BTreePage implements Page {
      * 父节点pageNo,可能是internal节点或者是rootPtr节点
      */
     protected int parentPageNo;
+
+    /**
+     * 索引字段在表结构中的下标
+     */
+    protected int keyFieldIndex;
+
+    /**
+     * 表结构
+     */
+    protected TableDesc tableDesc;
 
     @Override
     public BTreePageID getPageID() {
@@ -40,7 +49,7 @@ public abstract class BTreePage implements Page {
 
     public abstract boolean isSlotUsed(int index);
 
-    public abstract int calculateMaxSlotNum(TableDesc tableDesc);
+    // public abstract int calculateMaxSlotNum(TableDesc tableDesc);
 
     public abstract Iterator<Row> getRowIterator();
 

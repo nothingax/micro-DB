@@ -88,7 +88,6 @@ public class BTreeFile implements TableFile {
     @Override
     public void deleteRow(Row row) throws IOException {
         BTreePageID bTreePageID = new BTreePageID(tableId, row.getKeyItem().getPageID().getPageNo(), BTreePageType.LEAF);
-        // TODO
         BTreeLeafPage page = (BTreeLeafPage) readPageFromDisk(bTreePageID);
         //TODO
         page.deleteRow(row);
@@ -185,9 +184,9 @@ public class BTreeFile implements TableFile {
                 if (bTreePageID.getPageType() == BTreePageType.HEADER) {
                     return new BTreeHeaderPage(bTreePageID, pageData);
                 } else if (bTreePageID.getPageType() == BTreePageType.INTERNAL) {
-                    return new BTreeInternalPage(bTreePageID, pageData);
-                } else if (bTreePageID.getPageType() == BTreePageType.LEAF) {
-                    return new BTreeLeafPage(bTreePageID, pageData);
+                    return new BTreeInternalPage(bTreePageID, pageData, keyFieldIndex);
+                } else { //bTreePageID.getPageType() == BTreePageType.LEAF
+                    return new BTreeLeafPage(bTreePageID, pageData, keyFieldIndex);
                 }
             }
         } catch (FileNotFoundException e) {
@@ -195,9 +194,6 @@ public class BTreeFile implements TableFile {
         } catch (IOException e) {
             throw new DbException("btree file read page from disk error", e);
         }
-
-
-        throw new DbException("btree file read page from disk error");
     }
 
     @Override

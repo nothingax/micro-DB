@@ -1,9 +1,10 @@
 package com.microdb.model.page.btree;
 
 import com.microdb.model.Row;
-import com.microdb.model.TableDesc;
 import com.microdb.model.page.Page;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -37,15 +38,14 @@ public class BTreeHeaderPage extends BTreePage {
      */
     private boolean[] slotUsageStatusBitMap;
 
-
     /**
-     * headerPage中的槽位数量
+     * 槽位数量
      */
     public static final int maxSlotNum = Page.defaultPageSizeInByte - 2 * BTreeHeaderPage.POINTER_SIZE_IN_BYTE;
 
-
-    public BTreeHeaderPage(BTreePageID bTreePageID, byte[] pageData) {
-
+    public BTreeHeaderPage(BTreePageID bTreePageID, byte[] pageData) throws IOException {
+        this.pageID = bTreePageID;
+        deserialize(pageData);
     }
 
     @Override
@@ -55,7 +55,14 @@ public class BTreeHeaderPage extends BTreePage {
 
     @Override
     public void deserialize(byte[] pageData) throws IOException {
-
+        DataInputStream bis = new DataInputStream(new ByteArrayInputStream(pageData));
+        this.prevHeaderPageNo = bis.readInt();
+        this.nextHeaderPageNo = bis.readInt();
+        this.slotUsageStatusBitMap = new boolean[maxSlotNum];
+        for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
+            slotUsageStatusBitMap[i] = bis.readBoolean();
+        }
+        bis.close();
     }
 
     @Override
@@ -68,17 +75,12 @@ public class BTreeHeaderPage extends BTreePage {
         return false;
     }
 
-    @Override
-    public int calculateMaxSlotNum(TableDesc tableDesc) {
-        return 0;
-    }
-
     /**
      * 每个字节占用一个槽位
      */
     @Override
     public int getMaxSlotNum() {
-        return 0;
+        return maxSlotNum;
     }
 
     @Override

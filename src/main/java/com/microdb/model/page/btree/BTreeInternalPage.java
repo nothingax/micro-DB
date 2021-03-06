@@ -1,12 +1,16 @@
 package com.microdb.model.page.btree;
 
 import com.microdb.exception.DbException;
+import com.microdb.model.DataBase;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
 import com.microdb.model.field.Field;
 import com.microdb.model.field.FieldType;
+import com.microdb.model.field.IntField;
 import com.microdb.model.page.Page;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
@@ -22,6 +26,11 @@ import java.util.NoSuchElementException;
 public class BTreeInternalPage extends BTreePage {
 
     /**
+     * 指针长度，4个字节
+     */
+    private static final int INDEX_SIZE_IN_BYTE = FieldType.INT.getSizeInByte();
+
+    /**
      * 所有子节点的page编号
      * 本页中有 m 个key，则对应的子节点有m+1个
      * size size为key的数量+1
@@ -32,7 +41,7 @@ public class BTreeInternalPage extends BTreePage {
      * 存储本页中的key
      * keyList size为key的数量+1, index 0 不存储内容
      */
-    private Field[] keyList;
+    private Field[] keys;
 
     /**
      * 子节点page类型
@@ -45,21 +54,17 @@ public class BTreeInternalPage extends BTreePage {
      * 物理文件使用一个byte存储一个状态位
      */
     private boolean[] slotUsageStatusBitMap;
-
-    private TableDesc tableDesc;
-
-    /**
-     * 索引字段在表结构中的下标
-     */
-    private int keyFieldIndex;
-
     /**
      * 一页数据最多可存放的节点元素数量
      */
     private int maxSlotNum;
 
-    public BTreeInternalPage(BTreePageID bTreePageID, byte[] pageData) {
+    public BTreeInternalPage(BTreePageID bTreePageID, byte[] pageData, int keyFieldIndex) throws IOException {
+        this.pageID = bTreePageID;
+        this.tableDesc = DataBase.getInstance().getDbTableById(bTreePageID.getTableId()).getTableDesc();
         this.maxSlotNum = calculateMaxSlotNum(tableDesc);
+        this.keyFieldIndex = keyFieldIndex;
+        deserialize(pageData);
     }
 
     @Override
@@ -69,7 +74,46 @@ public class BTreeInternalPage extends BTreePage {
 
     @Override
     public void deserialize(byte[] pageData) throws IOException {
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(pageData));
+        // 1. parentPageNo
+        parentPageNo = dis.readInt();
+        // 2. childrenPageType
+        childrenPageType = dis.readByte();
+        // 3. slotUsageStatusBitMap
+        slotUsageStatusBitMap = new boolean[maxSlotNum];
+        for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
+            slotUsageStatusBitMap[i] = dis.readBoolean();
+        }
 
+        // 4. keys
+        keys = new Field[maxSlotNum];
+        // 0位置不存放元素
+        keys[0] = null;
+        FieldType keyFieldType = tableDesc.getFieldTypes().get(keyFieldIndex);
+        for (int i = 1; i < keys.length; i++) {
+            if (isSlotUsed(i)) {
+                keys[i] = keyFieldType.parse(dis);
+            } else {
+                keys[i] = null;
+                for (int i1 = 0; i1 < keyFieldType.getSizeInByte(); i1++) {
+                    dis.readByte();
+                }
+            }
+        }
+
+        // 5. childrenPageNos
+        childrenPageNos = new int[maxSlotNum];
+        for (int i = 0; i < childrenPageNos.length; i++) {
+            if (isSlotUsed(i)) {
+                childrenPageNos[i] = ((IntField) FieldType.INT.parse(dis)).getValue();
+            } else {
+                for (int i1 = 0; i1 < INDEX_SIZE_IN_BYTE; i1++) {
+                    dis.readByte();
+                }
+            }
+        }
+
+        dis.close();
     }
 
     @Override
@@ -90,7 +134,6 @@ public class BTreeInternalPage extends BTreePage {
         return slotUsageStatusBitMap[index];
     }
 
-    @Override
     public int calculateMaxSlotNum(TableDesc tableDesc) {
         return getMaxEntryNum(tableDesc) + 1;
     }
@@ -150,13 +193,13 @@ public class BTreeInternalPage extends BTreePage {
      * 获取第index个节点的键值
      */
     protected Field getKey(int index) {
-        if (index < 0 || index >= keyList.length) {
+        if (index < 0 || index >= keys.length) {
             throw new NoSuchElementException(String.format("不存在索引为%s的元素", index));
         }
         if (!isSlotUsed(index)) {
             return null;
         }
-        return keyList[index];
+        return keys[index];
     }
 
     /**
@@ -179,7 +222,7 @@ public class BTreeInternalPage extends BTreePage {
         if (getExistCount() == getMaxSlotNum()) {
             childrenPageNos[0] = entry.getLeftChildPageID().getPageNo();
             childrenPageNos[1] = entry.getRightChildPageID().getPageNo();
-            keyList[1] = entry.getKey(); // keyList 0位置不存放数据
+            keys[1] = entry.getKey(); // keyList 0位置不存放数据
             markSlotUsed(0, true);
             markSlotUsed(1, true);
             entry.setKeyItem(new KeyItem(pageID, 1));
@@ -230,7 +273,7 @@ public class BTreeInternalPage extends BTreePage {
 
         // 将 entry 插入匹配的位置
         markSlotUsed(matchedSlot, true);
-        keyList[matchedSlot] = entry.getKey();
+        keys[matchedSlot] = entry.getKey();
         childrenPageNos[matchedSlot] = entry.getRightChildPageID().getPageNo();
         entry.setKeyItem(new KeyItem(pageID, matchedSlot));
     }
@@ -238,7 +281,7 @@ public class BTreeInternalPage extends BTreePage {
     private void shift(int from, int to) {
         if (!isSlotUsed(to) && isSlotUsed(from)) {
             markSlotUsed(to, true);
-            keyList[to] = keyList[from];
+            keys[to] = keys[from];
             childrenPageNos[to] = childrenPageNos[from];
             markSlotUsed(from, false);
         }

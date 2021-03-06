@@ -1,13 +1,12 @@
 import com.microdb.model.DataBase;
 import com.microdb.model.DbTable;
-import com.microdb.model.TableDesc;
 import com.microdb.model.Row;
+import com.microdb.model.TableDesc;
 import com.microdb.model.dbfile.HeapTableFile;
 import com.microdb.model.dbfile.TableFile;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
 import com.microdb.model.page.heap.HeapPage;
-import com.microdb.model.page.Page;
 import com.microdb.model.page.heap.HeapPageID;
 import org.junit.Assert;
 import org.junit.Before;
@@ -73,8 +72,8 @@ public class DataBaseTest {
     @Test
     public void testCalculateMaxSlotNum() throws IOException {
         DbTable tablePerson = this.dataBase.getDbTableByName("t_person");
-        Page page = new HeapPage(new HeapPageID(tablePerson.getTableId(), 0), HeapPage.createEmptyPageData());
-        int i = page.calculateMaxSlotNum(tablePerson.getTableDesc());
+        HeapPage heapPage = new HeapPage(new HeapPageID(tablePerson.getTableId(), 0), HeapPage.createEmptyPageData());
+        int i = heapPage.calculateMaxSlotNum(tablePerson.getTableDesc());
         System.out.println(i);
         Assert.assertEquals(819, i);
     }

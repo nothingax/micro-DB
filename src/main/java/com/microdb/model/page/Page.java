@@ -1,7 +1,6 @@
 package com.microdb.model.page;
 
 import com.microdb.model.Row;
-import com.microdb.model.TableDesc;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -31,10 +30,10 @@ public interface Page {
      */
     void deserialize(byte[] pageData) throws IOException;
 
-    /**
-     * 计算每页可存放的行数
-     */
-    int calculateMaxSlotNum(TableDesc tableDesc);
+    // /**
+    //  * 计算每页可存放的行数
+    //  */
+    // int calculateMaxSlotNum(TableDesc tableDesc);
 
     /**
      * 返回每页可存放的行数
