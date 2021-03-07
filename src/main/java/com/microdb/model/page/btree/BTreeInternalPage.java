@@ -304,7 +304,7 @@ public class BTreeInternalPage extends BTreePage {
 
     public void deleteEntryAndRightChild(BTreeEntry entry) {
         KeyItem keyItem = entry.getKeyItem();
-        markSlotUsed(keyItem.getKeyItemNo(), false);
+        markSlotUsed(keyItem.getSlotIndex(), false);
         entry.setKeyItem(null);
     }
 

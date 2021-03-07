@@ -14,20 +14,20 @@ public class KeyItem {
     private BTreePageID pageID;
 
     /**
-     * key编号，从1开始
+     * 元素在页中的槽位下标
      */
-    private int keyItemNo;
+    private int slotIndex;
 
-    public KeyItem(BTreePageID pageID, int keyItemNo) {
+    public KeyItem(BTreePageID pageID, int slotIndex) {
         this.pageID = pageID;
-        this.keyItemNo = keyItemNo;
+        this.slotIndex = slotIndex;
     }
 
     public BTreePageID getPageID() {
         return pageID;
     }
 
-    public int getKeyItemNo() {
-        return keyItemNo;
+    public int getSlotIndex() {
+        return slotIndex;
     }
 }

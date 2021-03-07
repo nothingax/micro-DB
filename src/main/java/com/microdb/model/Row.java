@@ -69,6 +69,10 @@ public class Row implements Serializable {
         return keyItem;
     }
 
+    public void setKeyItem(KeyItem keyItem) {
+        this.keyItem = keyItem;
+    }
+
     public static Row merge(Row left, Row right) {
         Row row = new Row(TableDesc.merge(left.getTableDesc(), right.getTableDesc()));
         List<Field> leftFields = left.getFields();

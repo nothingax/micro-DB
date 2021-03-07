@@ -87,13 +87,12 @@ public class BTreeFile implements TableFile {
      */
     @Override
     public void deleteRow(Row row) throws IOException {
-        BTreePageID bTreePageID = new BTreePageID(tableId, row.getKeyItem().getPageID().getPageNo(), BTreePageType.LEAF);
-        BTreeLeafPage page = (BTreeLeafPage) readPageFromDisk(bTreePageID);
-        //TODO
+        BTreePageID BTreePageID = new BTreePageID(tableId, row.getKeyItem().getPageID().getPageNo(), BTreePageType.LEAF);
+        BTreeLeafPage page = (BTreeLeafPage) readPageFromDisk(BTreePageID);
         page.deleteRow(row);
 
         // 数量不足一半时，与兄弟节点重新分布元素
-        if (page.getExistRowCount() < page.getMaxSlotNum() / 2) {
+        if (page.isLessThanHalfFull()) {
             // todo
             redistributePage(page);
         }
@@ -110,28 +109,31 @@ public class BTreeFile implements TableFile {
         // 获取待分配页的父节点
         BTreePageID parentPageID = page.getParentPageID();
         BTreeInternalPage parentPage = null;
-        BTreeEntry leftEntry = null;
-        BTreeEntry rightEntry = null;
+        BTreeEntry leftParentEntry = null;
+        BTreeEntry rightParentEntry = null;
 
-        // 判断父节点的类型，如果不是ptr，获取其ptr页面
-        if (parentPageID.getPageType() != BTreePageType.ROOT_PTR) {
+        // 判断父节点的类型，如果是internal页，获取指向目标页的两个entry
+        if (parentPageID.getPageType() == BTreePageType.INTERNAL) {
             parentPage = (BTreeInternalPage) readPageFromDisk(parentPageID);
             Iterator<BTreeEntry> iterator = parentPage.getIterator();
             while (iterator.hasNext()) {
                 BTreeEntry entry = iterator.next();
                 if (entry.getLeftChildPageID().equals(page.getPageID())) {
-                    rightEntry = entry;
+                    rightParentEntry = entry;
                     break;
                 } else if (entry.getRightChildPageID().equals(page.getPageID())) {
-                    leftEntry = entry;
+                    leftParentEntry = entry;
                 }
             }
+        } else {
+            // parentPageID.getPageType() = rootPtr
+            // ignore
         }
 
-        if (page.getParentPageID().getPageType() == BTreePageType.LEAF) {
-            redistributeLeafPage((BTreeLeafPage) page, parentPage, leftEntry, rightEntry);
+        if (page.getPageID().getPageType() == BTreePageType.LEAF) {
+            redistributeLeafPage((BTreeLeafPage) page, parentPage, leftParentEntry, rightParentEntry);
         } else {
-            redistributeInternalPage((BTreeInternalPage) page, parentPage, leftEntry, rightEntry);
+            redistributeInternalPage((BTreeInternalPage) page, parentPage, leftParentEntry, rightParentEntry);
         }
     }
 
@@ -139,8 +141,68 @@ public class BTreeFile implements TableFile {
 
     }
 
-    private void redistributeLeafPage(BTreeLeafPage page, BTreeInternalPage parentPage, BTreeEntry leftEntry, BTreeEntry rightEntry) {
+    /**
+     * 首先判断兄弟页面是否有多余的节点，如果有，则与兄弟节点平分。
+     * 如果兄弟节点数量也少于1/2，则与兄弟节点合并，并更新父、子、兄弟索引
+     *
+     * @param page
+     * @param parentPage
+     * @param leftParentEntry  page的左侧父节点entry
+     * @param rightParentEntry page的右侧父节点entry
+     */
+    private void redistributeLeafPage(BTreeLeafPage page,
+                                      BTreeInternalPage parentPage,
+                                      BTreeEntry leftParentEntry,
+                                      BTreeEntry rightParentEntry) {
+        // 找到同一个父节点的左侧page，判断他容量是否不足一半，若是，则合并，不是则stealFromLeafPage 右侧page同理
 
+        if (leftParentEntry != null && leftParentEntry.getLeftChildPageID() != null) {
+            BTreePageID leftChildPageID = leftParentEntry.getLeftChildPageID();
+            BTreeLeafPage leftLeafPage = (BTreeLeafPage) readPageFromDisk(leftChildPageID);
+            if (leftLeafPage.isLessThanHalfFull()) {
+                mergeLeafPage(leftLeafPage, page, parentPage, leftParentEntry);
+            } else {
+                stealFromLeftLeafPage(page, leftChildPageID, parentPage, leftParentEntry);
+            }
+        } else if (rightParentEntry != null && rightParentEntry.getRightChildPageID() != null) {
+            BTreePageID rightChildPageID = rightParentEntry.getRightChildPageID();
+            BTreeLeafPage rightLeafPage = (BTreeLeafPage) readPageFromDisk(rightChildPageID);
+            if (rightLeafPage.isLessThanHalfFull()) {
+                mergeLeafPage(page, rightLeafPage, parentPage, rightParentEntry);
+            } else {
+                stealFromLeftRightPage(page, rightChildPageID, parentPage, rightParentEntry);
+            }
+        }
+    }
+
+    private void stealFromLeftRightPage(BTreeLeafPage page,
+                                        BTreePageID rightChildPageID,
+                                        BTreeInternalPage parentPage,
+                                        BTreeEntry rightParentEntry) {
+    }
+
+    private void stealFromLeftLeafPage(BTreeLeafPage page,
+                                       BTreePageID leftChildPageID,
+                                       BTreeInternalPage parentPage,
+                                       BTreeEntry leftParentEntry) {
+
+    }
+
+    /**
+     * 将右侧的page中的row移动到左侧中
+     * 删除父节点中相应的entry
+     * 更新左右兄弟指针
+     * 更改删掉的page的slot标识，用于页重用
+     *
+     * @param leftPage
+     * @param rightPage
+     * @param parentPage
+     * @param leftParentEntry
+     */
+    private void mergeLeafPage(BTreeLeafPage leftPage,
+                               BTreeLeafPage rightPage,
+                               BTreeInternalPage parentPage,
+                               BTreeEntry leftParentEntry) {
     }
 
     @Override
@@ -150,10 +212,10 @@ public class BTreeFile implements TableFile {
 
     @Override
     public BTreePage readPageFromDisk(PageID pageID) {
-        BTreePageID bTreePageID = (BTreePageID) pageID;
+        BTreePageID BTreePageID = (BTreePageID) pageID;
 
         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
-            if (bTreePageID.getPageType() == BTreePageType.ROOT_PTR) {
+            if (BTreePageID.getPageType() == BTreePageType.ROOT_PTR) {
                 byte[] bytes = new byte[BTreeRootPtrPage.rootPtrPageSizeInByte];
                 int bytesRead = bis.read(bytes, 0, BTreeRootPtrPage.rootPtrPageSizeInByte);
                 if (bytesRead == -1) {
@@ -162,11 +224,11 @@ public class BTreeFile implements TableFile {
                 if (bytesRead < BTreeRootPtrPage.rootPtrPageSizeInByte) {
                     throw new IllegalArgumentException("未从btree file 中读取到" + BTreeRootPtrPage.rootPtrPageSizeInByte + "字节");
                 }
-                System.out.println("btree file read  page ,pageNo=" + bTreePageID.getPageNo());
-                return new BTreeRootPtrPage(bTreePageID, bytes);
+                System.out.println("btree file read  page ,pageNo=" + BTreePageID.getPageNo());
+                return new BTreeRootPtrPage(BTreePageID, bytes);
             } else {
                 byte[] pageData = new byte[Page.defaultPageSizeInByte];
-                long size = BTreeRootPtrPage.rootPtrPageSizeInByte + (bTreePageID.getPageNo() - 1) * Page.defaultPageSizeInByte;
+                long size = BTreeRootPtrPage.rootPtrPageSizeInByte + (BTreePageID.getPageNo() - 1) * Page.defaultPageSizeInByte;
 
                 if (bis.skip(size) != size) {
                     throw new IllegalArgumentException("btree file read from disk error:寻址错误");
@@ -179,14 +241,14 @@ public class BTreeFile implements TableFile {
                     throw new IllegalArgumentException("未从btree file 中读取到" + BTreeRootPtrPage.rootPtrPageSizeInByte + "字节");
                 }
 
-                System.out.println("btree file read  page ,pageNo=" + bTreePageID.getPageNo());
+                System.out.println("btree file read  page ,pageNo=" + BTreePageID.getPageNo());
 
-                if (bTreePageID.getPageType() == BTreePageType.HEADER) {
-                    return new BTreeHeaderPage(bTreePageID, pageData);
-                } else if (bTreePageID.getPageType() == BTreePageType.INTERNAL) {
-                    return new BTreeInternalPage(bTreePageID, pageData, keyFieldIndex);
-                } else { //bTreePageID.getPageType() == BTreePageType.LEAF
-                    return new BTreeLeafPage(bTreePageID, pageData, keyFieldIndex);
+                if (BTreePageID.getPageType() == BTreePageType.HEADER) {
+                    return new BTreeHeaderPage(BTreePageID, pageData);
+                } else if (BTreePageID.getPageType() == BTreePageType.INTERNAL) {
+                    return new BTreeInternalPage(BTreePageID, pageData, keyFieldIndex);
+                } else { //BTreePageID.getPageType() == BTreePageType.LEAF
+                    return new BTreeLeafPage(BTreePageID, pageData, keyFieldIndex);
                 }
             }
         } catch (FileNotFoundException e) {

@@ -234,6 +234,10 @@ public class BTreeLeafPage extends BTreePage {
         return new BTreeLeafPageReverseIterator(this);
     }
 
+    public boolean isLessThanHalfFull() {
+        return this.getExistRowCount() < this.getMaxSlotNum() / 2;
+    }
+
     /**
      * 当前页已经存储的行数
      */
@@ -315,7 +319,9 @@ public class BTreeLeafPage extends BTreePage {
      * 删除行
      */
     public void deleteRow(Row row) {
-        // TODO
+        int slotIndex = row.getKeyItem().getSlotIndex();
+        slotUsageStatusBitMap[slotIndex] = false;
+        row.setKeyItem(null);
     }
 
     // ===============================迭代器=========================================
