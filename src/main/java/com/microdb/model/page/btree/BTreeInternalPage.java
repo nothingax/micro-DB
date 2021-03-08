@@ -324,8 +324,28 @@ public class BTreeInternalPage extends BTreePage {
      * 更新entry
      */
     public void updateEntry(BTreeEntry entry) {
+        KeyItem keyItem = entry.getKeyItem();
 
+        // 校验
+        if (keyItem == null) {
+            throw new DbException("tried to update entry with null keyItem");
+        }
+        if (keyItem.getPageID().getTableId() != pageID.getTableId()) {
+            throw new DbException("table id not match");
+        }
 
+        if (keyItem.getPageID().getPageNo() != pageID.getPageNo()) {
+            throw new DbException("page no not match");
+        }
+        if (!isSlotUsed(keyItem.getSlotIndex())) {
+            throw new DbException("update entry error:slot is not used");
+        }
+
+        // todo 检验元素顺序
+
+        int slotIndex = keyItem.getSlotIndex();
+        childrenPageNos[slotIndex] = entry.getRightChildPageID().getPageNo();
+        keys[slotIndex] = entry.getKey();
     }
     // =====================================迭代器==========================================
 
