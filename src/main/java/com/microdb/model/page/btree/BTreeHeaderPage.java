@@ -1,11 +1,13 @@
 package com.microdb.model.page.btree;
 
+import com.microdb.exception.DbException;
 import com.microdb.model.Row;
 import com.microdb.model.page.Page;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
 
 /**
@@ -95,6 +97,35 @@ public class BTreeHeaderPage extends BTreePage {
         return new BTreePageID(pageID.getTableId(), nextHeaderPageNo, BTreePageType.HEADER);
     }
 
+    public void setNextHeaderPageNoID(BTreePageID nextHeaderPageNoID) {
+        if (nextHeaderPageNoID == null) {
+            nextHeaderPageNo = 0;
+        } else {
+            if (nextHeaderPageNoID.getTableId() != pageID.getTableId()) {
+                throw new DbException("table id not match");
+            }
+            if (nextHeaderPageNoID.getPageType() != BTreePageType.HEADER) {
+                throw new DbException("page tye must be BTreePageType.HEADER");
+            }
+            nextHeaderPageNo = nextHeaderPageNoID.getPageNo();
+        }
+    }
+
+    public void setPrevHeaderPageID(BTreePageID prevHeaderPageID) {
+        if (prevHeaderPageID == null) {
+            prevHeaderPageNo = 0;
+        } else {
+            if (prevHeaderPageID.getTableId() != pageID.getTableId()) {
+                throw new DbException("table id not match");
+            }
+            if (prevHeaderPageID.getPageType() != BTreePageType.HEADER) {
+                throw new DbException("page tye must be BTreePageType.HEADER");
+            }
+
+            prevHeaderPageNo = prevHeaderPageID.getPageNo();
+        }
+    }
+
     /**
      * 返回第一个空slot的序号
      */
@@ -109,5 +140,12 @@ public class BTreeHeaderPage extends BTreePage {
 
     public void markSlotUsed(int slot, boolean status) {
         slotUsageStatusBitMap[slot] = status;
+    }
+
+    /**
+     * 设置所有slot为使用状态
+     */
+    public void markAllUsed() {
+        Arrays.fill(slotUsageStatusBitMap, true);
     }
 }

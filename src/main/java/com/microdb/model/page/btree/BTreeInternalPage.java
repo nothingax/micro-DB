@@ -308,8 +308,24 @@ public class BTreeInternalPage extends BTreePage {
         entry.setKeyItem(null);
     }
 
+    public boolean isLessThanHalfFull() {
+        return this.getExistCount() < this.getMaxSlotNum() / 2;
+    }
+
     private void markSlotUsed(int keyItemNo, boolean isUsed) {
         slotUsageStatusBitMap[keyItemNo] = isUsed;
+    }
+
+    public boolean isEmpty() {
+        return this.getExistCount() == 0;
+    }
+
+    /**
+     * 更新entry
+     */
+    public void updateEntry(BTreeEntry entry) {
+
+
     }
     // =====================================迭代器==========================================
 

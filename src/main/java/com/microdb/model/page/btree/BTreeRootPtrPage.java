@@ -1,5 +1,6 @@
 package com.microdb.model.page.btree;
 
+import com.microdb.exception.DbException;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
 
@@ -139,6 +140,20 @@ public class BTreeRootPtrPage extends BTreePage {
         this.rootNodePageNo = bTreePageID.getPageNo();
     }
 
+    public void setFirstHeaderPageID(BTreePageID firstHeaderPageID) {
+        if (firstHeaderPageID == null) {
+            firstHeaderPageNo = 0;
+        } else {
+            if (firstHeaderPageID.getPageType() != BTreePageType.HEADER) {
+                throw new DbException("first header page iD type must be BTreePageType.HEADER");
+            }
+            if (firstHeaderPageID.getTableId() != this.pageID.getTableId()) {
+                throw new DbException("page id is not match");
+            }
+            this.firstHeaderPageNo = firstHeaderPageID.getPageNo();
+        }
+    }
+
     public BTreePageID getFirstHeaderPageID() {
         if ((firstHeaderPageNo == 0)) {
             return null;
@@ -146,6 +161,19 @@ public class BTreeRootPtrPage extends BTreePage {
         return new BTreePageID(pageID.getTableId(), firstHeaderPageNo, BTreePageType.HEADER);
     }
 
-    public void setRootNodePageID(BTreePageID pageID) {
+    public void setRootNodePageID(BTreePageID rootNodePageID) {
+
+        if (rootNodePageID == null) {
+            rootNodePageNo = 0;
+        } else {
+            if (rootNodePageID.getPageType() != BTreePageType.INTERNAL
+                    || rootNodePageID.getPageType() != BTreePageType.LEAF) {
+                throw new DbException("root node page iD type must be BTreePageType.INTERNAL or BTreePageType.LEAF");
+            }
+            if (rootNodePageID.getTableId() != this.pageID.getTableId()) {
+                throw new DbException("page id is not match");
+            }
+            this.rootNodePageNo = rootNodePageID.getPageNo();
+        }
     }
 }
