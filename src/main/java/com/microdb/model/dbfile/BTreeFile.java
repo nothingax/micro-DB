@@ -219,8 +219,8 @@ public class BTreeFile implements TableFile {
         while (iterator.hasNext()) {
             BTreeEntry entryInRightPage = iterator.next();
             rightPage.deleteEntryAndRightChild(entryInRightPage);
-            updateParent(leftPage.getPageID(), entry.getLeftChildPageID());
-            updateParent(leftPage.getPageID(), entry.getRightChildPageID());
+            updateParent(leftPage.getPageID(), entryInRightPage.getLeftChildPageID());
+            updateParent(leftPage.getPageID(), entryInRightPage.getRightChildPageID());
             leftPage.insertEntry(entryInRightPage);
         }
         writePageToDisk(leftPage);
