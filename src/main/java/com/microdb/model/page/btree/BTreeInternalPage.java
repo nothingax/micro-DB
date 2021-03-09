@@ -352,7 +352,7 @@ public class BTreeInternalPage extends BTreePage {
     /**
      * 查找B+树内部节点的迭代器
      */
-    static class BTreeInternalPageIterator implements Iterator<BTreeEntry> {
+    public static class BTreeInternalPageIterator implements Iterator<BTreeEntry> {
         /**
          * 当前遍历的key和children的下标
          */
