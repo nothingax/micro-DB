@@ -18,7 +18,7 @@ import java.util.NoSuchElementException;
 
 /**
  * BTreeInternalPage 存储索引Key
- * 格式：slotBitMap + 索引键值（m+1个位置，位置0不存储）+子节点指针(m+1个)+子节点page类型
+ * 格式：父指针、子页类型、slotUsageStatusBitMap、索引键值（m+1个位置，位置0不存储）、子节点指针(m+1个)
  *
  * @author zhangjw
  * @version 1.0

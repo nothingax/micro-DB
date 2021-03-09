@@ -208,6 +208,7 @@ public class BTreeFile implements TableFile {
                                    BTreeEntry entry) throws IOException {
         // 两页合并，父页中指向两个子页的的entry应删除
         deleteParentEntry(leftPage, parentPage, entry);
+        writePageToDisk(parentPage);
 
         // 将原来在父页的entry拉下来到下一级
         entry.setLeftChildPageID(leftPage.getReverseIterator().next().getRightChildPageID());
@@ -219,6 +220,7 @@ public class BTreeFile implements TableFile {
         while (iterator.hasNext()) {
             BTreeEntry entryInRightPage = iterator.next();
             rightPage.deleteEntryAndRightChild(entryInRightPage);
+            // 右页删除后，原来右页的子页的父节点要更新为leftPage
             updateParent(leftPage.getPageID(), entryInRightPage.getLeftChildPageID());
             updateParent(leftPage.getPageID(), entryInRightPage.getRightChildPageID());
             leftPage.insertEntry(entryInRightPage);
