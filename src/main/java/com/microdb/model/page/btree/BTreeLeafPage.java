@@ -243,11 +243,9 @@ public class BTreeLeafPage extends BTreePage {
      */
     public int getExistRowCount() {
         int cnt = 0;
-
-        for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
-            cnt += slotUsageStatusBitMap[i] ? 1 : 0;
+        for (boolean b : slotUsageStatusBitMap) {
+            cnt += b ? 1 : 0;
         }
-
         return cnt;
     }
 

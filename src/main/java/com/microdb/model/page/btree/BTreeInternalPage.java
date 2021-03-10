@@ -205,7 +205,7 @@ public class BTreeInternalPage extends BTreePage {
     /**
      * 返回该页的迭代器
      */
-    public BTreeInternalPageIterator getIterator() {
+    public Iterator<BTreeEntry> getIterator() {
         return new BTreeInternalPageIterator(this);
     }
 
@@ -302,6 +302,12 @@ public class BTreeInternalPage extends BTreePage {
         return new BTreeInternalPageReverseIterator(this);
     }
 
+    public void deleteEntryAndLeftChild(BTreeEntry entry) {
+        KeyItem keyItem = entry.getKeyItem();
+        markSlotUsed(keyItem.getSlotIndex(), false);
+        entry.setKeyItem(null);
+    }
+
     public void deleteEntryAndRightChild(BTreeEntry entry) {
         KeyItem keyItem = entry.getKeyItem();
         markSlotUsed(keyItem.getSlotIndex(), false);
@@ -352,7 +358,7 @@ public class BTreeInternalPage extends BTreePage {
     /**
      * 查找B+树内部节点的迭代器
      */
-    public static class BTreeInternalPageIterator implements Iterator<BTreeEntry> {
+    public class BTreeInternalPageIterator implements Iterator<BTreeEntry> {
         /**
          * 当前遍历的key和children的下标
          */

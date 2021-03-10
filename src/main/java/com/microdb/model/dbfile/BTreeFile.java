@@ -93,10 +93,8 @@ public class BTreeFile implements TableFile {
 
         // 数量不足一半时，与兄弟节点重新分布元素
         if (page.isLessThanHalfFull()) {
-            // todo
             redistributePage(page);
         }
-
         writePageToDisk(page);
     }
 
@@ -105,7 +103,7 @@ public class BTreeFile implements TableFile {
      * 通过page的父节点找page的左右兄弟，保证他们在同一个页上、有同一个父节点。
      * 在父节点中找到相关的entry
      *
-     * @param pageLessThanHalfFull 不足荷载一半的页面
+     * @param pageLessThanHalfFull 不及半满的页
      */
     private void redistributePage(BTreePage pageLessThanHalfFull) throws IOException {
         // 获取待分配页的父节点
@@ -141,14 +139,14 @@ public class BTreeFile implements TableFile {
 
     /**
      * 重分布内部节点
-     * 分别判断左右兄弟页，如果不到半满，合并，否则挪用元素
+     * 评估左右兄弟页现有元素数量，如果均不及半满，则合并两页；如果兄弟页有多页元素，则取来补充
      *
-     * @param page
-     * @param parentPage
-     * @param leftEntry
-     * @param rightEntry
+     * @param pageLessThanHalfFull 不及半满的页
+     * @param parentPage           pageLessThanHalfFull 的父页
+     * @param leftEntry            指向pageLessThanHalfFull的两个entry中左侧entry
+     * @param rightEntry           指向pageLessThanHalfFull的两个entry中右侧entry
      */
-    private void redistributeInternalPage(BTreeInternalPage page,
+    private void redistributeInternalPage(BTreeInternalPage pageLessThanHalfFull,
                                           BTreeInternalPage parentPage,
                                           BTreeEntry leftEntry,
                                           BTreeEntry rightEntry) throws IOException {
@@ -156,37 +154,121 @@ public class BTreeFile implements TableFile {
             BTreePageID leftSibPageID = leftEntry.getLeftChildPageID();
             BTreeInternalPage leftSibPage = (BTreeInternalPage) readPageFromDisk(leftSibPageID);
             if (leftSibPage.isLessThanHalfFull()) {
-                mergeInternalPage(leftSibPage, page, parentPage, leftEntry);
+                mergeInternalPage(leftSibPage, pageLessThanHalfFull, parentPage, leftEntry);
             } else {
-                fetchFromLeftInternalPage(page, leftSibPage, parentPage, leftEntry);
+                fetchFromLeftInternalPage(pageLessThanHalfFull, leftSibPage, parentPage, leftEntry);
             }
         } else if (rightEntry != null && rightEntry.getRightChildPageID() != null) {
             BTreePageID rightSibPageID = rightEntry.getRightChildPageID();
             BTreeInternalPage rightSibPage = (BTreeInternalPage) readPageFromDisk(rightSibPageID);
             if (rightSibPage.isLessThanHalfFull()) {
-                mergeInternalPage(page, rightSibPage, parentPage, leftEntry);
+                mergeInternalPage(pageLessThanHalfFull, rightSibPage, parentPage, rightEntry);
             } else {
-                fetchFromRightInternalPage(page, rightSibPage, parentPage, leftEntry);
+                fetchFromRightInternalPage(pageLessThanHalfFull, rightSibPage, parentPage, rightEntry);
             }
         }
     }
 
-    private void fetchFromRightInternalPage(BTreeInternalPage page, BTreeInternalPage rightSibPage, BTreeInternalPage parentPage, BTreeEntry leftEntry) {
+    /**
+     * 从左页中挪走元素至目标页面，直到两个页面都至少达到半满
+     *
+     * @param pageLessHalfFull entry应移入的新页
+     * @param leftPage         提供entry的页
+     * @param parentPage       targetPage和leftPage的父页
+     * @param leftEntry        指向targetPage的两个entry中左侧的entry
+     */
+    private void fetchFromLeftInternalPage(BTreeInternalPage pageLessHalfFull,
+                                           BTreeInternalPage leftPage,
+                                           BTreeInternalPage parentPage,
+                                           BTreeEntry leftEntry) throws IOException {
+
+        // 计算需要移动的个数，使移动后，两个page里的entry数量均等
+        int entryNumToMove = (leftPage.getExistCount() - pageLessHalfFull.getExistCount()) / 2;
+
+        BTreeEntry[] bTreeEntries = new BTreeEntry[entryNumToMove];
+        // 需要移动的元素装入entryToMove，当从左侧page取元素时，从最右端取entryNumToMove个元素
+        Iterator<BTreeEntry> it = leftPage.getReverseIterator();
+        int cntIndex = bTreeEntries.length - 1;
+
+        while (cntIndex >= 0 && it.hasNext()) {
+            bTreeEntries[cntIndex--] = it.next();
+        }
+
+        for (int i = bTreeEntries.length - 1; i >= 0; --i) {
+            BTreeEntry entryToMove = bTreeEntries[i];
+            // 删除移动entry、设置其右孩子的新父页
+            leftPage.deleteEntryAndRightChild(entryToMove);
+            updateParent(pageLessHalfFull.getPageID(), entryToMove.getRightChildPageID());
+
+            // 旋转(entryToMove围绕leftEntry右旋，entryToMove是leftEntry的右子节点，右旋后，entryToMove变为父节点，leftEntry变为其右子节点)
+            // 较难推导，最好画图
+            BTreePageID pageID = entryToMove.getRightChildPageID();
+            // leftEntry 是发生转移的两个page的父entry，转移过程中，leftEntry需要下降到子级
+            entryToMove.setLeftChildPageID(leftEntry.getLeftChildPageID());
+            entryToMove.setRightChildPageID(leftEntry.getRightChildPageID());
+            entryToMove.setKeyItem(leftEntry.getKeyItem());
+            parentPage.updateEntry(entryToMove); //更新后，新的父entry生成，key是当前遍历的entry的key
+
+            leftEntry.setLeftChildPageID(pageID);
+            // 下降到右子树的父元素，需要设置新的右子page，应为pageLessHalfFull的第一个entry的左子page
+            leftEntry.setRightChildPageID(pageLessHalfFull.getIterator().next().getLeftChildPageID());
+
+            pageLessHalfFull.insertEntry(leftEntry);
+            leftEntry = entryToMove;
+        }
+        writePageToDisk(pageLessHalfFull);
+        writePageToDisk(leftPage);
+        writePageToDisk(parentPage);
     }
 
     /**
-     * 从left 页中挪走元素
+     * 从右页面中挪走元素至目标页面，直到两个页面至少半满，并更新右侧页面在父页中的rightEntry
      *
-     * @param page
-     * @param leftSibPage
-     * @param parentPage
-     * @param leftEntry
+     * @param pageLessHalfFull entry应移入的新页
+     * @param rightPage        提供entry的页
+     * @param parentPage       targetPage和rightPage的父页
+     * @param rightEntry       指向targetPage的两个entry中右侧的entry
      */
-    private void fetchFromLeftInternalPage(BTreeInternalPage page,
-                                           BTreeInternalPage leftSibPage,
-                                           BTreeInternalPage parentPage,
-                                           BTreeEntry leftEntry) {
+    private void fetchFromRightInternalPage(BTreeInternalPage pageLessHalfFull,
+                                            BTreeInternalPage rightPage,
+                                            BTreeInternalPage parentPage,
+                                            BTreeEntry rightEntry) throws IOException {
+        // 计算需要移动的个数，使移动后，两个page里的entry数量均等
+        int entryNumToMove = (rightPage.getExistCount() - pageLessHalfFull.getExistCount()) / 2;
 
+        BTreeEntry[] bTreeEntries = new BTreeEntry[entryNumToMove];
+        Iterator<BTreeEntry> iterator = pageLessHalfFull.getIterator();
+        int cntIndex = 0;
+        while (cntIndex < bTreeEntries.length && iterator.hasNext()) {
+            bTreeEntries[cntIndex++] = iterator.next();
+        }
+
+        for (BTreeEntry entryToMove : bTreeEntries) {
+            rightPage.deleteEntryAndLeftChild(entryToMove);
+            BTreePageID leftChildPageIDOfEntryToMove = entryToMove.getLeftChildPageID();
+
+            // 被移动的entry所指向的子页面需要设置新的父页
+            updateParent(pageLessHalfFull.getPageID(), entryToMove.getLeftChildPageID());
+
+            // 旋转(entryToMove围绕rightEntry左旋，entryToMove是rightEntry的右子节点，左旋后，entryToMove变为父节点，rightEntry变为其左子节点)
+            // 较难推导，最好画图
+            // from页中entry被推向父页
+            entryToMove.setLeftChildPageID(rightEntry.getLeftChildPageID());
+            entryToMove.setRightChildPageID(rightEntry.getRightChildPageID());
+            entryToMove.setKeyItem(rightEntry.getKeyItem());
+            parentPage.updateEntry(entryToMove);
+            // 父页中的插入左页
+            rightEntry.setRightChildPageID(leftChildPageIDOfEntryToMove);
+            rightEntry.setLeftChildPageID(pageLessHalfFull.getReverseIterator().next().getRightChildPageID());
+            pageLessHalfFull.insertEntry(rightEntry);
+
+            rightEntry = entryToMove;
+
+        }
+
+        writePageToDisk(pageLessHalfFull);
+        writePageToDisk(rightPage);
+        writePageToDisk(parentPage);
     }
 
     /**
@@ -216,7 +298,7 @@ public class BTreeFile implements TableFile {
         leftPage.insertEntry(entry);
 
         // 右侧页的数据挪到左侧页中
-        BTreeInternalPage.BTreeInternalPageIterator iterator = rightPage.getIterator();
+        Iterator<BTreeEntry> iterator = rightPage.getIterator();
         while (iterator.hasNext()) {
             BTreeEntry entryInRightPage = iterator.next();
             rightPage.deleteEntryAndRightChild(entryInRightPage);
@@ -394,7 +476,9 @@ public class BTreeFile implements TableFile {
      * @param parentPage    父页
      * @param entryToDelete 待删除entry
      */
-    private void deleteParentEntry(BTreePage leafPage, BTreeInternalPage parentPage, BTreeEntry entryToDelete) throws IOException {
+    private void deleteParentEntry(BTreePage leafPage,
+                                   BTreeInternalPage parentPage,
+                                   BTreeEntry entryToDelete) throws IOException {
 
         parentPage.deleteEntryAndRightChild(entryToDelete);
         if (parentPage.isEmpty()) {
