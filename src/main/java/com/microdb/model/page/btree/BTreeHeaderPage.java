@@ -4,24 +4,29 @@ import com.microdb.exception.DbException;
 import com.microdb.model.Row;
 import com.microdb.model.page.Page;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.Arrays;
 import java.util.Iterator;
 
 /**
  * headerPage 用来维护整个file中的pageNo的使用状态，所有headerPage串接成一个双向链表
+ * 存储格式：槽位状态标记（每一个slot占用1个字节）、prevHeaderPageNo（4字节）、nextHeaderPageNo（4字节）
  *
  * @author zhangjw
  * @version 1.0
  */
 public class BTreeHeaderPage extends BTreePage {
     /**
-     * prevHeaderPageNo 和 nextHeaderPageNo的空间
+     * prevHeaderPageNo指针 和 nextHeaderPageNo指针的占用空间
      */
     public static final int POINTER_SIZE_IN_BYTE = 4;
 
+    /**
+     * slot使用状态标识位图
+     * 每个槽位记录文件中的一个PageNo的使用状态，占用空间为1Byte，
+     * slotUsageStatusBitMap[i] 表示的是File中 prePageCount * BTreeHeaderPage.maxSlotNum + i 个pageNo的使用状态
+     */
+    private boolean[] slotUsageStatusBitMap;
 
     /**
      * 上一页
@@ -32,13 +37,6 @@ public class BTreeHeaderPage extends BTreePage {
      * 下一页
      */
     private int nextHeaderPageNo;
-
-    /**
-     * slot使用状态标识位图
-     * 每个槽位记录文件中的一个PageNo的使用状态，占用空间为1Byte，
-     * slotUsageStatusBitMap[i] 表示的是File中 prePageCount * BTreeHeaderPage.maxSlotNum + i 个pageNo的使用状态
-     */
-    private boolean[] slotUsageStatusBitMap;
 
     /**
      * 槽位数量
@@ -52,18 +50,31 @@ public class BTreeHeaderPage extends BTreePage {
 
     @Override
     public byte[] serialize() throws IOException {
-        return new byte[0];
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(Page.defaultPageSizeInByte);
+        DataOutputStream dos = new DataOutputStream(baos);
+        // 1. slotUsageStatusBitMap
+        for (boolean b : slotUsageStatusBitMap) {
+            dos.writeBoolean(b);
+        }
+        // 2.prevHeaderPageNo
+        dos.writeInt(prevHeaderPageNo);
+        // 3.prevHeaderPageNo
+        dos.writeInt(nextHeaderPageNo);
+        return baos.toByteArray();
     }
 
     @Override
     public void deserialize(byte[] pageData) throws IOException {
         DataInputStream bis = new DataInputStream(new ByteArrayInputStream(pageData));
-        this.prevHeaderPageNo = bis.readInt();
-        this.nextHeaderPageNo = bis.readInt();
+        // 1. slotUsageStatusBitMap
         this.slotUsageStatusBitMap = new boolean[maxSlotNum];
         for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
             slotUsageStatusBitMap[i] = bis.readBoolean();
         }
+        // 2.prevHeaderPageNo
+        this.prevHeaderPageNo = bis.readInt();
+        // 3.prevHeaderPageNo
+        this.nextHeaderPageNo = bis.readInt();
         bis.close();
     }
 

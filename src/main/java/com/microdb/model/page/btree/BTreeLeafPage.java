@@ -8,10 +8,7 @@ import com.microdb.model.field.Field;
 import com.microdb.model.page.Page;
 import com.microdb.operator.PredicateEnum;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -20,7 +17,7 @@ import java.util.stream.Collectors;
 
 /**
  * B+ Tree 叶页
- * 格式：slotStatusBitMap + rows + 三个指针（父节点、左右、兄弟节点）
+ * 格式：slotStatusBitMap + 三个指针（父节点、左右、兄弟节点）+ rows
  *
  * @author zhangjw
  * @version 1.0
@@ -33,17 +30,6 @@ public class BTreeLeafPage extends BTreePage {
     public static final int POINTER_SIZE_IN_BYTE = 4;
 
     /**
-     * 结构
-     */
-    private TableDesc tableDesc;
-
-    /**
-     * 一页数据最多可存放的数据行数
-     */
-    private int maxSlotNum;
-
-
-    /**
      * slot使用状态标识位图
      * 为利用 {@link DataOutputStream#writeBoolean(boolean)} api的便利性，
      * 物理文件使用一个byte存储一个状态位
@@ -51,14 +37,14 @@ public class BTreeLeafPage extends BTreePage {
     private boolean[] slotUsageStatusBitMap;
 
     /**
+     * 一页数据最多可存放的数据行数
+     */
+    private int maxSlotNum;
+
+    /**
      * 行
      */
     private Row[] rows;
-
-    // /**
-    //  * 父节点pageNo,可能是internal节点或者是rootPtr节点
-    //  */
-    // private int parentPageNo;
 
     /**
      * 左兄弟
@@ -70,11 +56,10 @@ public class BTreeLeafPage extends BTreePage {
      */
     private int rightSiblingPageNo;
 
-
-    public TableDesc getTableDesc() {
-        return tableDesc;
-    }
-
+    /**
+     * 结构
+     */
+    private TableDesc tableDesc;
 
     public BTreeLeafPage(BTreePageID pageID, byte[] pageData, int keyFieldIndex) throws IOException {
         this.pageID = pageID;
@@ -84,11 +69,9 @@ public class BTreeLeafPage extends BTreePage {
         deserialize(pageData);
     }
 
-    /**
-     * 计算返回一页数据可存放的数据行数
-     * 页字节数容量（4KB）/(表一行占用字节+行的状态标识占用字节），向下取整
-     * 行的状态标识占用位数：每行占用1byte
-     */
+    public TableDesc getTableDesc() {
+        return tableDesc;
+    }
 
     /**
      * 初始化一块leafPae页面默认大小的空间
@@ -104,7 +87,38 @@ public class BTreeLeafPage extends BTreePage {
 
     @Override
     public byte[] serialize() throws IOException {
-        return new byte[0];
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(Page.defaultPageSizeInByte);
+        DataOutputStream dos = new DataOutputStream(baos);
+
+        // 1. slotUsageStatusBitMap
+        for (boolean b : slotUsageStatusBitMap) {
+            dos.writeBoolean(b);
+        }
+        // 2. 父指针、左兄弟、右兄弟指针
+        dos.writeInt(parentPageNo);
+        dos.writeInt(leftSiblingPageNo);
+        dos.writeInt(rightSiblingPageNo);
+
+        // 3. rows 行数据
+        for (int i = 0; i < rows.length; i++) {
+            if (isSlotUsed(i)) {
+                for (int j = 0; j < tableDesc.getAttributesNum(); j++) {
+                    rows[i].getField(j).serialize(dos);
+                }
+            } else {
+                fillBytes(dos, tableDesc.getRowMaxSizeInBytes());
+            }
+        }
+
+        // 4. 填充剩余空间
+        int slotSize = slotUsageStatusBitMap.length;
+        int indexSize = 3 * 4;
+        int rowSize = tableDesc.getRowMaxSizeInBytes() * rows.length;
+        fillBytes(dos, Page.defaultPageSizeInByte - slotSize - indexSize - rowSize);
+
+        dos.flush();
+        return baos.toByteArray();
     }
 
     @Override

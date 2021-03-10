@@ -81,7 +81,6 @@ public class BTreeRootPtrPage extends BTreePage {
         dos.writeByte(rootNodePageType);
         dos.writeInt(firstHeaderPageNo);
         dos.flush();
-
         return baos.toByteArray();
     }
 

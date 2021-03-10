@@ -5,6 +5,7 @@ import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
 import com.microdb.model.page.Page;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -53,6 +54,21 @@ public abstract class BTreePage implements Page {
 
     public abstract Iterator<Row> getRowIterator();
 
+
+    /**
+     * 向dos中填充指定数量的字节
+     *
+     * @param dos      DataOutputStream
+     * @param bytesNum 填充的字节数量
+     * @throws IOException write byte error
+     */
+    protected void fillBytes(DataOutputStream dos, int bytesNum) throws IOException {
+        if (dos == null) {
+            throw new DbException("fill bytes error: stream is closed ");
+        }
+        byte[] emptyBytes = new byte[bytesNum];
+        dos.write(emptyBytes, 0, bytesNum);
+    }
 
     public void setParentPageID(BTreePageID parentPageID) {
         if (parentPageID == null) {

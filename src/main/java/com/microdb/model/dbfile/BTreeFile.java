@@ -39,7 +39,7 @@ public class BTreeFile implements TableFile {
     private int tableId;
 
     /**
-     * 索引字段下标，在{@link TableDesc.Attribute}的index
+     * 索引字段下标，在{@link TableDesc#attributes}的index
      */
     private int keyFieldIndex;
 

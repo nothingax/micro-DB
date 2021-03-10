@@ -9,16 +9,13 @@ import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
 import com.microdb.model.page.Page;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
  * BTreeInternalPage 存储索引Key
- * 格式：父指针、子页类型、slotUsageStatusBitMap、索引键值（m+1个位置，位置0不存储）、子节点指针(m+1个)
+ * 格式：槽位状态标记（每一个slot占用1Byte）、父指针(4Byte)、子页类型（1Byte）、索引键值（m+1个位置，位置0不存储）、子节点指针(m+1 Byte)
  *
  * @author zhangjw
  * @version 1.0
@@ -29,6 +26,18 @@ public class BTreeInternalPage extends BTreePage {
      * 指针长度，4个字节
      */
     private static final int INDEX_SIZE_IN_BYTE = FieldType.INT.getSizeInByte();
+
+    /**
+     * slot使用状态标识位图
+     * 为利用 {@link DataOutputStream#writeBoolean(boolean)} api的便利性，
+     * 物理文件使用一个byte存储一个状态位
+     */
+    private boolean[] slotUsageStatusBitMap;
+
+    /**
+     * 子节点page类型
+     */
+    private int childrenPageType;
 
     /**
      * 所有子节点的page编号
@@ -44,17 +53,6 @@ public class BTreeInternalPage extends BTreePage {
     private Field[] keys;
 
     /**
-     * 子节点page类型
-     */
-    private int childrenPageType;
-
-    /**
-     * slot使用状态标识位图
-     * 为利用 {@link DataOutputStream#writeBoolean(boolean)} api的便利性，
-     * 物理文件使用一个byte存储一个状态位
-     */
-    private boolean[] slotUsageStatusBitMap;
-    /**
      * 一页数据最多可存放的节点元素数量
      */
     private int maxSlotNum;
@@ -69,21 +67,66 @@ public class BTreeInternalPage extends BTreePage {
 
     @Override
     public byte[] serialize() throws IOException {
-        return new byte[0];
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(Page.defaultPageSizeInByte);
+        DataOutputStream dos = new DataOutputStream(baos);
+        // 1. slotUsageStatusBitMap
+        for (boolean b : slotUsageStatusBitMap) {
+            dos.writeBoolean(b);
+        }
+
+        // 2. parentPageNo
+        dos.writeInt(parentPageNo);
+        // 3. childrenPageType
+        dos.writeByte(childrenPageType);
+
+        // 4. keys，从1开始，0位置不存储索引
+        int sizePerKeyInByte = tableDesc.getFieldTypes().get(keyFieldIndex).getSizeInByte();
+        for (int i = 0; i < keys.length; i++) {
+            if (isSlotUsed(i)) {
+                keys[i].serialize(dos);
+            } else {
+                // 填充 keySizeInByte 个字节
+                fillBytes(dos, sizePerKeyInByte);
+            }
+        }
+
+        // 5. childrenPageNos
+        for (int i = 0; i < childrenPageNos.length; i++) {
+            if (isSlotUsed(i)) {
+                dos.writeByte(childrenPageNos[i]);
+            } else {
+                // 填充 INDEX_SIZE_IN_BYTE 个字节
+                fillBytes(dos, INDEX_SIZE_IN_BYTE);
+            }
+        }
+
+        // 6、填充剩余空间
+        int slotSize = slotUsageStatusBitMap.length;
+        int parentPageNoSize = INDEX_SIZE_IN_BYTE;
+        int childrenPageTypeSize = 1;
+        int keysSize = sizePerKeyInByte * (keys.length - 1);
+        int childrenNosSize = childrenPageNos.length * INDEX_SIZE_IN_BYTE;
+        int paddingLength = Page.defaultPageSizeInByte
+                - slotSize - parentPageNoSize - childrenPageTypeSize - keysSize - childrenNosSize;
+        fillBytes(dos, paddingLength);
+
+        dos.flush();
+        return baos.toByteArray();
     }
 
     @Override
     public void deserialize(byte[] pageData) throws IOException {
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(pageData));
-        // 1. parentPageNo
-        parentPageNo = dis.readInt();
-        // 2. childrenPageType
-        childrenPageType = dis.readByte();
-        // 3. slotUsageStatusBitMap
+        // 1. slotUsageStatusBitMap
         slotUsageStatusBitMap = new boolean[maxSlotNum];
         for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
             slotUsageStatusBitMap[i] = dis.readBoolean();
         }
+
+        // 2. parentPageNo
+        parentPageNo = dis.readInt();
+        // 3. childrenPageType
+        childrenPageType = dis.readByte();
 
         // 4. keys
         keys = new Field[maxSlotNum];
