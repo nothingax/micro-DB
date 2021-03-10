@@ -74,7 +74,7 @@ public class HeapPage implements Page {
                     field.serialize(dos);
                 }
             } else { // 空slot的位置填充
-                dos.write(new byte[tableDesc.getRowMaxSizeInBytes()]);
+                fillBytes(dos, tableDesc.getRowMaxSizeInBytes());
             }
         }
 
@@ -83,11 +83,24 @@ public class HeapPage implements Page {
                 HeapPage.defaultPageSizeInByte
                         - slotUsageStatusBitMap.length
                         - tableDesc.getRowMaxSizeInBytes() * rows.length;
-        byte[] zeroes = new byte[zeroSize];
-        dos.write(zeroes, 0, zeroSize);
-
+        fillBytes(dos, zeroSize);
         dos.flush();
         return baos.toByteArray();
+    }
+
+    /**
+     * 向dos中填充指定数量的字节
+     *
+     * @param dos      DataOutputStream
+     * @param bytesNum 填充的字节数量
+     * @throws IOException write byte error
+     */
+    protected void fillBytes(DataOutputStream dos, int bytesNum) throws IOException {
+        if (dos == null) {
+            throw new DbException("fill bytes error: stream is closed ");
+        }
+        byte[] emptyBytes = new byte[bytesNum];
+        dos.write(emptyBytes, 0, bytesNum);
     }
 
     /**
