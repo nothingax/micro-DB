@@ -73,34 +73,81 @@
    
    
    
-   实现此方案基本的类如下：
-   
-   BTreeFile:数据存储的文件
-   
-   RootPage：树的根节点所在的pageNo、根节点所在Page的类型（internal 或leaf）、第一个HeaderPage
-   
-   HeaderPage:以链表形式存储internalPage 和 leafPage 的目录、页空满状态
-   
-   InternalPage：存储key值
-   
-   LeafPage：存储整行数据
-
-1、B+tree 页的结构图
+   #### B+Tree  文件布局
 
 ![pic1-页的结构](./doc/img/pic1.png)
 
 
 
-header page：记录每一个页的使用状态
+页类型区分为四种：RootPTRPage、HeaderPage、InternalPage、LeafPage
+
+RootPTRPage格式如下，记录树的根节点所在的pageNo、根节点所在Page的类型（internal 或leaf）、第一个HeaderPage
 
 ![pic2](./doc/img/pic2.png)
 
 
-2、microDB中-底层的存储结构：page中数据的存储格式
-每种page的存储格式描述、图
 
-3、新增行：页分裂、递归分裂、更新各级节点
+HeaderPage格式如下，作用是跟踪整个文件中使用的页，记录页的使用状态，用于回收和重用，所有的header page 以双向链表连接
 
-代码骨架
+![](./doc/img/pic5.png)
 
-TODO :用线程本地变量实现脏页管理
+
+
+InternalPage 格式如下，用于存储索引值
+
+![](./doc/img/pic4.png)
+
+
+
+LeafPage格式如下，聚簇索引中存储整行数据，普通索引中存放索引value本身
+
+![](./doc/img/pic3.png)
+
+
+
+#### B+树 表的存储
+
+以下存储一个表的示例，图中的Node对应上面的一个page（如图中的[99,203]标示的是一页中存储两个元素），在micro-DB B+树实现中，每次存储或读取都是以页为单位。
+
+![](./doc/img/pic6.png)
+
+
+
+#### 基于B+树的表文件存储基本操作
+
+##### 页分裂
+
+
+
+##### 元素再分布
+
+
+
+##### 页合并
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
