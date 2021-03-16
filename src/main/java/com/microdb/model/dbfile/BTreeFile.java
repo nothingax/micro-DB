@@ -575,10 +575,8 @@ public class BTreeFile implements TableFile {
                 if (bytesRead < BTreeRootPtrPage.rootPtrPageSizeInByte) {
                     throw new IllegalArgumentException("未从btree file 中读取到" + BTreeRootPtrPage.rootPtrPageSizeInByte + "字节");
                 }
-                System.out.println("btree file read  page ,pageNo=" + BTreePageID.getPageNo());
-                BTreeRootPtrPage bTreeRootPtrPage = new BTreeRootPtrPage(BTreePageID, bytes);
-                writePageToDisk(bTreeRootPtrPage);
-                return bTreeRootPtrPage;
+                System.out.println("btree file read  page ,pageNo=" + BTreePageID.getPageNo() + ",BTree type=" + BTreePageID.getPageType());
+                return new BTreeRootPtrPage(BTreePageID, bytes);
             } else {
                 byte[] pageData = new byte[Page.defaultPageSizeInByte];
                 long size = BTreeRootPtrPage.rootPtrPageSizeInByte + (BTreePageID.getPageNo() - 1) * Page.defaultPageSizeInByte;
@@ -594,20 +592,14 @@ public class BTreeFile implements TableFile {
                     throw new IllegalArgumentException("未从btree file 中读取到" + BTreeRootPtrPage.rootPtrPageSizeInByte + "字节");
                 }
 
-                System.out.println("btree file read  page ,pageNo=" + BTreePageID.getPageNo());
+                System.out.println("btree file read  page ,pageNo=" + BTreePageID.getPageNo() + ",BTree type=" + BTreePageID.getPageType());
 
                 if (BTreePageID.getPageType() == BTreePageType.HEADER) {
-                    BTreeHeaderPage headerPage = new BTreeHeaderPage(BTreePageID, pageData);
-                    writePageToDisk(headerPage);
-                    return headerPage;
+                    return new BTreeHeaderPage(BTreePageID, pageData);
                 } else if (BTreePageID.getPageType() == BTreePageType.INTERNAL) {
-                    BTreeInternalPage bTreeInternalPage = new BTreeInternalPage(BTreePageID, pageData, keyFieldIndex);
-                    writePageToDisk(bTreeInternalPage);
-                    return bTreeInternalPage;
+                    return new BTreeInternalPage(BTreePageID, pageData, keyFieldIndex);
                 } else { //BTreePageID.getPageType() == BTreePageType.LEAF
-                    BTreeLeafPage leafPage = new BTreeLeafPage(BTreePageID, pageData, keyFieldIndex);
-                    writePageToDisk(leafPage);
-                    return leafPage;
+                    return new BTreeLeafPage(BTreePageID, pageData, keyFieldIndex);
                 }
             }
         } catch (FileNotFoundException e) {

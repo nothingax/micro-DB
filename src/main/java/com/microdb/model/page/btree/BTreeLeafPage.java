@@ -162,7 +162,12 @@ public class BTreeLeafPage extends BTreePage {
 
     @Override
     public boolean hasEmptySlot() {
-        throw new UnsupportedOperationException("todo");
+        for (boolean b : this.slotUsageStatusBitMap) {
+            if (!b) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

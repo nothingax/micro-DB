@@ -39,7 +39,25 @@ public class DataBase {
      * @param tableFile table file
      * @param tableName table name
      */
+    @Deprecated
     public void addTable(TableFile tableFile, String tableName, TableDesc tableDesc) {
+        DbTable dbTable = new DbTable(tableName, tableFile, tableDesc);
+        tableId2Table.put(tableFile.getTableId(), dbTable);
+        tableName2Table.put(tableName, dbTable);
+    }
+
+    /**
+     * 添加表
+     *
+     * @param tableFile table file
+     * @param tableName table name
+     */
+    public void addTable(TableFile tableFile, String tableName) {
+        TableDesc tableDesc = tableFile.getTableDesc();
+        if (tableDesc == null) {
+            throw new DbException("table file's table desc must not be null");
+        }
+
         DbTable dbTable = new DbTable(tableName, tableFile, tableDesc);
         tableId2Table.put(tableFile.getTableId(), dbTable);
         tableName2Table.put(tableName, dbTable);
