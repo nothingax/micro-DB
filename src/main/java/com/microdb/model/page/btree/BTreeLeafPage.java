@@ -67,7 +67,11 @@ public class BTreeLeafPage extends BTreePage {
         this.keyFieldIndex = keyFieldIndex;
         this.maxSlotNum = this.calculateMaxSlotNum(this.tableDesc);
         deserialize(pageData);
-
+        // if (pageID.getPageNo() > 2) {
+        //     if (parentPageNo == 0) {
+        //         throw new DbException("叶子页读入磁盘error: parent page_no should not be 0");
+        //     }
+        // }
         check(this);
     }
 
@@ -79,12 +83,12 @@ public class BTreeLeafPage extends BTreePage {
         Row[] rows = leafPage.rows;
         int cnt = 0;
         for (Row b : rows) {
-            cnt += b!=null ? 1 : 0;
+            cnt += b != null ? 1 : 0;
         }
 
-        if (existRowCount !=cnt) {
+        if (existRowCount != cnt) {
 
-            throw new DbException("页状态不一致，bitmap与实际存储rows的数量不一致，pageID="+leafPage.getPageID());
+            throw new DbException("页状态不一致，bitmap与实际存储rows的数量不一致，pageID=" + leafPage.getPageID());
         }
     }
 
@@ -107,6 +111,13 @@ public class BTreeLeafPage extends BTreePage {
     @Override
     public byte[] serialize() throws IOException {
         check(this);
+        print(this);
+
+        if (this.getPageID().getPageNo() > 2) {
+            if (this.getParentPageID().getPageNo() == 0) {
+                throw new DbException("leafPage 序列化写入磁盘: parent page_no should not be 0");
+            }
+        }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream(Page.defaultPageSizeInByte);
         DataOutputStream dos = new DataOutputStream(baos);
@@ -139,6 +150,21 @@ public class BTreeLeafPage extends BTreePage {
 
         dos.flush();
         return baos.toByteArray();
+    }
+
+    private void print(BTreeLeafPage leafPage) {
+        int pageNo = leafPage.getPageID().getPageNo();
+        int parentPageNo = leafPage.getParentPageID().getPageNo();
+        int existRowCount = leafPage.getExistRowCount();
+        StringBuilder append = new StringBuilder().append("叶子写入磁盘：")
+                .append("pageNo:")
+                .append(pageNo)
+                .append(",parentPageNo:")
+                .append(parentPageNo)
+                .append(",existRowCount:")
+                .append(existRowCount);
+
+        System.out.println(append.toString());
     }
 
     @Override

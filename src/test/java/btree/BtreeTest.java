@@ -83,5 +83,79 @@ public class BtreeTest {
         }
     }
 
+    /**
+     * t_person表 Leaf页可存储453行记录，Internal页可以存储455个索引
+     * <p>
+     * 需要>455个leaf页来触发Internal页分裂
+     */
+    @Test
+    public void testInternalPageSplit() throws IOException {
+        DbTable t_person = dataBase.getDbTableByName("t_person");
+        long l1 = System.currentTimeMillis();
+        int num = 453;
+        for (int j = 0; j < 456; j++) {
+            for (int i = 0; i < num; i++) {
+                Row row = new Row(personTableDesc);
+                row.setField(0, new IntField(i));
+                row.setField(1, new IntField(18));
+                t_person.insertRow(row);
+            }
+        }
+        System.out.println("插入" + 453 * num + "条记录,耗时(ms)" + (System.currentTimeMillis() - l1));
+    }
+
+
+    /**
+     * 将Page的默认大小设置为256字节，而非4KB
+     */
+    @Test
+    public void testInternalPageSplitWithSmallPage() throws IOException {
+        DbTable t_person = dataBase.getDbTableByName("t_person");
+        long l1 = System.currentTimeMillis();
+        int num = 12;
+        // for (int i = 0; i < num; i++) {
+        //     Row row = new Row(personTableDesc);
+        //     row.setField(0, new IntField(i));
+        //     row.setField(1, new IntField(18));
+        //     t_person.insertRow(row);
+        // }
+
+
+        int leafPageNum = 13;
+        for (int j = 0; j < leafPageNum; j++) {
+            for (int i = 0; i < num; i++) {
+                Row row = new Row(personTableDesc);
+                row.setField(0, new IntField(i));
+                row.setField(1, new IntField(18));
+                t_person.insertRow(row);
+            }
+        }
+
+        // for (int j = 0; j < leafPageNum; j++) {
+        //     for (int i = 0; i < num; i++) {
+        //         Row row = new Row(personTableDesc);
+        //         row.setField(0, new IntField(i));
+        //         row.setField(1, new IntField(18));
+        //         t_person.insertRow(row);
+        //     }
+        // }
+        //
+        // for (int i = 0; i < 1; i++) {
+        //     Row row = new Row(personTableDesc);
+        //     row.setField(0, new IntField(i));
+        //     row.setField(1, new IntField(18));
+        //     t_person.insertRow(row);
+        // }
+
+        // for (int i = 0; i < num; i++) {
+        //     Row row = new Row(personTableDesc);
+        //     row.setField(0, new IntField(i));
+        //     row.setField(1, new IntField(18));
+        //     t_person.insertRow(row);
+        // }
+        //
+        System.out.println("插入" + 453 * num + "条记录,耗时(ms)" + (System.currentTimeMillis() - l1));
+
+    }
 
 }

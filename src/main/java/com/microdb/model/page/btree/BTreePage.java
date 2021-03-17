@@ -78,9 +78,9 @@ public abstract class BTreePage implements Page {
             throw new DbException("table id mismatch");
         }
 
-        if (parentPageID.getPageType() != BTreePageType.ROOT_PTR) {
+        if (parentPageID.getPageType() == BTreePageType.ROOT_PTR) {
             parentPageNo = 0;
-        } else if (parentPageID.getPageType() != BTreePageType.INTERNAL) {
+        } else if (parentPageID.getPageType() == BTreePageType.INTERNAL) {
             parentPageNo = parentPageID.getPageNo();
         } else {
             throw new DbException("parent must be internal or root node");

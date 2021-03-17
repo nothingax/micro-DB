@@ -173,6 +173,7 @@ public class BTreeRootPtrPage extends BTreePage {
                 throw new DbException("page id is not match");
             }
             this.rootNodePageNo = rootNodePageID.getPageNo();
+            this.rootNodePageType = rootNodePageID.getPageType();
         }
     }
 }

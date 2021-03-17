@@ -76,6 +76,9 @@ public class BTreeFile implements TableFile {
         BTreeLeafPage leafPage = this.findLeafPage(rootPtrPage.getRootNodePageID(), row.getField(keyFieldIndex));
         if (!leafPage.hasEmptySlot()) {
             leafPage = this.splitLeafPage(leafPage, row.getField(keyFieldIndex));
+            if (leafPage.getParentPageID().getPageNo() == 0) {
+                throw new DbException("叶页分裂后，父节点不应指向rootPtr");
+            }
         }
 
         leafPage.insertRow(row);
@@ -690,6 +693,8 @@ public class BTreeFile implements TableFile {
 
         // 新页的首元素作为键，获取midKey应该插入的父节点page，可能触发父节点分裂，甚至递归分裂
         Field midKey = rowToMove[0].getField(keyFieldIndex);
+
+        System.out.println("分列前的父页ID="+leafPageNeedSplit.getParentPageID().getPageNo());
         BTreeInternalPage parentInternalPage = findParentPageToPlaceEntry(leafPageNeedSplit.getParentPageID(), midKey);
         BTreePageID oldRightSibPageID = leafPageNeedSplit.getRightSibPageID();
 
@@ -701,6 +706,10 @@ public class BTreeFile implements TableFile {
         // 设置新页的父节点，新页和原页的父节点一定是同一个
         newRightSibPage.setParentPageID(parentInternalPage.getPageID());
         leafPageNeedSplit.setParentPageID(parentInternalPage.getPageID());
+        if (newRightSibPage.getParentPageID().getPageNo() == 0) {
+            throw new DbException("error");
+        }
+
 
         // 父节点Page，插入midKey元素
         BTreeEntry newParentEntry = new BTreeEntry(midKey, leafPageNeedSplit.getPageID(), newRightSibPage.getPageID());
@@ -730,10 +739,12 @@ public class BTreeFile implements TableFile {
             parentPage = (BTreeInternalPage) getEmptyPage(BTreePageType.INTERNAL);
             BTreeRootPtrPage rootPrtPage = getRootPrtPage();
             rootPrtPage.setRootNodePageID(parentPage.getPageID());
+            writePageToDisk(rootPrtPage);
         } else {
             parentPage = (BTreeInternalPage) readPageFromDisk(parentPageID);
         }
 
+        System.out.println("internal page getExistCount==" + parentPage.getExistCount() + ",pageNo=" + parentPage.getPageID().getPageNo());
         // 父节点没有空槽位则分裂
         if (!parentPage.hasEmptySlot()) {
             parentPage = splitInternalPage(parentPage, keyToInsert);
@@ -786,7 +797,7 @@ public class BTreeFile implements TableFile {
 
         // 从上一级找到一个page，容纳升级的节点midEntry，递归触发上级page的递归分裂,调用findParentPageToPlaceEntry
         // 原页和新页都更新父节点为新获取的父节点
-        BTreeInternalPage newParentInternalPage = findParentPageToPlaceEntry(internalPageNeedSplit.getPageID(), midEntry.getKey());
+        BTreeInternalPage newParentInternalPage = findParentPageToPlaceEntry(internalPageNeedSplit.getParentPageID(), midEntry.getKey());
         newParentInternalPage.insertEntry(midEntry);
         internalPageNeedSplit.setParentPageID(newParentInternalPage.getPageID());
         newInternalPage.setParentPageID(newParentInternalPage.getPageID());
@@ -822,22 +833,30 @@ public class BTreeFile implements TableFile {
      * 返回一个空叶页
      */
     private Page getEmptyPage(int pageType) throws IOException {
-        int emptyPageNo = getEmptyPageNo();
-        this.writeEmptyPageToDisk(emptyPageNo, pageType);
-        BTreePageID BTreePageID = new BTreePageID(tableId, emptyPageNo, pageType);
+        int getExistPageCountExceptRootPtr = getEmptyPageNo();
+        int newPageNo = getExistPageCountExceptRootPtr;// pageNo 从0开始计数
+        this.writeEmptyPageToDisk(newPageNo, pageType);
+        BTreePageID BTreePageID = new BTreePageID(tableId, newPageNo, pageType);
         return this.readPageFromDisk(BTreePageID);
     }
 
+    /**
+     * 写入文件一个新页
+     *
+     * @param pageNo   写入的页号
+     * @param pageType 页类型
+     */
     private void writeEmptyPageToDisk(int pageNo, int pageType) throws IOException {
         // TODO opt
-        int pageSizeInByte = Page.defaultPageSizeInByte; // 除 ROOT_PTR之外的页大小
-        if (pageType == BTreePageType.ROOT_PTR) {
-            pageSizeInByte = BTreeRootPtrPage.rootPtrPageSizeInByte;
-        }
-
         RandomAccessFile rf = new RandomAccessFile(file, "rw");
-        rf.seek(BTreeRootPtrPage.defaultPageSizeInByte + (pageNo - 1) * pageSizeInByte);
-        rf.write(new byte[pageSizeInByte]);
+        if (pageType == BTreePageType.ROOT_PTR) {
+            rf.seek(0);
+            rf.write(new byte[BTreeRootPtrPage.rootPtrPageSizeInByte]);
+        } else {
+            int pageSizeInByte = Page.defaultPageSizeInByte; // 除 ROOT_PTR之外的页大小
+            rf.seek(BTreeRootPtrPage.rootPtrPageSizeInByte + (pageNo - 1) * pageSizeInByte);
+            rf.write(new byte[pageSizeInByte]);
+        }
         rf.close();
     }
 
@@ -874,7 +893,7 @@ public class BTreeFile implements TableFile {
             }
         }
 
-        // 没有headerPage或现有的HeaderPage均没有空槽位，则新增一个headerPage
+        // 没有headerPage或现有的HeaderPage均没有空槽位，直接新增一个新页
         if (headerPageID == null) {
             synchronized (this) {
                 BufferedOutputStream bw = new BufferedOutputStream(new FileOutputStream(file, true));
@@ -927,6 +946,8 @@ public class BTreeFile implements TableFile {
                 nextSearchPageId = entry.getRightChildPageID();
             }
         }
+
+        System.out.println("B+Tree中查询页面，nextSearchPageId=" + nextSearchPageId);
         return this.findLeafPage(nextSearchPageId, indexField);
     }
 

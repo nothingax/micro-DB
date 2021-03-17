@@ -93,7 +93,7 @@ public class BTreeInternalPage extends BTreePage {
         // 5. childrenPageNos
         for (int i = 0; i < childrenPageNos.length; i++) {
             if (isSlotUsed(i)) {
-                dos.writeByte(childrenPageNos[i]);
+                dos.writeInt(childrenPageNos[i]);
             } else {
                 // 填充 INDEX_SIZE_IN_BYTE 个字节
                 fillBytes(dos, INDEX_SIZE_IN_BYTE);
@@ -424,6 +424,10 @@ public class BTreeInternalPage extends BTreePage {
         }
 
         public boolean hasNext() {
+            if (nextEntryToReturn != null) {
+                return true;
+            }
+
             if (prevChildPageID == null) { // 首次迭代
                 prevChildPageID = internalPage.getChildPageID(0);
                 if (prevChildPageID == null) {
@@ -431,8 +435,9 @@ public class BTreeInternalPage extends BTreePage {
                 }
             }
 
-            while (true) {
+            while (curIndex < internalPage.getMaxSlotNum()) {
                 final int index = curIndex;
+                curIndex++;
                 Field key = internalPage.getKey(index);
                 BTreePageID childPageId = internalPage.getChildPageID(index);
                 if (key != null && childPageId != null) {
@@ -441,9 +446,9 @@ public class BTreeInternalPage extends BTreePage {
                     prevChildPageID = childPageId;
                     return true;
                 }
-
-                curIndex++;
             }
+
+            return false;
         }
 
         public BTreeEntry next() {

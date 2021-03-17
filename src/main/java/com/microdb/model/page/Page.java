@@ -16,7 +16,7 @@ public interface Page {
     /**
      * 默认每页4KB
      */
-    int defaultPageSizeInByte = 4096;
+    int defaultPageSizeInByte = 128;
 
     PageID getPageID();
 
