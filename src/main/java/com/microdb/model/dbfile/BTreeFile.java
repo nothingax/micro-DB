@@ -735,7 +735,7 @@ public class BTreeFile implements TableFile {
         }
 
         // 父节点没有空槽位则分裂
-        if (parentPage.hasEmptySlot()) {
+        if (!parentPage.hasEmptySlot()) {
             parentPage = splitInternalPage(parentPage, keyToInsert);
         }
 

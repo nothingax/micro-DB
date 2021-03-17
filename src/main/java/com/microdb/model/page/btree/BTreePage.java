@@ -89,7 +89,7 @@ public abstract class BTreePage implements Page {
 
     public BTreePageID getParentPageID() {
         if (parentPageNo == 0) { // 没有内部节点时，父节点是RootPtr
-            new BTreePageID(this.pageID.getTableId(), 0, BTreePageType.ROOT_PTR);
+            return new BTreePageID(this.pageID.getTableId(), 0, BTreePageType.ROOT_PTR);
         }
         return new BTreePageID(this.pageID.getTableId(), parentPageNo, BTreePageType.INTERNAL);
     }

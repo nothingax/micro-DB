@@ -67,6 +67,25 @@ public class BTreeLeafPage extends BTreePage {
         this.keyFieldIndex = keyFieldIndex;
         this.maxSlotNum = this.calculateMaxSlotNum(this.tableDesc);
         deserialize(pageData);
+
+        check(this);
+    }
+
+    private void check(BTreeLeafPage leafPage) {
+        // bitmap中数量
+        int existRowCount = leafPage.getExistRowCount();
+
+        // 实际存储的数量
+        Row[] rows = leafPage.rows;
+        int cnt = 0;
+        for (Row b : rows) {
+            cnt += b!=null ? 1 : 0;
+        }
+
+        if (existRowCount !=cnt) {
+
+            throw new DbException("页状态不一致，bitmap与实际存储rows的数量不一致，pageID="+leafPage.getPageID());
+        }
     }
 
     public TableDesc getTableDesc() {
@@ -87,6 +106,7 @@ public class BTreeLeafPage extends BTreePage {
 
     @Override
     public byte[] serialize() throws IOException {
+        check(this);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream(Page.defaultPageSizeInByte);
         DataOutputStream dos = new DataOutputStream(baos);
@@ -150,6 +170,8 @@ public class BTreeLeafPage extends BTreePage {
                         .map(x -> x.parse(dis))
                         .collect(Collectors.toList());
                 row.setFields(fieldList);
+                row.setKeyItem(new KeyItem(pageID, i));
+                rows[i] = row;
             } else {
                 rows[i] = null;
                 for (int i1 = 0; i1 < rowMaxSizeInBytes; i1++) {
@@ -338,6 +360,7 @@ public class BTreeLeafPage extends BTreePage {
     public void deleteRow(Row row) {
         int slotIndex = row.getKeyItem().getSlotIndex();
         slotUsageStatusBitMap[slotIndex] = false;
+        rows[slotIndex] = null;
         row.setKeyItem(null);
     }
 

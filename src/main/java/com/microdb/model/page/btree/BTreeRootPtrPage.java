@@ -166,7 +166,7 @@ public class BTreeRootPtrPage extends BTreePage {
             rootNodePageNo = 0;
         } else {
             if (rootNodePageID.getPageType() != BTreePageType.INTERNAL
-                    || rootNodePageID.getPageType() != BTreePageType.LEAF) {
+                    && rootNodePageID.getPageType() != BTreePageType.LEAF) {
                 throw new DbException("root node page iD type must be BTreePageType.INTERNAL or BTreePageType.LEAF");
             }
             if (rootNodePageID.getTableId() != this.pageID.getTableId()) {

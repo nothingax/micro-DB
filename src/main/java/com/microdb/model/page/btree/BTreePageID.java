@@ -63,4 +63,13 @@ public class BTreePageID implements PageID {
     public int hashCode() {
         return Objects.hash(tableId, pageNo, pageType);
     }
+
+    @Override
+    public String toString() {
+        return "BTreePageID{" +
+                "tableId=" + tableId +
+                ", pageNo=" + pageNo +
+                ", pageType=" + pageType +
+                '}';
+    }
 }

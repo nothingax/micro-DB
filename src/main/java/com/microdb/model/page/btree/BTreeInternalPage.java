@@ -81,7 +81,7 @@ public class BTreeInternalPage extends BTreePage {
 
         // 4. keys，从1开始，0位置不存储索引
         int sizePerKeyInByte = tableDesc.getFieldTypes().get(keyFieldIndex).getSizeInByte();
-        for (int i = 0; i < keys.length; i++) {
+        for (int i = 1; i < keys.length; i++) {
             if (isSlotUsed(i)) {
                 keys[i].serialize(dos);
             } else {
@@ -262,7 +262,7 @@ public class BTreeInternalPage extends BTreePage {
         }
 
         // 第一个节点特殊处理
-        if (getExistCount() == getMaxSlotNum()) {
+        if (getExistCount() == 0) {
             childrenPageNos[0] = entry.getLeftChildPageID().getPageNo();
             childrenPageNos[1] = entry.getRightChildPageID().getPageNo();
             keys[1] = entry.getKey(); // keyList 0位置不存放数据

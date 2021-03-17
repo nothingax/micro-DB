@@ -47,18 +47,34 @@ public class BtreeTest {
         personTableDesc = tableDesc;
     }
 
+    /**
+     * t_person表叶子页可存储453行记录
+     */
     @Test
     public void testInsert() throws IOException {
         DbTable t_person = dataBase.getDbTableByName("t_person");
 
-        for (int i = 0; i < 100; i++) {
+        long l1 = System.currentTimeMillis();
+        int num = 453;
+        // 第一页
+        for (int i = 0; i < num; i++) {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
             row.setField(1, new IntField(18));
             t_person.insertRow(row);
         }
-    }
+        System.out.println("插入" + num + "条记录,耗时(ms)" + (System.currentTimeMillis() - l1));
 
+        // 第2页，触发页分裂
+        // 测试 leaf页分裂逻辑
+        for (int i = 0; i < 1; i++) {
+            Row row = new Row(personTableDesc);
+            row.setField(0, new IntField(i));
+            row.setField(1, new IntField(18));
+            t_person.insertRow(row);
+        }
+
+    }
 
 
 }
