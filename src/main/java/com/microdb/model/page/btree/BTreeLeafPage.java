@@ -305,7 +305,7 @@ public class BTreeLeafPage extends BTreePage {
         if (pageNo == 0) {
             return null;
         }
-        return new BTreePageID(pageID.getTableId(), pageNo, BTreePageType.INTERNAL);
+        return new BTreePageID(pageID.getTableId(), pageNo, BTreePageType.LEAF);
     }
 
     public BTreePageID getRightSibPageID() {

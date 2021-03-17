@@ -48,7 +48,7 @@ public class BtreeTest {
     }
 
     /**
-     * t_person表叶子页可存储453行记录
+     * t_person表 Leaf页可存储453行记录，Internal页可以存储455个索引
      */
     @Test
     public void testInsert() throws IOException {
@@ -74,6 +74,13 @@ public class BtreeTest {
             t_person.insertRow(row);
         }
 
+        //
+        for (int i = 0; i < num; i++) {
+            Row row = new Row(personTableDesc);
+            row.setField(0, new IntField(i));
+            row.setField(1, new IntField(18));
+            t_person.insertRow(row);
+        }
     }
 
 
