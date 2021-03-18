@@ -72,6 +72,9 @@ public class TableDesc implements Serializable {
                 .sum();
     }
 
+    public FieldType getFieldType(int keyFieldIndex) {
+        return this.attributes.get(keyFieldIndex).getFieldType();
+    }
     /**
      * 属性，表中的一列
      */

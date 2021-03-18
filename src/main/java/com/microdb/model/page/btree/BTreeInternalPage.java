@@ -256,9 +256,8 @@ public class BTreeInternalPage extends BTreePage {
      * 找位置，移动数据空出位置，插入节点
      */
     public void insertEntry(BTreeEntry entry) {
-        // 首次插入节点时更新
         if (childrenPageType == BTreePageType.ROOT_PTR) {
-            childrenPageType = BTreePageType.LEAF;
+            childrenPageType = entry.getLeftChildPageType();
         }
 
         // 第一个节点特殊处理

@@ -76,13 +76,21 @@ public class BTreeFile implements TableFile {
         BTreeLeafPage leafPage = this.findLeafPage(rootPtrPage.getRootNodePageID(), row.getField(keyFieldIndex));
         if (!leafPage.hasEmptySlot()) {
             leafPage = this.splitLeafPage(leafPage, row.getField(keyFieldIndex));
+            System.out.println("页分裂" + leafPage.getPageID());
             if (leafPage.getParentPageID().getPageNo() == 0) {
-                throw new DbException("叶页分裂后，父节点不应指向rootPtr");
+                throw new DbException("叶页分裂后，父parent no 不应为0");
             }
         }
 
+        System.out.println("insertRow" + row);
         leafPage.insertRow(row);
-        writePageToDisk(leafPage);
+        try {
+            writePageToDisk(leafPage);
+            System.out.println("writePageToDisk" + leafPage.getPageID());
+        } catch (Exception e) {
+            System.out.println("error row=" + row.toString());
+            throw new DbException(e);
+        }
     }
 
     /**
@@ -591,8 +599,8 @@ public class BTreeFile implements TableFile {
                 if (bytesRead == -1) {
                     throw new IllegalArgumentException("btree file read from disk error：reach the end of the file");
                 }
-                if (bytesRead < BTreeRootPtrPage.rootPtrPageSizeInByte) {
-                    throw new IllegalArgumentException("未从btree file 中读取到" + BTreeRootPtrPage.rootPtrPageSizeInByte + "字节");
+                if (bytesRead < Page.defaultPageSizeInByte) {
+                    throw new IllegalArgumentException("未从btree file 中读取到" + Page.defaultPageSizeInByte + "字节");
                 }
 
                 System.out.println("btree file read  page ,pageNo=" + BTreePageID.getPageNo() + ",BTree type=" + BTreePageID.getPageType());

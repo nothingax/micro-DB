@@ -69,4 +69,11 @@ public class BTreeEntry {
         this.keyItem = keyItem;
     }
 
+    public int getLeftChildPageType() {
+        return this.getLeftChildPageID().getPageType();
+    }
+
+    public int getRightChildPageType() {
+        return this.getRightChildPageID().getPageType();
+    }
 }
