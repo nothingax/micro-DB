@@ -86,11 +86,11 @@ public class Row implements Serializable {
     }
     @Override
     public String toString() {
-        StringBuilder column = new StringBuilder();
+        StringBuilder column = new StringBuilder().append("[");
         for (int i = 0; i < fields.length - 1; i++) {
             column.append(fields[i].toString()).append("\t");
         }
-        column.append(fields[fields.length - 1]).append("\n");
+        column.append(fields[fields.length - 1]).append("]");
         return column.toString();
     }
 

@@ -82,7 +82,7 @@ public class BTreeFile implements TableFile {
             }
         }
 
-        System.out.println("insertRow" + row);
+        System.out.println("insertRow:" + row);
         leafPage.insertRow(row);
         try {
             writePageToDisk(leafPage);
@@ -702,7 +702,7 @@ public class BTreeFile implements TableFile {
         // 新页的首元素作为键，获取midKey应该插入的父节点page，可能触发父节点分裂，甚至递归分裂
         Field midKey = rowToMove[0].getField(keyFieldIndex);
 
-        System.out.println("分列前的父页ID="+leafPageNeedSplit.getParentPageID().getPageNo());
+        System.out.println("分列前的父页ID=" + leafPageNeedSplit.getParentPageID().getPageNo());
         BTreeInternalPage parentInternalPage = findParentPageToPlaceEntry(leafPageNeedSplit.getParentPageID(), midKey);
         BTreePageID oldRightSibPageID = leafPageNeedSplit.getRightSibPageID();
 
@@ -773,8 +773,17 @@ public class BTreeFile implements TableFile {
         // 获取一个可用的页
         BTreeInternalPage newInternalPage = (BTreeInternalPage) getEmptyPage(BTreePageType.INTERNAL);
 
+        // 2:1 +1
+        // 3：1+2
+        // 4：2+2
+        // 5：2+3
+        int numToMove = internalPageNeedSplit.getExistCount() - (internalPageNeedSplit.getExistCount() / 2);
+        if (Math.abs(internalPageNeedSplit.getExistCount() / 2 - numToMove) >= 2) {
+            throw new DbException("splitInternalPage 失败，元素没有均分");
+        }
+
         Iterator<BTreeEntry> it = internalPageNeedSplit.getReverseIterator();
-        BTreeEntry[] entryToMove = new BTreeEntry[(internalPageNeedSplit.getExistCount() + 1) / 2];
+        BTreeEntry[] entryToMove = new BTreeEntry[numToMove];
         int moveCnt = entryToMove.length - 1;
         BTreeEntry midEntry = null;
         while (moveCnt >= 0 && it.hasNext()) {

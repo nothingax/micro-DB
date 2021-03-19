@@ -106,7 +106,7 @@ public class BtreeTest {
 
 
     /**
-     * 将Page的默认大小设置为256字节，而非4KB
+     * 将Page的默认大小设置为48字节,便于测测试
      */
     @Test
     public void testInternalPageSplitWithSmallPage() throws IOException {
@@ -121,24 +121,32 @@ public class BtreeTest {
         // }
 
 
-        int leafPageNum = 13;
-        for (int j = 0; j < leafPageNum; j++) {
-            for (int i = 1; i < num+1; i++) {
-                Row row = new Row(personTableDesc);
-                row.setField(0, new IntField(i));
-                row.setField(1, new IntField(18));
-                t_person.insertRow(row);
-            }
-        }
+        // int leafPageNum = 13;
+        // for (int j = 0; j < leafPageNum; j++) {
+        //     for (int i = 1; i < num+1; i++) {
+        //         Row row = new Row(personTableDesc);
+        //         row.setField(0, new IntField(i));
+        //         row.setField(1, new IntField(18));
+        //         t_person.insertRow(row);
+        //     }
+        // }
+        //
+        //
+        // for (int j = 0; j < 1000; j++) {
+        //     for (int i = 1; i < num+1; i++) {
+        //         Row row = new Row(personTableDesc);
+        //         row.setField(0, new IntField(i));
+        //         row.setField(1, new IntField(18));
+        //         t_person.insertRow(row);
+        //     }
+        // }
 
 
-        for (int j = 0; j < 1000; j++) {
-            for (int i = 1; i < num+1; i++) {
-                Row row = new Row(personTableDesc);
-                row.setField(0, new IntField(i));
-                row.setField(1, new IntField(18));
-                t_person.insertRow(row);
-            }
+        for (int i = 1; i < 10000; i++) {
+            Row row = new Row(personTableDesc);
+            row.setField(0, new IntField(i));
+            row.setField(1, new IntField(18));
+            t_person.insertRow(row);
         }
 
         // for (int j = 0; j < leafPageNum; j++) {
@@ -167,5 +175,7 @@ public class BtreeTest {
         System.out.println("插入" + 453 * num + "条记录,耗时(ms)" + (System.currentTimeMillis() - l1));
 
     }
+
+// insert Entry
 
 }

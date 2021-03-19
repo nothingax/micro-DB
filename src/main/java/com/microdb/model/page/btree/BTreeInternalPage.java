@@ -8,6 +8,7 @@ import com.microdb.model.field.Field;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
 import com.microdb.model.page.Page;
+import com.microdb.operator.PredicateEnum;
 
 import java.io.*;
 import java.util.Iterator;
@@ -21,6 +22,12 @@ import java.util.NoSuchElementException;
  * @version 1.0
  */
 public class BTreeInternalPage extends BTreePage {
+
+    // TODO 重写
+    public class ChildPages {
+        int leftPageNo;
+        int rightPageNo;
+    }
 
     /**
      * 指针长度，4个字节
@@ -45,6 +52,9 @@ public class BTreeInternalPage extends BTreePage {
      * size size为key的数量+1
      */
     private int[] childrenPageNos;
+
+    // TODO 重写
+    private ChildPages[] childPages;
 
     /**
      * 存储本页中的key
@@ -210,9 +220,13 @@ public class BTreeInternalPage extends BTreePage {
     public int getExistCount() {
         int cnt = 0;
 
-        for (boolean b : slotUsageStatusBitMap) {
-            cnt += b ? 1 : 0;
+        // slotUsageStatusBitMap 第0位置不对应元素
+        for (int i = 1; i < slotUsageStatusBitMap.length; i++) {
+            cnt += slotUsageStatusBitMap[i] ? 1 : 0;
         }
+        // for (boolean b : slotUsageStatusBitMap) {
+        //     cnt += b ? 1 : 0;
+        // }
 
         return cnt;
     }
@@ -284,6 +298,10 @@ public class BTreeInternalPage extends BTreePage {
             if (isSlotUsed(i)) {
                 if (childrenPageNos[i] == entry.getLeftChildPageID().getPageNo()
                         || childrenPageNos[i] == entry.getRightChildPageID().getPageNo()) {
+                    if (i > 0 && keys[i].compare(PredicateEnum.GREATER_THAN, entry.getKey())) {
+                        throw new DbException("排序错误，entry不应插入此位置");
+                    }
+
                     lessOrEqKey = i;
                     if (childrenPageNos[i] == entry.getRightChildPageID().getPageNo()) {
                         childrenPageNos[i] = entry.getLeftChildPageID().getPageNo();
@@ -354,6 +372,8 @@ public class BTreeInternalPage extends BTreePage {
         KeyItem keyItem = entry.getKeyItem();
         markSlotUsed(keyItem.getSlotIndex(), false);
         entry.setKeyItem(null);
+        keys[keyItem.getSlotIndex()] = null;
+        childrenPageNos[keyItem.getSlotIndex()] = 0;
     }
 
     public boolean isLessThanHalfFull() {
@@ -479,7 +499,7 @@ public class BTreeInternalPage extends BTreePage {
         /**
          * 暂存上一次取得的childPageID，在构造BtreeEntry时做临时变量使用
          */
-        BTreePageID prevChildPageID = null;
+        // BTreePageID prevChildPageID = null;
 
         /**
          * 做临时变量使用，在next()中返回
@@ -543,7 +563,7 @@ public class BTreeInternalPage extends BTreePage {
                 if (childPageID != null) {
                     nextEntryToReturn = new BTreeEntry(key, childPageID, reversePrevChildPageID);
                     nextEntryToReturn.setKeyItem(keyItem);
-                    prevChildPageID = childPageID;
+                    reversePrevChildPageID = childPageID;
                     key = internalPage.getKey(index);
                     keyItem = new KeyItem(internalPage.getPageID(), index);
                     return true;
