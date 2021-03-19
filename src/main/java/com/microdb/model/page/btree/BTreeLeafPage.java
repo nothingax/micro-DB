@@ -443,7 +443,7 @@ public class BTreeLeafPage extends BTreePage {
 
         public BTreeLeafPageIterator(BTreeLeafPage leafPage) {
             this.leafPage = leafPage;
-            this.curIndex = leafPage.getMaxSlotNum() - 1;
+            this.curIndex = 0;
         }
 
         public boolean hasNext() {
@@ -453,7 +453,7 @@ public class BTreeLeafPage extends BTreePage {
 
             try {
                 while (curIndex >= 0) {
-                    nextRowToReturn = leafPage.getRow(curIndex--);
+                    nextRowToReturn = leafPage.getRow(curIndex++);
                     if (nextRowToReturn != null) {
                         return true;
                     }

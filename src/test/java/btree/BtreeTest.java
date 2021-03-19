@@ -7,6 +7,8 @@ import com.microdb.model.TableDesc;
 import com.microdb.model.dbfile.BTreeFile;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
+import com.microdb.operator.Delete;
+import com.microdb.operator.SeqScan;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -111,69 +113,48 @@ public class BtreeTest {
     @Test
     public void testInternalPageSplitWithSmallPage() throws IOException {
         DbTable t_person = dataBase.getDbTableByName("t_person");
-        long l1 = System.currentTimeMillis();
-        int num = 12;
-        // for (int i = 0; i < num; i++) {
-        //     Row row = new Row(personTableDesc);
-        //     row.setField(0, new IntField(i));
-        //     row.setField(1, new IntField(18));
-        //     t_person.insertRow(row);
-        // }
 
-
-        // int leafPageNum = 13;
-        // for (int j = 0; j < leafPageNum; j++) {
-        //     for (int i = 1; i < num+1; i++) {
-        //         Row row = new Row(personTableDesc);
-        //         row.setField(0, new IntField(i));
-        //         row.setField(1, new IntField(18));
-        //         t_person.insertRow(row);
-        //     }
-        // }
-        //
-        //
-        // for (int j = 0; j < 1000; j++) {
-        //     for (int i = 1; i < num+1; i++) {
-        //         Row row = new Row(personTableDesc);
-        //         row.setField(0, new IntField(i));
-        //         row.setField(1, new IntField(18));
-        //         t_person.insertRow(row);
-        //     }
-        // }
-
-
-        for (int i = 1; i < 10000; i++) {
+        // 完成内部页分裂
+        for (int i = 1; i < 14; i++) {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
             row.setField(1, new IntField(18));
             t_person.insertRow(row);
         }
 
-        // for (int j = 0; j < leafPageNum; j++) {
-        //     for (int i = 0; i < num; i++) {
-        //         Row row = new Row(personTableDesc);
-        //         row.setField(0, new IntField(i));
-        //         row.setField(1, new IntField(18));
-        //         t_person.insertRow(row);
-        //     }
-        // }
-        //
-        // for (int i = 0; i < 1; i++) {
-        //     Row row = new Row(personTableDesc);
-        //     row.setField(0, new IntField(i));
-        //     row.setField(1, new IntField(18));
-        //     t_person.insertRow(row);
-        // }
+        // 全部删除
+        // TODO 不使用缓存的情况下，迭代器无法跟踪页元素重分布导致业内的元素变化
+        SeqScan scan = new SeqScan(t_person.getTableId());
+        Delete delete = new Delete(scan);
+        delete.open();
+        while (delete.hasNext()) {
+            // 删除
+            delete.next();
+        }
+    }
+  /**
+     * seqScan
+     */
+    @Test
+    public void SeqScanWithBTree() throws IOException {
+        DbTable t_person = dataBase.getDbTableByName("t_person");
+        long l1 = System.currentTimeMillis();
+        int num = 12;
+        // 完成内部页分裂
+        for (int i = 1; i < 14; i++) {
+            Row row = new Row(personTableDesc);
+            row.setField(0, new IntField(i));
+            row.setField(1, new IntField(18));
+            t_person.insertRow(row);
+        }
 
-        // for (int i = 0; i < num; i++) {
-        //     Row row = new Row(personTableDesc);
-        //     row.setField(0, new IntField(i));
-        //     row.setField(1, new IntField(18));
-        //     t_person.insertRow(row);
-        // }
-        //
-        System.out.println("插入" + 453 * num + "条记录,耗时(ms)" + (System.currentTimeMillis() - l1));
-
+        // 全部删除
+        SeqScan scan = new SeqScan(t_person.getTableId());
+        scan.open();
+        while (scan.hasNext()) {
+            Row next = scan.next();
+            System.out.println(next);
+        }
     }
 
 // insert Entry

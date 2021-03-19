@@ -63,4 +63,13 @@ public class DbTable {
         }
         this.tableFile.insertRow(row);
     }
+
+    public void deleteRow(Row row) throws IOException {
+        if (!Objects.equals(row.getTableDesc(), this.getTableDesc())) {
+            throw new DbException("insertRow error: TableDesc not match");
+        }
+        System.out.println("删除行" + row);
+        this.tableFile.deleteRow(row);
+    }
+
 }

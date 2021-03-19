@@ -339,8 +339,8 @@ public class BTreeFile implements TableFile {
                                       BTreeEntry rightParentEntry) throws IOException {
         // 找到同一个父节点的左侧page，判断他容量是否不足一半，若是，则合并，不是则stealFromLeafPage 右侧page同理
 
-        // 取与leafPageLessThanHalfFull有同一个父leftParentEntry的page，与leafPageLessThanHalfFull一起重分配
         if (leftParentEntry != null && leftParentEntry.getLeftChildPageID() != null) {
+            // 与left兄弟页分配
             BTreePageID leftChildPageID = leftParentEntry.getLeftChildPageID();
             BTreeLeafPage leftLeafPage = (BTreeLeafPage) readPageFromDisk(leftChildPageID);
             if (leftLeafPage.isLessThanHalfFull()) {
@@ -349,13 +349,13 @@ public class BTreeFile implements TableFile {
                 fetchFromLeftLeafPage(leafPageLessThanHalfFull, leftLeafPage, parentPage, leftParentEntry);
             }
         } else if (rightParentEntry != null && rightParentEntry.getRightChildPageID() != null) {
-            // 取与leafPageLessThanHalfFull有同一个父rightParentEntry的page，与leafPageLessThanHalfFull一起重分配
+            // 与right兄弟页分配
             BTreePageID rightChildPageID = rightParentEntry.getRightChildPageID();
             BTreeLeafPage rightLeafPage = (BTreeLeafPage) readPageFromDisk(rightChildPageID);
             if (rightLeafPage.isLessThanHalfFull()) {
                 mergeLeafPage(leafPageLessThanHalfFull, rightLeafPage, parentPage, rightParentEntry);
             } else {
-                fetchFromLeftRightPage(leafPageLessThanHalfFull, rightLeafPage, parentPage, rightParentEntry);
+                fetchFromRightLeafPage(leafPageLessThanHalfFull, rightLeafPage, parentPage, rightParentEntry);
             }
         }
     }
@@ -405,7 +405,7 @@ public class BTreeFile implements TableFile {
      * @param parentPage       父页
      * @param rightParentEntry 右侧页面entry
      */
-    private void fetchFromLeftRightPage(BTreeLeafPage targetPage,
+    private void fetchFromRightLeafPage(BTreeLeafPage targetPage,
                                         BTreeLeafPage rightLeafPage,
                                         BTreeInternalPage parentPage,
                                         BTreeEntry rightParentEntry) {
@@ -424,8 +424,10 @@ public class BTreeFile implements TableFile {
         }
 
 
-        rightParentEntry.setKey(rightLeafPage.getRowIterator().next().getField(keyFieldIndex));
-        parentPage.updateEntry(rightParentEntry);
+        if (rowNumToMove > 0) {
+            rightParentEntry.setKey(rightLeafPage.getRowIterator().next().getField(keyFieldIndex));
+            parentPage.updateEntry(rightParentEntry);
+        }
 
         writePageToDisk(targetPage);
         writePageToDisk(rightLeafPage);
@@ -453,7 +455,7 @@ public class BTreeFile implements TableFile {
         Row[] rowToDelete = new Row[rightPage.getExistRowCount()];
         int deleteIndex = rowToDelete.length - 1;
         Iterator<Row> rowIterator = rightPage.getRowIterator();
-        while (deleteIndex > -0 && rowIterator.hasNext()) {
+        while (deleteIndex >= 0 && rowIterator.hasNext()) {
             rowToDelete[deleteIndex--] = rowIterator.next();
         }
         for (Row row : rowToDelete) {
