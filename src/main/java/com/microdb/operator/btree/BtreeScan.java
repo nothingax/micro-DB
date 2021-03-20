@@ -1,30 +1,38 @@
-package com.microdb.operator;
+package com.microdb.operator.btree;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
+import com.microdb.model.dbfile.BTreeFile;
 import com.microdb.model.dbfile.ITableFileIterator;
 import com.microdb.model.dbfile.TableFile;
+import com.microdb.operator.Operator;
 
 /**
- * 表顺序扫描 sequence scan，基于迭代器
+ * B+Tree表扫描
  *
  * @author zhangjw
  * @version 1.0
  */
-public class SeqScan extends Operator {
-
+public class BtreeScan extends Operator {
     private TableFile tableFile;
-
+    private IndexPredicate indexPredicate;
+    private TableDesc tableDesc;
     /**
      * 表中行数据的迭代
      */
     private ITableFileIterator tableFileIterator;
 
-    public SeqScan(int tableId) {
+    public BtreeScan(int tableId, IndexPredicate indexPredicate) {
         this.tableFile = DataBase.getInstance().getDbTableById(tableId).getTableFile();
-        this.tableFileIterator = this.tableFile.getIterator();
+        this.indexPredicate = indexPredicate;
+        tableDesc = tableFile.getTableDesc();
+        if (this.indexPredicate == null) {
+            this.tableFileIterator = tableFile.getIterator();
+        } else {
+            this.tableFileIterator = ((BTreeFile) tableFile).getIndexIterator(indexPredicate);
+        }
     }
 
     @Override
@@ -41,7 +49,7 @@ public class SeqScan extends Operator {
 
     @Override
     public TableDesc getTableDesc() {
-        return tableFile.getTableDesc();
+        return tableDesc;
     }
 
     @Override

@@ -53,7 +53,7 @@ public class DbTable {
         return tableId;
     }
 
-    public TableFile getHeapTableFile() {
+    public TableFile getTableFile() {
         return tableFile;
     }
 

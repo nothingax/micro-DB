@@ -9,6 +9,7 @@ import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 import com.microdb.model.page.btree.*;
 import com.microdb.operator.PredicateEnum;
+import com.microdb.operator.btree.IndexPredicate;
 
 import java.io.*;
 import java.util.Iterator;
@@ -48,6 +49,10 @@ public class BTreeFile implements TableFile {
         this.tableDesc = tableDesc;
         this.tableId = file.getAbsoluteFile().hashCode();
         this.keyFieldIndex = keyFieldIndex;
+    }
+
+    public int getKeyFieldIndex() {
+        return keyFieldIndex;
     }
 
     /**
@@ -925,6 +930,12 @@ public class BTreeFile implements TableFile {
         return emptyPageNo;
     }
 
+
+    private BTreeLeafPage findLeafPageWithIndex(BTreePageID rootNodePageID,
+                                                IndexPredicate indexPredicate) {
+        return null;
+    }
+
     /**
      * 查找索引field应该放置的页面，不考虑是否已满
      * 根据pageID和索引查找叶子页
@@ -933,7 +944,7 @@ public class BTreeFile implements TableFile {
      * @param indexField 索引字段值，在内部节点的查找过程中使用,null 时返回最左page
      * @return 查找field应该放置的页面
      */
-    private BTreeLeafPage findLeafPage(BTreePageID pageID, Field indexField) throws IOException {
+    private BTreeLeafPage findLeafPage(BTreePageID pageID, Field indexField) {
 
         // 查找到树的最后一层--leafPage
         if (pageID.getPageType() == BTreePageType.LEAF) {
@@ -974,6 +985,10 @@ public class BTreeFile implements TableFile {
         return new BtreeTableFileIterator(this);
     }
 
+    public ITableFileIterator getIndexIterator(IndexPredicate indexPredicate) {
+        return new BtreeIndexIterator(this, indexPredicate);
+    }
+
     //====================================迭代器======================================
     private static class BtreeTableFileIterator implements ITableFileIterator {
 
@@ -1001,12 +1016,8 @@ public class BTreeFile implements TableFile {
         public void open() throws DbException {
             // 找到文件的根指针页，拿到根节点页ID，从根节点找到第一个叶子页面
             BTreeRootPtrPage page = (BTreeRootPtrPage) DataBase.getInstance()
-                    .getPage(BTreeRootPtrPage.getRootNodePageID(bTreeFile.getTableId()));
-            try {
-                this.curPage = bTreeFile.findLeafPage(page.getRootNodePageID(), null);
-            } catch (IOException e) {
-                throw new DbException("findLeafPage error", e);
-            }
+                    .getPage(BTreeRootPtrPage.getRootPtrPageID(bTreeFile.getTableId()));
+            this.curPage = bTreeFile.findLeafPage(page.getRootNodePageID(), null);
             this.rowIterator = curPage.getRowIterator();
         }
 
@@ -1062,6 +1073,93 @@ public class BTreeFile implements TableFile {
                 return null;
             }
             return rowIterator.next();
+        }
+    }
+
+    private static class BtreeIndexIterator implements ITableFileIterator {
+        private BTreeFile bTreeFile;
+        private IndexPredicate indexPredicate;
+        private BTreeLeafPage curPage;
+        private Iterator<Row> rowIterator;
+        private Row next = null;
+
+        public BtreeIndexIterator(BTreeFile bTreeFile, IndexPredicate indexPredicate) {
+            this.bTreeFile = bTreeFile;
+
+            if (!PredicateEnum.BTREE_INDEX_PREDICATES.contains(indexPredicate.getPredicate())) {
+                throw new DbException("B+Tree索引搜索暂不支持" + indexPredicate.getPredicate());
+            }
+            this.indexPredicate = indexPredicate;
+        }
+
+        @Override
+        public void open() throws DbException {
+            BTreeRootPtrPage page = (BTreeRootPtrPage) DataBase.getInstance().getPage(BTreeRootPtrPage.getRootPtrPageID(bTreeFile.getTableId()));
+            BTreePageID rootNodePageID = page.getRootNodePageID();
+            if (PredicateEnum.BTREE_INDEX_PREDICATES.contains(indexPredicate.getPredicate())) {
+                curPage = bTreeFile.findLeafPage(rootNodePageID, indexPredicate.getParamOperand());
+            } else {
+                curPage = bTreeFile.findLeafPage(rootNodePageID, null);
+            }
+            rowIterator = curPage.getRowIterator();
+        }
+
+        @Override
+        public boolean hasNext() throws DbException {
+            if (next == null) next = readNext();
+            return next != null;
+        }
+
+        private Row readNext() {
+            while (rowIterator != null) {
+                while (rowIterator.hasNext()) {
+                    Row row = rowIterator.next();
+
+                    // 判断是否满足条件
+                    if (row.getField(bTreeFile.getKeyFieldIndex()).compare(indexPredicate.getPredicate(),
+                            indexPredicate.getParamOperand())) {
+                        return row;
+                    } else if (indexPredicate.getPredicate() == PredicateEnum.EQUALS
+                            // 所有元素均大于给定的参数
+                            && row.getField(bTreeFile.getKeyFieldIndex()).compare(PredicateEnum.GREATER_THAN,
+                            indexPredicate.getParamOperand())) {
+                        return null;
+                    } else if (indexPredicate.getPredicate() == PredicateEnum.LESS_THAN
+                            || indexPredicate.getPredicate() == PredicateEnum.LESS_THAN_OR_EQ) {
+                        // 不支持'小于'查询
+                        return null;
+                    }
+                }
+
+                BTreePageID nextPage = curPage.getRightSibPageID();
+                if (nextPage == null) {
+                    return null;
+                } else {
+                    curPage = (BTreeLeafPage) DataBase.getInstance().getPage(nextPage);
+                    rowIterator = curPage.getRowIterator();
+                }
+            }
+
+            return null;
+        }
+
+        @Override
+        public Row next() throws DbException, NoSuchElementException {
+            if (next == null) {
+                next = readNext();
+                if (next == null) {
+                    throw new NoSuchElementException();
+                }
+            }
+            Row result = next;
+            next = null;
+            return result;
+        }
+
+        @Override
+        public void close() {
+            rowIterator = null;
+            curPage = null;
         }
     }
 

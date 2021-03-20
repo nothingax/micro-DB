@@ -89,7 +89,7 @@ public class DataBaseTest {
         for (int i = 0; i < 819; i++) {
             row.setField(0, new IntField(i));
             tablePerson.insertRow(row);
-            int existPageCount = tablePerson.getHeapTableFile().getExistPageCount();
+            int existPageCount = tablePerson.getTableFile().getExistPageCount();
             Assert.assertEquals(1, existPageCount);
         }
 
@@ -97,13 +97,13 @@ public class DataBaseTest {
         for (int i = 0; i < 819; i++) {
             row.setField(0, new IntField(i));
             tablePerson.insertRow(row);
-            int existPageCount = tablePerson.getHeapTableFile().getExistPageCount();
+            int existPageCount = tablePerson.getTableFile().getExistPageCount();
             Assert.assertEquals(2, existPageCount);
         }
 
         row.setField(0, new IntField(1000));
         tablePerson.insertRow(row);
-        int existPageCount = tablePerson.getHeapTableFile().getExistPageCount();
+        int existPageCount = tablePerson.getTableFile().getExistPageCount();
         Assert.assertEquals(3, existPageCount);
 
     }

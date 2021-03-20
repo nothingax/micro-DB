@@ -2,7 +2,6 @@ package com.microdb.model.page.btree;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.Row;
-import com.microdb.model.TableDesc;
 
 import java.io.*;
 import java.util.Iterator;
@@ -52,7 +51,10 @@ public class BTreeRootPtrPage extends BTreePage {
         return new byte[rootPtrPageSizeInByte];
     }
 
-    public static BTreePageID getRootNodePageID(int tableId) {
+    /**
+     * 获取ptr，Btree文件的第0页
+     */
+    public static BTreePageID getRootPtrPageID(int tableId) {
         return new BTreePageID(tableId, 0, BTreePageType.ROOT_PTR);
     }
 
@@ -61,6 +63,9 @@ public class BTreeRootPtrPage extends BTreePage {
         return pageID;
     }
 
+    /**
+     * 获取B+Tree的根节点页
+     */
     public BTreePageID getRootNodePageID() {
         if (rootNodePageNo == 0) {
             return null;
@@ -108,10 +113,6 @@ public class BTreeRootPtrPage extends BTreePage {
         return false;
     }
 
-    public int calculateMaxSlotNum(TableDesc tableDesc) {
-        return 0;
-    }
-
     @Override
     public int getMaxSlotNum() {
         return 0;
@@ -120,15 +121,6 @@ public class BTreeRootPtrPage extends BTreePage {
     @Override
     public Iterator<Row> getRowIterator() {
         return null;
-    }
-
-
-    public int getRootNodePageNo() {
-        return rootNodePageNo;
-    }
-
-    public int getRootNodePageType() {
-        return rootNodePageType;
     }
 
     public void setRootPageID(BTreePageID bTreePageID) {

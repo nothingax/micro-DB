@@ -8,7 +8,10 @@ import com.microdb.model.dbfile.BTreeFile;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
 import com.microdb.operator.Delete;
+import com.microdb.operator.PredicateEnum;
 import com.microdb.operator.SeqScan;
+import com.microdb.operator.btree.BtreeScan;
+import com.microdb.operator.btree.IndexPredicate;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -132,12 +135,14 @@ public class BtreeTest {
             delete.next();
         }
     }
-  /**
-     * seqScan
+
+    /**
+     * BtreeScan
+     * 带索引条件的扫描
      */
     @Test
-    public void SeqScanWithBTree() throws IOException {
-        DbTable t_person = dataBase.getDbTableByName("t_person");
+    public void BtreeScan() throws IOException {
+        DbTable person = dataBase.getDbTableByName("t_person");
         long l1 = System.currentTimeMillis();
         int num = 12;
         // 完成内部页分裂
@@ -145,18 +150,25 @@ public class BtreeTest {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
             row.setField(1, new IntField(18));
-            t_person.insertRow(row);
+            person.insertRow(row);
         }
 
-        // 全部删除
-        SeqScan scan = new SeqScan(t_person.getTableId());
+        // 带索引的扫描
+        IndexPredicate predicate =
+                new IndexPredicate(PredicateEnum.GREATER_THAN_OR_EQ, new IntField(5));
+        BtreeScan scan = new BtreeScan(person.getTableId(), predicate);
         scan.open();
         while (scan.hasNext()) {
             Row next = scan.next();
             System.out.println(next);
         }
+
+        // 不带索引的扫描
+        BtreeScan scanNoIndex = new BtreeScan(person.getTableId(),null);
+        scanNoIndex.open();
+        while (scanNoIndex.hasNext()) {
+            Row next = scanNoIndex.next();
+            System.out.println(next);
+        }
     }
-
-// insert Entry
-
 }

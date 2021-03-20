@@ -81,7 +81,7 @@ public class DataBase {
 
     public Page getPage(PageID pageID) throws DbException {
         try {
-            return this.getDbTableById(pageID.getTableId()).getHeapTableFile().readPageFromDisk(pageID);
+            return this.getDbTableById(pageID.getTableId()).getTableFile().readPageFromDisk(pageID);
         } catch (IOException e) {
             throw new DbException("read page failed", e);
         }

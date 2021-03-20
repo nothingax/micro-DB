@@ -48,7 +48,7 @@ public class SeqScanTest {
         for (int i = 0; i < 20; i++) {
             row.setField(0, new IntField(i));
             tablePerson.insertRow(row);
-            int existPageCount = tablePerson.getHeapTableFile().getExistPageCount();
+            int existPageCount = tablePerson.getTableFile().getExistPageCount();
             Assert.assertEquals(1, existPageCount);
         }
     }
