@@ -377,7 +377,9 @@ public class BTreeInternalPage extends BTreePage {
     }
 
     public boolean isLessThanHalfFull() {
-        return this.getExistCount() < this.getMaxSlotNum() / 2;
+        // 4/2=2
+        // 5/2=2 2<=2
+        return this.getExistCount() <= this.getMaxSlotNum() / 2;
     }
 
     private void markSlotUsed(int keyItemNo, boolean isUsed) {

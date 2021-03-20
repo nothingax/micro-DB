@@ -171,4 +171,48 @@ public class BtreeTest {
             System.out.println(next);
         }
     }
+
+    /**
+     * BtreeScan
+     * 带索引条件的扫描
+     */
+    @Test
+    public void BtreeDelete() throws IOException {
+        DbTable person = dataBase.getDbTableByName("t_person");
+        long l1 = System.currentTimeMillis();
+        int num = 12;
+        // 完成内部页分裂
+        for (int i = 1; i < 14; i++) {
+            Row row = new Row(personTableDesc);
+            row.setField(0, new IntField(i));
+            row.setField(1, new IntField(18));
+            person.insertRow(row);
+        }
+
+        BtreeScan scan = new BtreeScan(person.getTableId(), null);
+        scan.open();
+        while (scan.hasNext()) {
+            Row next = scan.next();
+            System.out.println(next);
+        }
+        scan.close();
+
+        // 全部删除
+        Delete delete = new Delete(scan);
+        delete.open();
+        while (delete.hasNext()) {
+            // 删除
+            delete.next();
+        }
+        delete.close();
+
+        System.out.println("未成功删除的数据");
+        scan.open();
+        while (scan.hasNext()) {
+            Row next = scan.next();
+            System.out.println(next);
+        }
+
+    }
+
 }

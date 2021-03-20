@@ -176,6 +176,7 @@ public class BTreeFile implements TableFile {
         } else if (rightEntry != null && rightEntry.getRightChildPageID() != null) {
             BTreePageID rightSibPageID = rightEntry.getRightChildPageID();
             BTreeInternalPage rightSibPage = (BTreeInternalPage) readPageFromDisk(rightSibPageID);
+            // TODO 不足半满的逻辑
             if (rightSibPage.isLessThanHalfFull()) {
                 mergeInternalPage(pageLessThanHalfFull, rightSibPage, parentPage, rightEntry);
             } else {
@@ -500,7 +501,7 @@ public class BTreeFile implements TableFile {
         parentPage.deleteEntryAndRightChild(entryToDelete);
         if (parentPage.isEmpty()) {
             // 当父页变空，说明没有可以合并的页，即不再有其他internal page了，需要将leafPage挂在rootPtr下
-            BTreePageID rootPrtPageID = parentPage.getPageID();
+            BTreePageID rootPrtPageID = parentPage.getParentPageID();
             if (rootPrtPageID.getPageType() != BTreePageType.ROOT_PTR) {
                 throw new DbException("try delete none root ptr page");
             }
