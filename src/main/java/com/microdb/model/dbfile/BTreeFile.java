@@ -304,6 +304,10 @@ public class BTreeFile implements TableFile {
                                    BTreeInternalPage rightPage,
                                    BTreeInternalPage parentPage,
                                    BTreeEntry entry) throws IOException {
+
+        if (leftPage.getExistCount() == leftPage.getMaxSlotNum()-1 || rightPage.getExistCount() == leftPage.getMaxSlotNum()-1) {
+            throw new DbException("mergeInternalPage异常： page 已满 无法合并");
+        }
         // 两页合并，父页中指向两个子页的的entry应删除
         deleteParentEntry(leftPage, parentPage, entry);
         writePageToDisk(parentPage);
@@ -515,7 +519,7 @@ public class BTreeFile implements TableFile {
 
             // 父page标记为未使用
             markPageUnused(parentPage.getPageID().getPageNo());
-        } else if (parentPage.isLessThanHalfFull()) {
+        } else if (parentPage.isLessThanHalfFullOpen()) {
             redistributePage(parentPage);
         }
     }
@@ -524,55 +528,59 @@ public class BTreeFile implements TableFile {
      * 将pageNo标记为未使用
      */
     private void markPageUnused(int pageNo) throws IOException {
-        // 查找B+tree文件中的的第一个headerPage
-        BTreeRootPtrPage rootPrtPage = getRootPrtPage();
-        BTreePageID headerPageID = rootPrtPage.getFirstHeaderPageID();
-        BTreePageID prevHeaderPageID = null;
-
-        int headerPageCount = 0;
-        // 如果第一个headerPage尚未创建，则新建
-        if (headerPageID == null) {
-            BTreeHeaderPage emptyHeaderPage = (BTreeHeaderPage) getEmptyPage(BTreePageType.HEADER);
-            headerPageID = emptyHeaderPage.getPageID();
-            rootPrtPage.setFirstHeaderPageID(headerPageID);
-            // 刷盘
-            writePageToDisk(rootPrtPage);
-            writePageToDisk(emptyHeaderPage);
-        } else {
-            // 尝试获取emptyPageNo槽位所在的headerPage
-            while (headerPageID != null && (headerPageCount + 1) * BTreeHeaderPage.maxSlotNum < pageNo) {
-                BTreeHeaderPage headerPage = (BTreeHeaderPage) readPageFromDisk(headerPageID);
-                prevHeaderPageID = headerPageID;
-                headerPageID = headerPage.getNextPageID();
-                headerPageCount++;
-            }
-
-            // 如果上面尝试获取时未找到，说明emptyPageNo槽位所在的headerPage或headerPage链表前面的headerPage尚未创建，
-            // 应创建相关headerPage，并设置链表的节点索引
-            while ((headerPageCount + 1) * BTreeHeaderPage.maxSlotNum < pageNo) {
-                BTreeHeaderPage prevPage = (BTreeHeaderPage) readPageFromDisk(prevHeaderPageID);
-                BTreeHeaderPage emptyPageHeaderPage = (BTreeHeaderPage) getEmptyPage(BTreePageType.HEADER);
-                headerPageID = emptyPageHeaderPage.getPageID();
-                emptyPageHeaderPage.setPrevHeaderPageID(prevHeaderPageID);
-                prevPage.setNextHeaderPageNoID(headerPageID);
-
-                headerPageCount++;
-                prevHeaderPageID = headerPageID;
-
-                // 刷盘
-                writePageToDisk(prevPage);
-                writePageToDisk(emptyPageHeaderPage);
-            }
-        }
-
-        // 获取emptyPageNo槽位真正所在的headerPage
-        BTreeHeaderPage headerPage = (BTreeHeaderPage) readPageFromDisk(headerPageID);
-        // 计算槽位在该页中的下标位置 ，设置状态为 unUsed
-        int slotIndex = pageNo - headerPageCount * BTreeHeaderPage.maxSlotNum;
-        headerPage.markSlotUsed(slotIndex, false);
-
-        // 刷盘
-        writePageToDisk(headerPage);
+        // TODO
+        // // 查找B+tree文件中的的第一个headerPage
+        // BTreeRootPtrPage rootPrtPage = getRootPrtPage();
+        // BTreePageID headerPageID = rootPrtPage.getFirstHeaderPageID();
+        // BTreePageID prevHeaderPageID = null;
+        //
+        // int headerPageCount = 0;
+        // // 如果第一个headerPage尚未创建，则新建
+        // if (headerPageID == null) {
+        //     BTreeHeaderPage emptyHeaderPage = (BTreeHeaderPage) getEmptyPage(BTreePageType.HEADER);
+        //     headerPageID = emptyHeaderPage.getPageID();
+        //     rootPrtPage.setFirstHeaderPageID(headerPageID);
+        //     emptyHeaderPage.markAllUsed();
+        //     // 刷盘
+        //     writePageToDisk(rootPrtPage);
+        //     writePageToDisk(emptyHeaderPage);
+        // } else {
+        //     // 尝试获取emptyPageNo槽位所在的headerPage
+        //     while (headerPageID != null && (headerPageCount + 1) * BTreeHeaderPage.maxSlotNum < pageNo) {
+        //         BTreeHeaderPage headerPage = (BTreeHeaderPage) readPageFromDisk(headerPageID);
+        //         prevHeaderPageID = headerPageID;
+        //         headerPageID = headerPage.getNextPageID();
+        //         headerPageCount++;
+        //     }
+        //
+        //     // 如果上面尝试获取时未找到，说明emptyPageNo槽位所在的headerPage或headerPage链表前面的headerPage尚未创建，
+        //     // 应创建相关headerPage，并设置链表的节点索引
+        //     while ((headerPageCount + 1) * BTreeHeaderPage.maxSlotNum < pageNo) {
+        //         BTreeHeaderPage prevPage = (BTreeHeaderPage) readPageFromDisk(prevHeaderPageID);
+        //         BTreeHeaderPage emptyPageHeaderPage = (BTreeHeaderPage) getEmptyPage(BTreePageType.HEADER);
+        //         headerPageID = emptyPageHeaderPage.getPageID();
+        //         emptyPageHeaderPage.setPrevHeaderPageID(prevHeaderPageID);
+        //
+        //         emptyPageHeaderPage.markAllUsed();
+        //         prevPage.setNextHeaderPageNoID(headerPageID);
+        //
+        //         headerPageCount++;
+        //         prevHeaderPageID = headerPageID;
+        //
+        //         // 刷盘
+        //         writePageToDisk(prevPage);
+        //         writePageToDisk(emptyPageHeaderPage);
+        //     }
+        // }
+        //
+        // // 获取emptyPageNo槽位真正所在的headerPage
+        // BTreeHeaderPage headerPage = (BTreeHeaderPage) readPageFromDisk(headerPageID);
+        // // 计算槽位在该页中的下标位置 ，设置状态为 unUsed
+        // int slotIndex = pageNo - headerPageCount * BTreeHeaderPage.maxSlotNum;
+        // headerPage.markSlotUsed(slotIndex, false);
+        //
+        // // 刷盘
+        // writePageToDisk(headerPage);
     }
 
     @Override
@@ -893,29 +901,31 @@ public class BTreeFile implements TableFile {
         BTreePageID headerPageID = rootPrtPage.getFirstHeaderPageID();
 
         int emptyPageNo = 0;
-        if (headerPageID != null) {
-            // 读取第一个headerPage
-            BTreeHeaderPage headerPage = (BTreeHeaderPage) this.readPageFromDisk(headerPageID);
-            int headerPageCount = 0;
-            // 遍历headerPage，找到一个含有空槽位的page
-            while (headerPage != null && !headerPage.hasEmptySlot()) { // header页存在，但没有空槽位
-                headerPageID = headerPage.getNextPageID();
-                if (headerPageID != null) {
-                    headerPage = (BTreeHeaderPage) this.readPageFromDisk(headerPageID);
-                    headerPageCount++;
-                } else {
-                    break; //遍历完现有的headerPage，全都没有空槽位。
-                }
-            }
 
-            // 如果headerPage != null，一定存在空的slot
-            if (headerPage != null) {
-                headerPage = (BTreeHeaderPage) this.readPageFromDisk(headerPageID);
-                int emptySlot = headerPage.getFirstEmptySlot();
-                headerPage.markSlotUsed(emptySlot, true);
-                emptyPageNo = headerPageCount * BTreeHeaderPage.maxSlotNum + emptySlot;
-            }
-        }
+        // TODO 暂不实现
+        // if (headerPageID != null) {
+        //     // 读取第一个headerPage
+        //     BTreeHeaderPage headerPage = (BTreeHeaderPage) this.readPageFromDisk(headerPageID);
+        //     int headerPageCount = 0;
+        //     // 遍历headerPage，找到一个含有空槽位的page
+        //     while (headerPage != null && !headerPage.hasEmptySlot()) { // header页存在，但没有空槽位
+        //         headerPageID = headerPage.getNextPageID();
+        //         if (headerPageID != null) {
+        //             headerPage = (BTreeHeaderPage) this.readPageFromDisk(headerPageID);
+        //             headerPageCount++;
+        //         } else {
+        //             break; //遍历完现有的headerPage，全都没有空槽位。
+        //         }
+        //     }
+        //
+        //     // 如果headerPage != null，一定存在空的slot
+        //     if (headerPage != null) {
+        //         headerPage = (BTreeHeaderPage) this.readPageFromDisk(headerPageID);
+        //         int emptySlot = headerPage.getFirstEmptySlot();
+        //         headerPage.markSlotUsed(emptySlot, true);
+        //         emptyPageNo = headerPageCount * BTreeHeaderPage.maxSlotNum + emptySlot;
+        //     }
+        // }
 
         // 没有headerPage或现有的HeaderPage均没有空槽位，直接新增一个新页
         if (headerPageID == null) {

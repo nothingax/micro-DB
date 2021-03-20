@@ -299,7 +299,7 @@ public class BTreeInternalPage extends BTreePage {
                 if (childrenPageNos[i] == entry.getLeftChildPageID().getPageNo()
                         || childrenPageNos[i] == entry.getRightChildPageID().getPageNo()) {
                     if (i > 0 && keys[i].compare(PredicateEnum.GREATER_THAN, entry.getKey())) {
-                        throw new DbException("排序错误，entry不应插入此位置");
+                        throw new DbException("entry的大小不符合此页面，不应插入此位置");
                     }
 
                     lessOrEqKey = i;
@@ -376,10 +376,25 @@ public class BTreeInternalPage extends BTreePage {
         childrenPageNos[keyItem.getSlotIndex()] = 0;
     }
 
+    public boolean isLessThanHalfFullOpen() {
+
+        return this.getExistCount() < (this.getMaxSlotNum()-1) / 2;
+    }
+
+
     public boolean isLessThanHalfFull() {
         // 4/2=2
         // 5/2=2 2<=2
-        return this.getExistCount() <= this.getMaxSlotNum() / 2;
+        // TODO
+
+        // int maxEnty = this.getMaxSlotNum() - 1;
+        //
+        // int maxEmptySlots = maxEnty - maxEnty / 2;
+        // int numEmpy = maxEnty - this.getExistCount();
+
+        // return numEmpy >= maxEmptySlots;
+        // return - this.getExistCount() >= -maxEnty / 2;
+        return this.getExistCount() <= (this.getMaxSlotNum()-1) / 2;
     }
 
     private void markSlotUsed(int keyItemNo, boolean isUsed) {

@@ -21,7 +21,33 @@ public class Delete extends Operator {
 
 
     public Delete(IOperatorIterator tableIterator) {
+        if (tableIterator == null) {
+            throw new DbException("tableIterator can not be null");
+        }
         this.tableIterator = tableIterator;
+    }
+
+
+    /**
+     * 循环删除全部
+     * 处理页不足半满时挪用兄弟页的情况
+     * TODO 实现递归删除
+     */
+    public void loopDelete() {
+        while (isNotEmpty()) {
+            open();
+            while (hasNext()) {
+                next();
+            }
+            close();
+        }
+    }
+
+    public boolean isNotEmpty() {
+        tableIterator.open();
+        boolean hasNext = tableIterator.hasNext();
+        tableIterator.close();
+        return hasNext;
     }
 
     @Override
@@ -56,10 +82,10 @@ public class Delete extends Operator {
         tableIterator.open();
     }
 
-    @Override
-    public boolean hasNext() throws DbException {
-        return super.hasNext();
-    }
+    // @Override
+    // public boolean hasNext() throws DbException {
+    //     return super.hasNext();
+    // }
 
     @Override
     public void close() {

@@ -21,6 +21,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.Assert.assertFalse;
+
 /**
  * TODO
  *
@@ -126,14 +128,10 @@ public class BtreeTest {
         }
 
         // 全部删除
-        // TODO 不使用缓存的情况下，迭代器无法跟踪页元素重分布导致业内的元素变化
         SeqScan scan = new SeqScan(t_person.getTableId());
         Delete delete = new Delete(scan);
-        delete.open();
-        while (delete.hasNext()) {
-            // 删除
-            delete.next();
-        }
+        delete.loopDelete();
+
     }
 
     /**
@@ -182,7 +180,8 @@ public class BtreeTest {
         long l1 = System.currentTimeMillis();
         int num = 12;
         // 完成内部页分裂
-        for (int i = 1; i < 14; i++) {
+        // FIXME 3000 以内数据能跑通测是，页重分布还是有问题
+        for (int i = 1; i < 4000; i++) {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
             row.setField(1, new IntField(18));
@@ -190,28 +189,12 @@ public class BtreeTest {
         }
 
         BtreeScan scan = new BtreeScan(person.getTableId(), null);
-        scan.open();
-        while (scan.hasNext()) {
-            Row next = scan.next();
-            System.out.println(next);
-        }
-        scan.close();
-
         // 全部删除
         Delete delete = new Delete(scan);
-        delete.open();
-        while (delete.hasNext()) {
-            // 删除
-            delete.next();
-        }
-        delete.close();
+        delete.loopDelete();
 
-        System.out.println("未成功删除的数据");
         scan.open();
-        while (scan.hasNext()) {
-            Row next = scan.next();
-            System.out.println(next);
-        }
+        assertFalse(scan.hasNext());
 
     }
 
