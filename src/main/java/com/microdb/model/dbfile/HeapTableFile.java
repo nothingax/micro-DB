@@ -8,7 +8,6 @@ import com.microdb.model.page.heap.HeapPage;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.heap.HeapPageID;
 import com.microdb.model.page.PageID;
-import com.microdb.operator.ITableFileIterator;
 
 import java.io.File;
 import java.io.FileInputStream;

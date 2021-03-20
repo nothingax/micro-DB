@@ -4,6 +4,7 @@ import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
+import com.microdb.model.dbfile.ITableFileIterator;
 import com.microdb.model.dbfile.TableFile;
 
 /**

@@ -1,4 +1,4 @@
-package com.microdb.operator;
+package com.microdb.model.dbfile;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.Row;

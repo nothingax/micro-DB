@@ -8,7 +8,6 @@ import com.microdb.model.field.Field;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 import com.microdb.model.page.btree.*;
-import com.microdb.operator.ITableFileIterator;
 import com.microdb.operator.PredicateEnum;
 
 import java.io.*;
