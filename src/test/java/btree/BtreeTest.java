@@ -180,7 +180,7 @@ public class BtreeTest {
         long l1 = System.currentTimeMillis();
         int num = 12;
         // 完成内部页分裂
-        // FIXME 3000 以内数据能跑通测是，页重分布还是有问题
+        // FIXME 3000 以内数据能跑通测试，页重分布还是有问题
         for (int i = 1; i < 4000; i++) {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
