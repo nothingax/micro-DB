@@ -189,7 +189,7 @@ public class BtreeTest {
         }
 
         BtreeScan scan = new BtreeScan(person.getTableId(), null);
-        // 全部删除
+        // 全部删
         Delete delete = new Delete(scan);
         delete.loopDelete();
 

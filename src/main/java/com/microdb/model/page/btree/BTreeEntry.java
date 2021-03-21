@@ -76,4 +76,14 @@ public class BTreeEntry {
     public int getRightChildPageType() {
         return this.getRightChildPageID().getPageType();
     }
+
+    @Override
+    public String toString() {
+        return "BTreeEntry{" +
+                "key=" + key +
+                ", leftChildPage=" + leftChildPageID.getPageNo() +
+                ", rightChildPage=" + rightChildPageID.getPageNo() +
+                ", keyItemSlotIndex=" + keyItem.getSlotIndex() +
+                '}';
+    }
 }

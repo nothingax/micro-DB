@@ -27,7 +27,6 @@ import java.util.NoSuchElementException;
  */
 public class BTreeInternalPage extends BTreePage {
 
-    // TODO 重写
     public class ChildPages {
         int leftPageNo;
         int rightPageNo;
@@ -35,10 +34,10 @@ public class BTreeInternalPage extends BTreePage {
         public ChildPages() {
         }
 
-        public ChildPages(int leftPageNo, int rightPageNo) {
-            this.leftPageNo = leftPageNo;
-            this.rightPageNo = rightPageNo;
-        }
+        // public ChildPages(int leftPageNo, int rightPageNo) {
+        //     this.leftPageNo = leftPageNo;
+        //     this.rightPageNo = rightPageNo;
+        // }
 
         public ChildPages(BTreeEntry entry) {
             this.leftPageNo = entry.getLeftChildPageID().getPageNo();
@@ -70,7 +69,6 @@ public class BTreeInternalPage extends BTreePage {
      */
     // private int[] childrenPageNos;
 
-    // TODO 重写
     private ChildPages[] childPages;
 
     /**
@@ -83,6 +81,14 @@ public class BTreeInternalPage extends BTreePage {
      * 一页数据最多可存放的节点元素数量
      */
     private int maxSlotNum;
+
+
+    /**
+     * 初始化一块leafPae页面默认大小的空间
+     */
+    public static byte[] createEmptyPageData() {
+        return new byte[Page.defaultPageSizeInByte];
+    }
 
     public BTreeInternalPage(BTreePageID bTreePageID, byte[] pageData, int keyFieldIndex) throws IOException {
         this.pageID = bTreePageID;
@@ -245,10 +251,6 @@ public class BTreeInternalPage extends BTreePage {
      */
     public int getExistCount() {
         int cnt = 0;
-
-        // for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
-        //     cnt += slotUsageStatusBitMap[i] ? 1 : 0;
-        // }
         for (boolean b : slotUsageStatusBitMap) {
             cnt += b ? 1 : 0;
         }
@@ -314,87 +316,131 @@ public class BTreeInternalPage extends BTreePage {
             childrenPageType = entry.getLeftChildPageType();
         }
 
-        // // 第一个节点特殊处理
-        // if (getExistCount() == 0) {
-        //     childrenPageNos[0] = entry.getLeftChildPageID().getPageNo();
-        //     childrenPageNos[1] = entry.getRightChildPageID().getPageNo();
-        //
-        //
-        //     keys[0] = entry.getKey(); // keyList 0位置不存放数据
-        //     markSlotUsed(0, true);
-        //     // markSlotUsed(1, true);
-        //     entry.setKeyItem(new KeyItem(pageID, 0));
-        //     return;
-        // }
+        // 第一个节点特殊处理
+        if (getExistCount() == 0) {
+            setEntry(entry, 0);
+            return;
+        }
 
-        // 找到第一个空位置，从1开始，因为0不存放数据
+        // 找到第一个空位置
         int firstEmptySlot = getFirstEmptySlot();
         if (firstEmptySlot == -1) {
             throw new DbException("insert entry error :no empty slot");
         }
 
-
-        // 查找本页中与待插入节点有相同左孩子或右孩子的节点。
-        int insertIndex = -1;
-        for (int i = 0; i < getMaxSlotNum(); i++) {
-            if (isSlotUsed(i)) {
-                // 找到应插入的位置
-                if (keys[i].compare(PredicateEnum.GREATER_THAN_OR_EQ, entry.getKey())) {
-                    insertIndex = i + 1;
-                    // check
-                    ChildPages childPage = childPages[i];
-                    int pageNo = entry.getRightChildPageID().getPageNo();
-                    if (childPage.rightPageNo == pageNo) {
-                        // entry 插在childPage的右侧，childPage[i+1]右移空出位置
-                        // insertIndex = i; // changeI
-                    } else if (childPage.leftPageNo == pageNo) {
-                        // entry 插在childPage的左侧，childPage[i]右移空出位置
-                        // rightInsertIndex = i; // changeI+1
-                    } else {
-                        throw new DbException("子页不相邻");
-                    }
-                    break;
-                }
-            }
-        }
-
-        int matchedSlot = -1;
-        // 左插
-        if (insertIndex != -1) {
-            if (firstEmptySlot < insertIndex) {
-                // 左边有空位，将(firstEmptySlot,leftInsertIndex]向左平移1位
-                for (int i = firstEmptySlot + 1; i <= insertIndex - 1; i++) {
-                    shift(i, i - 1);
-                }
-            } else { // 右边有空位[leftInsertIndex+1，firstEmptySlot) 向右平移1
-                for (int i = firstEmptySlot - 1; i >= insertIndex; i--) {
+        int first = getFirstKey();
+        int last = getLastKey();
+        if (entry.getKey().compare(PredicateEnum.LESS_THAN_OR_EQ, keys[first])) {
+            if (first == 0) {
+                for (int i = firstEmptySlot - 1; i >= 0; i--) {
                     shift(i, i + 1);
                 }
-            }
 
-            matchedSlot = insertIndex;
-            markSlotUsed(matchedSlot, true);
-            keys[matchedSlot] = entry.getKey();
+                setEntry(entry, 0);
 
-            int before = findEntryBefore(matchedSlot);
-            int after = findEntryAfter(matchedSlot);
-            if (before != -1 && childPages[before].rightPageNo == entry.getRightChildPageID().getPageNo()) {
-                childPages[before].rightPageNo = entry.getLeftChildPageID().getPageNo();
-            } else if (before != -1 && childPages[before].rightPageNo == entry.getLeftChildPageID().getPageNo()) {
-                if (after != -1) {
-                    childPages[after].leftPageNo = entry.getRightChildPageID().getPageNo();
-                } else {
-                    // matchedSlot should be the last in the page
-                }
+                int after = findEntryAfter(0);
+                childPages[after].leftPageNo = childPages[0].rightPageNo;
             } else {
-                throw new DbException("error");
+                setEntry(entry, 0);
+                int after = findEntryAfter(0);
+                childPages[after].leftPageNo = childPages[0].rightPageNo;
             }
-            entry.setKeyItem(new KeyItem(pageID, matchedSlot));
+        } else if (entry.getKey().compare(PredicateEnum.GREATER_THAN_OR_EQ, keys[last])) {
+            if (last == maxSlotNum - 1) { // 没有位置
+                // 左边有空位，将(firstEmptySlot,leftInsertIndex]向左平移1位
+                for (int i = firstEmptySlot + 1; i <= last; i++) {
+                    shift(i, i - 1);
+                }
+                setEntry(entry, last);
+                int entryBefore = findEntryBefore(last);
+                childPages[entryBefore].rightPageNo = childPages[last].leftPageNo;
+            } else {
+                int insertIndex = last + 1;
+                setEntry(entry, insertIndex);
+                childPages[last].rightPageNo = childPages[insertIndex].leftPageNo;
+            }
+        } else { // entry in (first ,last )
+            int firstLessOrEq = findFirstLessOrEqIndex(entry.getKey());
+            if (firstLessOrEq == -1) {
+                throw new DbException("未找到第一个小于待插入Entry的key");
+            }
+            if (firstEmptySlot < firstLessOrEq) {
+                // 向左平移1位，包括slotIndex ，元素插在slotIndex
+                for (int i = firstEmptySlot + 1; i <= firstLessOrEq; i++) {
+                    shift(i, i - 1);
+                }
+                setEntry(entry, firstLessOrEq);
+                updateChild(entry, firstLessOrEq);
+
+            } else { // 右边有空位 向右平移1，不包括slotIndex，元素插在slotIndex+1
+                for (int i = firstEmptySlot - 1; i > firstLessOrEq; i--) {
+                    shift(i, i + 1);
+                }
+                setEntry(entry, firstLessOrEq + 1);
+                updateChild(entry, firstLessOrEq + 1);
+            }
         }
     }
 
+    private void updateChild(BTreeEntry entry, int slotIndex) {
+        // 更新子页
+        int before = findEntryBefore(slotIndex);
+        if (before == -1) {
+            throw new DbException("should not happen");
+        }
+        int after = findEntryAfter(slotIndex);
+        if (after == -1) {
+            throw new DbException("should not happen");
+        }
+        if (childPages[before].rightPageNo == entry.getLeftChildPageID().getPageNo()) {
+            childPages[after].leftPageNo = entry.getRightChildPageID().getPageNo();
+        } else if (childPages[after].leftPageNo == entry.getRightChildPageID().getPageNo()) {
+            childPages[before].rightPageNo = entry.getLeftChildPageID().getPageNo();
+        } else {
+            throw new DbException("error");
+        }
+    }
+
+    private void setEntry(BTreeEntry entry, int insertIndex) {
+        markSlotUsed(insertIndex, true);
+        keys[insertIndex] = entry.getKey();
+        childPages[insertIndex] = new ChildPages(entry);
+        entry.setKeyItem(new KeyItem(pageID, insertIndex));
+    }
+
+    private int findFirstLessOrEqIndex(Field key) {
+        int lastUsed = -1;
+        for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
+            if (isSlotUsed(i)) {
+                if (keys[i].compare(PredicateEnum.GREATER_THAN_OR_EQ, key)) {
+                    return lastUsed;
+                }
+                lastUsed = i;
+            }
+        }
+        return -1;
+    }
+
+    private int getLastKey() {
+        for (int i = slotUsageStatusBitMap.length - 1; i >= 0; i--) {
+            if (isSlotUsed(i)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private int getFirstKey() {
+        for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
+            if (isSlotUsed(i)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     private int findEntryBefore(int matchedSlot) {
-        for (int i = matchedSlot; i >= 0; i--) {
+        for (int i = matchedSlot - 1; i >= 0; i--) {
             if (slotUsageStatusBitMap[i]) {
                 return i;
             }
@@ -403,7 +449,7 @@ public class BTreeInternalPage extends BTreePage {
     }
 
     private int findEntryAfter(int matchedSlot) {
-        for (int i = matchedSlot; i < slotUsageStatusBitMap.length; i++) {
+        for (int i = matchedSlot + 1; i < slotUsageStatusBitMap.length; i++) {
             if (slotUsageStatusBitMap[i]) {
                 return i;
             }
