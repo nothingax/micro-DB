@@ -213,7 +213,7 @@ public class BTreeFile implements TableFile {
         for (int i = bTreeEntries.length - 1; i >= 0; --i) {
             BTreeEntry entryToMove = bTreeEntries[i];
             // 删除移动entry、设置其右孩子的新父页
-            leftPage.deleteEntryAndRightChild(entryToMove);
+            leftPage.deleteEntryFromTheRight(entryToMove);
             updateParent(pageLessHalfFull.getPageID(), entryToMove.getRightChildPageID());
 
             // 旋转(entryToMove围绕leftEntry右旋，entryToMove是leftEntry的右子节点，右旋后，entryToMove变为父节点，leftEntry变为其右子节点)
@@ -260,7 +260,7 @@ public class BTreeFile implements TableFile {
         }
 
         for (BTreeEntry entryToMove : bTreeEntries) {
-            rightPage.deleteEntryAndLeftChild(entryToMove);
+            rightPage.deleteEntryFromTheLeft(entryToMove);
             BTreePageID leftChildPageIDOfEntryToMove = entryToMove.getLeftChildPageID();
 
             // 被移动的entry所指向的子页面需要设置新的父页
@@ -321,7 +321,7 @@ public class BTreeFile implements TableFile {
         Iterator<BTreeEntry> iterator = rightPage.getIterator();
         while (iterator.hasNext()) {
             BTreeEntry entryInRightPage = iterator.next();
-            rightPage.deleteEntryAndRightChild(entryInRightPage);
+            rightPage.deleteEntryFromTheLeft(entryInRightPage);
             // 右页删除后，原来右页的子页的父节点要更新为leftPage
             updateParent(leftPage.getPageID(), entryInRightPage.getLeftChildPageID());
             updateParent(leftPage.getPageID(), entryInRightPage.getRightChildPageID());
@@ -502,7 +502,8 @@ public class BTreeFile implements TableFile {
                                    BTreeInternalPage parentPage,
                                    BTreeEntry entryToDelete) throws IOException {
 
-        parentPage.deleteEntryAndRightChild(entryToDelete);
+        // 由于合并后删除右页
+        parentPage.deleteEntryFromTheRight(entryToDelete);
         if (parentPage.isEmpty()) {
             // 当父页变空，说明没有可以合并的页，即不再有其他internal page了，需要将leafPage挂在rootPtr下
             BTreePageID rootPrtPageID = parentPage.getParentPageID();
@@ -808,10 +809,10 @@ public class BTreeFile implements TableFile {
         // 将原页中右半部分的数据移入到新页中，右半部分的首个元素midEntry升级为上级索引
         for (int i = entryToMove.length - 1; i >= 0; --i) {
             if (i == 0) {
-                internalPageNeedSplit.deleteEntryAndRightChild(entryToMove[i]);
+                internalPageNeedSplit.deleteEntryFromTheRight(entryToMove[i]);
                 midEntry = entryToMove[0];
             } else {
-                internalPageNeedSplit.deleteEntryAndRightChild(entryToMove[i]);
+                internalPageNeedSplit.deleteEntryFromTheRight(entryToMove[i]);
                 newInternalPage.insertEntry(entryToMove[i]);
             }
             // 更新被移动节点的右孩子的父指针

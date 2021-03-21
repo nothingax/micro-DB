@@ -16,7 +16,11 @@ import java.util.NoSuchElementException;
 
 /**
  * BTreeInternalPage 存储索引Key
- * 格式：槽位状态标记（每一个slot占用1Byte）、父指针(4Byte)、子页类型（1Byte）、索引键值（m+1个位置，位置0不存储）、子节点指针(m+1 Byte)
+ * 格式：槽位状态标记（每一个slot占用1Byte）、父指针(4Byte)、子页类型（1Byte）、
+ * 索引键值（m+1个位置，位置0不存储）、子节点指针(m+1 Byte)
+ * m个key
+ * m个slot mByte
+ * m个ChildPages ：2*m*4B
  *
  * @author zhangjw
  * @version 1.0
@@ -27,6 +31,19 @@ public class BTreeInternalPage extends BTreePage {
     public class ChildPages {
         int leftPageNo;
         int rightPageNo;
+
+        public ChildPages() {
+        }
+
+        public ChildPages(int leftPageNo, int rightPageNo) {
+            this.leftPageNo = leftPageNo;
+            this.rightPageNo = rightPageNo;
+        }
+
+        public ChildPages(BTreeEntry entry) {
+            this.leftPageNo = entry.getLeftChildPageID().getPageNo();
+            this.rightPageNo = entry.getRightChildPageID().getPageNo();
+        }
     }
 
     /**
@@ -51,7 +68,7 @@ public class BTreeInternalPage extends BTreePage {
      * 本页中有 m 个key，则对应的子节点有m+1个
      * size size为key的数量+1
      */
-    private int[] childrenPageNos;
+    // private int[] childrenPageNos;
 
     // TODO 重写
     private ChildPages[] childPages;
@@ -91,7 +108,7 @@ public class BTreeInternalPage extends BTreePage {
 
         // 4. keys，从1开始，0位置不存储索引
         int sizePerKeyInByte = tableDesc.getFieldTypes().get(keyFieldIndex).getSizeInByte();
-        for (int i = 1; i < keys.length; i++) {
+        for (int i = 0; i < keys.length; i++) {
             if (isSlotUsed(i)) {
                 keys[i].serialize(dos);
             } else {
@@ -101,12 +118,14 @@ public class BTreeInternalPage extends BTreePage {
         }
 
         // 5. childrenPageNos
-        for (int i = 0; i < childrenPageNos.length; i++) {
+        for (int i = 0; i < childPages.length; i++) {
             if (isSlotUsed(i)) {
-                dos.writeInt(childrenPageNos[i]);
+                ChildPages childPage = childPages[i];
+                dos.writeInt(childPage.leftPageNo);
+                dos.writeInt(childPage.rightPageNo);
             } else {
                 // 填充 INDEX_SIZE_IN_BYTE 个字节
-                fillBytes(dos, INDEX_SIZE_IN_BYTE);
+                fillBytes(dos, INDEX_SIZE_IN_BYTE * 2);
             }
         }
 
@@ -114,8 +133,8 @@ public class BTreeInternalPage extends BTreePage {
         int slotSize = slotUsageStatusBitMap.length;
         int parentPageNoSize = INDEX_SIZE_IN_BYTE;
         int childrenPageTypeSize = 1;
-        int keysSize = sizePerKeyInByte * (keys.length - 1);
-        int childrenNosSize = childrenPageNos.length * INDEX_SIZE_IN_BYTE;
+        int keysSize = sizePerKeyInByte * (keys.length);
+        int childrenNosSize = childPages.length * INDEX_SIZE_IN_BYTE * 2;// childPages 左右两个页面
         int paddingLength = Page.defaultPageSizeInByte
                 - slotSize - parentPageNoSize - childrenPageTypeSize - keysSize - childrenNosSize;
         fillBytes(dos, paddingLength);
@@ -141,9 +160,9 @@ public class BTreeInternalPage extends BTreePage {
         // 4. keys
         keys = new Field[maxSlotNum];
         // 0位置不存放元素
-        keys[0] = null;
+        // keys[0] = null;
         FieldType keyFieldType = tableDesc.getFieldTypes().get(keyFieldIndex);
-        for (int i = 1; i < keys.length; i++) {
+        for (int i = 0; i < keys.length; i++) {
             if (isSlotUsed(i)) {
                 keys[i] = keyFieldType.parse(dis);
             } else {
@@ -155,12 +174,15 @@ public class BTreeInternalPage extends BTreePage {
         }
 
         // 5. childrenPageNos
-        childrenPageNos = new int[maxSlotNum];
-        for (int i = 0; i < childrenPageNos.length; i++) {
+        childPages = new ChildPages[maxSlotNum];
+        for (int i = 0; i < childPages.length; i++) {
             if (isSlotUsed(i)) {
-                childrenPageNos[i] = ((IntField) FieldType.INT.parse(dis)).getValue();
+                ChildPages child = new ChildPages();
+                child.leftPageNo = ((IntField) FieldType.INT.parse(dis)).getValue();
+                child.rightPageNo = ((IntField) FieldType.INT.parse(dis)).getValue();
+                this.childPages[i] = child;
             } else {
-                for (int i1 = 0; i1 < INDEX_SIZE_IN_BYTE; i1++) {
+                for (int i1 = 0; i1 < INDEX_SIZE_IN_BYTE * 2; i1++) {
                     dis.readByte();
                 }
             }
@@ -188,19 +210,23 @@ public class BTreeInternalPage extends BTreePage {
     }
 
     public int calculateMaxSlotNum(TableDesc tableDesc) {
-        return getMaxEntryNum(tableDesc) + 1;
+        return getMaxEntryNum(tableDesc);
     }
 
     private int getMaxEntryNum(TableDesc tableDesc) {
         int slotStatusSizeInByte = 1;
-        int childSizeInByte = FieldType.INT.getSizeInByte();
+        int pageNoSizeInByte = FieldType.INT.getSizeInByte();
         int keySizeInByte = tableDesc.getFieldTypes().get(keyFieldIndex).getSizeInByte();
 
-        // 索引值+子节点指针+slot状态位
-        int perEntrySizeInByte = keySizeInByte + childSizeInByte + slotStatusSizeInByte;
+        // 索引值+子节点指针（每个entry两个子页面）+slot状态位
+        int perEntrySizeInByte = keySizeInByte + pageNoSizeInByte * 2 + slotStatusSizeInByte;
 
-        // 每页一个父指针，m个entry有m+1个子节点指针，一个字节表示子page类型、一个额外的header使用1字节。
-        int extra = 2 * FieldType.INT.getSizeInByte() + 1 + 1;
+        // // 每页一个父指针，m个entry有m+1个子节点指针，一个字节表示子page类型、一个额外的header使用1字节。
+        // int extra = 2 * FieldType.INT.getSizeInByte() + 1 + 1;
+
+        // 每页一个父pageNo指针 一个字节表示子page类型
+        int extra = FieldType.INT.getSizeInByte() + 1;
+
         return (Page.defaultPageSizeInByte - extra) / perEntrySizeInByte;
     }
 
@@ -220,13 +246,12 @@ public class BTreeInternalPage extends BTreePage {
     public int getExistCount() {
         int cnt = 0;
 
-        // slotUsageStatusBitMap 第0位置不对应元素
-        for (int i = 1; i < slotUsageStatusBitMap.length; i++) {
-            cnt += slotUsageStatusBitMap[i] ? 1 : 0;
-        }
-        // for (boolean b : slotUsageStatusBitMap) {
-        //     cnt += b ? 1 : 0;
+        // for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
+        //     cnt += slotUsageStatusBitMap[i] ? 1 : 0;
         // }
+        for (boolean b : slotUsageStatusBitMap) {
+            cnt += b ? 1 : 0;
+        }
 
         return cnt;
     }
@@ -235,15 +260,30 @@ public class BTreeInternalPage extends BTreePage {
      * 获取第index个子节点pageID
      * 通过页内存储的子节点的pageNo，构造并返回pageID
      */
-    private BTreePageID getChildPageID(int index) {
-        if (index < 0 || index >= childrenPageNos.length) {
+    private BTreePageID getChildPageIDFromLeft(int index) {
+        if (index < 0 || index >= childPages.length) {
             throw new NoSuchElementException(String.format("不存在索引为%s的元素", index));
         }
         if (!isSlotUsed(index)) {
             return null;
         }
+        int leftPageNo = childPages[index].leftPageNo;
+        return new BTreePageID(pageID.getTableId(), leftPageNo, childrenPageType);
+    }
 
-        return new BTreePageID(pageID.getTableId(), childrenPageNos[index], childrenPageType);
+    /**
+     * 获取第index个子节点pageID
+     * 通过页内存储的子节点的pageNo，构造并返回pageID
+     */
+    private BTreePageID getChildPageIDFromRight(int index) {
+        if (index < 0 || index >= childPages.length) {
+            throw new NoSuchElementException(String.format("不存在索引为%s的元素", index));
+        }
+        if (!isSlotUsed(index)) {
+            return null;
+        }
+        int rightPageNo = childPages[index].rightPageNo;
+        return new BTreePageID(pageID.getTableId(), rightPageNo, childrenPageType);
     }
 
     /**
@@ -274,82 +314,115 @@ public class BTreeInternalPage extends BTreePage {
             childrenPageType = entry.getLeftChildPageType();
         }
 
-        // 第一个节点特殊处理
-        if (getExistCount() == 0) {
-            childrenPageNos[0] = entry.getLeftChildPageID().getPageNo();
-            childrenPageNos[1] = entry.getRightChildPageID().getPageNo();
-            keys[1] = entry.getKey(); // keyList 0位置不存放数据
-            markSlotUsed(0, true);
-            markSlotUsed(1, true);
-            entry.setKeyItem(new KeyItem(pageID, 1));
-            return;
-        }
+        // // 第一个节点特殊处理
+        // if (getExistCount() == 0) {
+        //     childrenPageNos[0] = entry.getLeftChildPageID().getPageNo();
+        //     childrenPageNos[1] = entry.getRightChildPageID().getPageNo();
+        //
+        //
+        //     keys[0] = entry.getKey(); // keyList 0位置不存放数据
+        //     markSlotUsed(0, true);
+        //     // markSlotUsed(1, true);
+        //     entry.setKeyItem(new KeyItem(pageID, 0));
+        //     return;
+        // }
 
         // 找到第一个空位置，从1开始，因为0不存放数据
-        int emptySlot = getFirstEmptySlot();
-        if (emptySlot == -1) {
+        int firstEmptySlot = getFirstEmptySlot();
+        if (firstEmptySlot == -1) {
             throw new DbException("insert entry error :no empty slot");
         }
 
 
-        // 查找本页中与带插入节点有相同左孩子或右孩子的节点。
-        int lessOrEqKey = -1;
+        // 查找本页中与待插入节点有相同左孩子或右孩子的节点。
+        int insertIndex = -1;
         for (int i = 0; i < getMaxSlotNum(); i++) {
             if (isSlotUsed(i)) {
-                if (childrenPageNos[i] == entry.getLeftChildPageID().getPageNo()
-                        || childrenPageNos[i] == entry.getRightChildPageID().getPageNo()) {
-                    if (i > 0 && keys[i].compare(PredicateEnum.GREATER_THAN, entry.getKey())) {
-                        throw new DbException("entry的大小不符合此页面，不应插入此位置");
+                // 找到应插入的位置
+                if (keys[i].compare(PredicateEnum.GREATER_THAN_OR_EQ, entry.getKey())) {
+                    insertIndex = i + 1;
+                    // check
+                    ChildPages childPage = childPages[i];
+                    int pageNo = entry.getRightChildPageID().getPageNo();
+                    if (childPage.rightPageNo == pageNo) {
+                        // entry 插在childPage的右侧，childPage[i+1]右移空出位置
+                        // insertIndex = i; // changeI
+                    } else if (childPage.leftPageNo == pageNo) {
+                        // entry 插在childPage的左侧，childPage[i]右移空出位置
+                        // rightInsertIndex = i; // changeI+1
+                    } else {
+                        throw new DbException("子页不相邻");
                     }
-
-                    lessOrEqKey = i;
-                    if (childrenPageNos[i] == entry.getRightChildPageID().getPageNo()) {
-                        childrenPageNos[i] = entry.getLeftChildPageID().getPageNo();
-                    }
-                } else if (lessOrEqKey != -1) {
-                    // 找到了位置跳出循环
                     break;
                 }
             }
         }
 
-        if (lessOrEqKey == -1) {
-            throw new DbException("error");
-        }
-
-        // 移动节点中元素，空出一个新位置
         int matchedSlot = -1;
-        if (emptySlot < lessOrEqKey) {
-            for (int i = emptySlot; i < lessOrEqKey; i++) {
-                shift(i + 1, i);
+        // 左插
+        if (insertIndex != -1) {
+            if (firstEmptySlot < insertIndex) {
+                // 左边有空位，将(firstEmptySlot,leftInsertIndex]向左平移1位
+                for (int i = firstEmptySlot + 1; i <= insertIndex - 1; i++) {
+                    shift(i, i - 1);
+                }
+            } else { // 右边有空位[leftInsertIndex+1，firstEmptySlot) 向右平移1
+                for (int i = firstEmptySlot - 1; i >= insertIndex; i--) {
+                    shift(i, i + 1);
+                }
             }
-            matchedSlot = lessOrEqKey;
-        } else {
-            for (int i = emptySlot; i > lessOrEqKey + 1; i--) {
-                shift(i - 1, i);
-            }
-            matchedSlot = lessOrEqKey + 1;
-        }
 
-        // 将 entry 插入匹配的位置
-        markSlotUsed(matchedSlot, true);
-        keys[matchedSlot] = entry.getKey();
-        childrenPageNos[matchedSlot] = entry.getRightChildPageID().getPageNo();
-        entry.setKeyItem(new KeyItem(pageID, matchedSlot));
+            matchedSlot = insertIndex;
+            markSlotUsed(matchedSlot, true);
+            keys[matchedSlot] = entry.getKey();
+
+            int before = findEntryBefore(matchedSlot);
+            int after = findEntryAfter(matchedSlot);
+            if (before != -1 && childPages[before].rightPageNo == entry.getRightChildPageID().getPageNo()) {
+                childPages[before].rightPageNo = entry.getLeftChildPageID().getPageNo();
+            } else if (before != -1 && childPages[before].rightPageNo == entry.getLeftChildPageID().getPageNo()) {
+                if (after != -1) {
+                    childPages[after].leftPageNo = entry.getRightChildPageID().getPageNo();
+                } else {
+                    // matchedSlot should be the last in the page
+                }
+            } else {
+                throw new DbException("error");
+            }
+            entry.setKeyItem(new KeyItem(pageID, matchedSlot));
+        }
+    }
+
+    private int findEntryBefore(int matchedSlot) {
+        for (int i = matchedSlot; i >= 0; i--) {
+            if (slotUsageStatusBitMap[i]) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private int findEntryAfter(int matchedSlot) {
+        for (int i = matchedSlot; i < slotUsageStatusBitMap.length; i++) {
+            if (slotUsageStatusBitMap[i]) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private void shift(int from, int to) {
         if (!isSlotUsed(to) && isSlotUsed(from)) {
             markSlotUsed(to, true);
             keys[to] = keys[from];
-            childrenPageNos[to] = childrenPageNos[from];
+            childPages[to] = childPages[from];
             markSlotUsed(from, false);
         }
     }
 
     private int getFirstEmptySlot() {
         int emptySlot = -1;
-        for (int i = 1; i < this.maxSlotNum; i++) {
+        for (int i = 0; i < this.maxSlotNum; i++) {
             if (!isSlotUsed(i)) {
                 emptySlot = i;
                 break;
@@ -362,23 +435,32 @@ public class BTreeInternalPage extends BTreePage {
         return new BTreeInternalPageReverseIterator(this);
     }
 
-    public void deleteEntryAndLeftChild(BTreeEntry entry) {
-        KeyItem keyItem = entry.getKeyItem();
-        markSlotUsed(keyItem.getSlotIndex(), false);
-        entry.setKeyItem(null);
-    }
-
-    public void deleteEntryAndRightChild(BTreeEntry entry) {
+    /**
+     * 从左边开始删除entry
+     */
+    public void deleteEntryFromTheLeft(BTreeEntry entry) {
         KeyItem keyItem = entry.getKeyItem();
         markSlotUsed(keyItem.getSlotIndex(), false);
         entry.setKeyItem(null);
         keys[keyItem.getSlotIndex()] = null;
-        childrenPageNos[keyItem.getSlotIndex()] = 0;
+        KeyItem keyItem1 = entry.getKeyItem();
+        for (int i = keyItem1.getSlotIndex() - 1; i >= 0; i--) {
+            if (isSlotUsed(i)) {
+                childPages[i].rightPageNo = childPages[keyItem1.getSlotIndex()].leftPageNo;
+                break;
+            }
+        }
+    }
+
+    public void deleteEntryFromTheRight(BTreeEntry entry) {
+        KeyItem keyItem = entry.getKeyItem();
+        markSlotUsed(keyItem.getSlotIndex(), false);
+        entry.setKeyItem(null);
+        keys[keyItem.getSlotIndex()] = null;
     }
 
     public boolean isLessThanHalfFullOpen() {
-
-        return this.getExistCount() < (this.getMaxSlotNum()-1) / 2;
+        return this.getExistCount() < this.getMaxSlotNum() / 2;
     }
 
 
@@ -394,7 +476,7 @@ public class BTreeInternalPage extends BTreePage {
 
         // return numEmpy >= maxEmptySlots;
         // return - this.getExistCount() >= -maxEnty / 2;
-        return this.getExistCount() <= (this.getMaxSlotNum()-1) / 2;
+        return this.getExistCount() <= this.getMaxSlotNum() / 2;
     }
 
     private void markSlotUsed(int keyItemNo, boolean isUsed) {
@@ -429,7 +511,7 @@ public class BTreeInternalPage extends BTreePage {
         // todo 检验元素顺序
 
         int slotIndex = keyItem.getSlotIndex();
-        childrenPageNos[slotIndex] = entry.getRightChildPageID().getPageNo();
+        childPages[slotIndex] = new ChildPages(entry);
         keys[slotIndex] = entry.getKey();
     }
     // =====================================迭代器==========================================
@@ -440,8 +522,9 @@ public class BTreeInternalPage extends BTreePage {
     public class BTreeInternalPageIterator implements Iterator<BTreeEntry> {
         /**
          * 当前遍历的key和children的下标
+         * TODO
          */
-        int curIndex = 1;
+        int curIndex = 0;
 
         /**
          * 暂存上一次取得的childPageID，在构造BtreeEntry时做临时变量使用
@@ -464,18 +547,20 @@ public class BTreeInternalPage extends BTreePage {
                 return true;
             }
 
+            // TODO
             if (prevChildPageID == null) { // 首次迭代
-                prevChildPageID = internalPage.getChildPageID(0);
+                prevChildPageID = internalPage.getChildPageIDFromLeft(0);
                 if (prevChildPageID == null) {
                     return false;
                 }
             }
 
+            // TODO
             while (curIndex < internalPage.getMaxSlotNum()) {
                 final int index = curIndex;
                 curIndex++;
                 Field key = internalPage.getKey(index);
-                BTreePageID childPageId = internalPage.getChildPageID(index);
+                BTreePageID childPageId = internalPage.getChildPageIDFromLeft(index);
                 if (key != null && childPageId != null) {
                     nextEntryToReturn = new BTreeEntry(key, prevChildPageID, childPageId);
                     nextEntryToReturn.setKeyItem(new KeyItem(internalPage.pageID, index));
@@ -561,7 +646,7 @@ public class BTreeInternalPage extends BTreePage {
             if (reversePrevChildPageID == null
                     || key == null
                     || keyItem == null) {
-                reversePrevChildPageID = internalPage.getChildPageID(curIndex);
+                reversePrevChildPageID = internalPage.getChildPageIDFromRight(curIndex);
                 key = internalPage.getKey(curIndex);
                 keyItem = new KeyItem(internalPage.getPageID(), curIndex);
 
@@ -574,7 +659,7 @@ public class BTreeInternalPage extends BTreePage {
             while (curIndex > 0) {
                 --curIndex;
                 int index = curIndex;
-                BTreePageID childPageID = internalPage.getChildPageID(index);
+                BTreePageID childPageID = internalPage.getChildPageIDFromRight(index);
 
                 // 如果找到子pageID，封装entry
                 if (childPageID != null) {
