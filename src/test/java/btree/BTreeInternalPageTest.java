@@ -1,14 +1,13 @@
 package btree;
 
 import com.microdb.model.DataBase;
+import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
 import com.microdb.model.dbfile.BTreeFile;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
-import com.microdb.model.page.btree.BTreeEntry;
-import com.microdb.model.page.btree.BTreeInternalPage;
-import com.microdb.model.page.btree.BTreePageID;
-import com.microdb.model.page.btree.BTreePageType;
+import com.microdb.model.page.btree.*;
+import com.microdb.operator.btree.BtreeScan;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -16,7 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * BTreeInternalPageTest
@@ -154,45 +153,6 @@ public class BTreeInternalPageTest {
 
     }
 
-
-    /**
-     * 添加entry
-     */
-    @Test
-    public void deleteEntry() throws Exception {
-        byte[] data = BTreeInternalPage.createEmptyPageData();
-        BTreePageID pageID =
-                new BTreePageID(DataBase.getInstance().getDbTableByName("t_person").getTableId(), 1, BTreePageType.INTERNAL);
-        BTreeInternalPage page = new BTreeInternalPage(pageID, data, 0);
-        ArrayList<BTreeEntry> entries = new ArrayList<>();
-
-        int[][] EXAMPLE_VALUES = new int[][]{
-                {2, 100, 4},
-                {4, 200, 5},
-                {5, 300, 7}
-        };
-
-        // 从小到大顺序插入
-        for (int[] entry : EXAMPLE_VALUES) {
-            BTreePageID leftChild = new BTreePageID(pageID.getTableId(), entry[0], BTreePageType.LEAF);
-            BTreePageID rightChild = new BTreePageID(pageID.getTableId(), entry[2], BTreePageType.LEAF);
-            BTreeEntry e = new BTreeEntry(new IntField(entry[1]), leftChild, rightChild);
-            entries.add(e);
-            page.insertEntry(e);
-        }
-
-        System.out.println(page);
-
-
-        // for (int[] entry : EXAMPLE_VALUES) {
-        //     BTreePageID leftChild = new BTreePageID(pageID.getTableId(), entry[0], BTreePageType.LEAF);
-        //     BTreePageID rightChild = new BTreePageID(pageID.getTableId(), entry[2], BTreePageType.LEAF);
-        //     BTreeEntry e = new BTreeEntry(new IntField(entry[1]), leftChild, rightChild);
-        //     entries.add(e);
-        //     page.deleteEntryFromTheLeft(e);
-        // }
-    }
-
     @Test
     public void testIterator() throws IOException {
         byte[] data = BTreeInternalPage.createEmptyPageData();
@@ -257,4 +217,208 @@ public class BTreeInternalPageTest {
         }
 
     }
+
+
+    /**
+     * delete Entry
+     */
+    @Test
+    public void deleteEntry() throws Exception {
+
+        byte[] data = BTreeInternalPage.createEmptyPageData();
+        BTreePageID pageID =
+                new BTreePageID(DataBase.getInstance().getDbTableByName("t_person").getTableId(), 1, BTreePageType.INTERNAL);
+        BTreeInternalPage page = new BTreeInternalPage(pageID, data, 0);
+        ArrayList<BTreeEntry> entries = new ArrayList<>();
+
+        int[][] EXAMPLE_VALUES = new int[][]{
+                {2, 100, 4},
+                {4, 200, 5},
+                {5, 300, 7}
+        };
+
+        // 从小到大顺序插入
+        for (int[] entry : EXAMPLE_VALUES) {
+            BTreePageID leftChild = new BTreePageID(pageID.getTableId(), entry[0], BTreePageType.LEAF);
+            BTreePageID rightChild = new BTreePageID(pageID.getTableId(), entry[2], BTreePageType.LEAF);
+            BTreeEntry e = new BTreeEntry(new IntField(entry[1]), leftChild, rightChild);
+            entries.add(e);
+            page.insertEntry(e);
+        }
+
+        Iterator<BTreeEntry> iterator = page.getIterator();
+        iterator = page.getIterator();
+        BTreeEntry next1 = iterator.next();
+        BTreeEntry next2 = iterator.next();
+        BTreeEntry next3 = iterator.next();
+
+        // page.deleteEntryFromTheLeft(next1);
+        // page.deleteEntryFromTheLeft(next2);
+        // page.deleteEntryFromTheLeft(next3);
+        // printEntry(page);
+
+        // page.deleteEntryFromTheRight(next1);
+        page.deleteEntryFromTheRight(next2);
+        // page.deleteEntryFromTheRight(next3);
+        printInternalPage(page);
+    }
+
+
+    @Test
+    public void insertEntryAndSplit() throws IOException {
+        byte[] data = BTreeInternalPage.createEmptyPageData();
+        BTreePageID pageID =
+                new BTreePageID(DataBase.getInstance().getDbTableByName("t_person").getTableId(), 1, BTreePageType.INTERNAL);
+        BTreeInternalPage page = new BTreeInternalPage(pageID, data, 0);
+        ArrayList<BTreeEntry> entries = new ArrayList<>();
+
+        System.out.println(page.getPageID());
+        BTreeFile tableFile = (BTreeFile) dataBase.getDbTableByName("t_person").getTableFile();
+
+        for (int i = 1; i < 11; i++) {
+            Row row = new Row(personTableDesc);
+            row.setField(0, new IntField(i));
+            row.setField(1, new IntField(18));
+            tableFile.insertRow(row);
+        }
+        int tableId = tableFile.getTableId();
+        BTreePageID rootPtrPageID = BTreeRootPtrPage.getRootPtrPageID(tableId);
+        BTreeRootPtrPage rootPtrPage = (BTreeRootPtrPage) tableFile.readPageFromDisk(rootPtrPageID);
+        BTreePage rootNodePage = tableFile.readPageFromDisk(rootPtrPage.getRootNodePageID());
+
+
+        Row row = new Row(personTableDesc);
+                row.setField(0, new IntField(11));
+                row.setField(1, new IntField(18));
+                tableFile.insertRow(row);
+
+        rootPtrPage = (BTreeRootPtrPage) tableFile.readPageFromDisk(rootPtrPageID);
+        rootNodePage = tableFile.readPageFromDisk(rootPtrPage.getRootNodePageID());
+        System.out.println("打印rootNodePage======");
+        IntField key = (IntField) ((BTreeInternalPage) rootNodePage).getIterator().next().getKey();
+        assertTrue(key.getValue() == 5);
+        Iterator<BTreeEntry> iterator = ((BTreeInternalPage) rootNodePage).getIterator();
+
+        while (iterator.hasNext()) {
+            BTreeEntry next = iterator.next();
+            // should be internal
+
+            System.out.println("left=====:");
+            BTreePage bTreePage = tableFile.readPageFromDisk(next.getLeftChildPageID());
+            printInternalPage((BTreeInternalPage) bTreePage);
+            printLeafByInternalPage(tableFile, (BTreeInternalPage) bTreePage);
+
+
+            System.out.println("right=====:");
+            BTreePage bTreePage1 = tableFile.readPageFromDisk(next.getRightChildPageID());
+            printInternalPage((BTreeInternalPage) bTreePage1);
+            printLeafByInternalPage(tableFile, (BTreeInternalPage) bTreePage1);
+        }
+    }
+
+
+    /**
+     * 删除测试
+     * 表中只有一页internalPage的情况
+     */
+    @Test
+    public void deleteRowAndEntryOneInternalPage() throws IOException {
+        byte[] data = BTreeInternalPage.createEmptyPageData();
+        BTreePageID pageID =
+                new BTreePageID(DataBase.getInstance().getDbTableByName("t_person").getTableId(), 1, BTreePageType.INTERNAL);
+        BTreeInternalPage page = new BTreeInternalPage(pageID, data, 0);
+        System.out.println(page.getPageID());
+        BTreeFile tableFile = (BTreeFile) dataBase.getDbTableByName("t_person").getTableFile();
+        int tableId = tableFile.getTableId();
+        for (int i = 0; i < 10; i++) {
+            Row row = new Row(personTableDesc);
+            row.setField(0, new IntField(i));
+            row.setField(1, new IntField(18));
+            tableFile.insertRow(row);
+        }
+
+        BtreeScan scan = new BtreeScan(tableFile.getTableId(), null);
+
+        System.out.println("开始打印====");
+        // 删除并打印
+        for (int i = 0; i < 10; i++) {
+            deleteOne(tableFile, scan);
+            printTree(tableFile, tableId);
+        }
+
+
+        scan.open();
+        assertFalse(scan.hasNext());
+    }
+
+    private void deleteOne(BTreeFile tableFile, BtreeScan scan) throws IOException {
+        scan.open();
+        tableFile.deleteRow(scan.next());
+        scan.close();
+    }
+
+    private void printTree(BTreeFile tableFile, int tableId) {
+        BTreePageID rootPtrPageID = BTreeRootPtrPage.getRootPtrPageID(tableId);
+        BTreeRootPtrPage rootPtrPage = (BTreeRootPtrPage) tableFile.readPageFromDisk(rootPtrPageID);
+        BTreePage rootNodePage = tableFile.readPageFromDisk(rootPtrPage.getRootNodePageID());
+        rootPtrPage = (BTreeRootPtrPage) tableFile.readPageFromDisk(rootPtrPageID);
+        rootNodePage = tableFile.readPageFromDisk(rootPtrPage.getRootNodePageID());
+        System.out.println("打印rootNodePage======");
+        if (rootNodePage instanceof BTreeInternalPage) {
+            printBtreePage(rootNodePage);
+            Iterator<BTreeEntry> iterator = ((BTreeInternalPage) rootNodePage).getIterator();
+            System.out.println("打印内部元素=====");
+            while (iterator.hasNext()) {
+                BTreeEntry next = iterator.next();
+
+                System.out.println("left=====:");
+                BTreePage bTreePage = tableFile.readPageFromDisk(next.getLeftChildPageID());
+                printBtreePage(bTreePage);
+
+                System.out.println("right=====:");
+                BTreePage bTreePage1 = tableFile.readPageFromDisk(next.getRightChildPageID());
+                printBtreePage(bTreePage1);
+            }
+        } else if (rootNodePage instanceof BTreeLeafPage) {
+            printBtreePage(rootNodePage);
+        }
+
+    }
+
+    private void printBtreePage(BTreePage bTreePage) {
+        if (bTreePage instanceof BTreeInternalPage) {
+            printInternalPage((BTreeInternalPage) bTreePage);
+        } else if (bTreePage instanceof BTreeLeafPage) {
+            printLeafPage(bTreePage);
+        }
+    }
+
+    private void printLeafByInternalPage(BTreeFile tableFile, BTreeInternalPage bTreePage) {
+        Iterator<BTreeEntry> iterator1 = bTreePage.getIterator();
+        while (iterator1.hasNext()) {
+            BTreeEntry next1 = iterator1.next();
+            printLeafPage(tableFile.readPageFromDisk(next1.getLeftChildPageID()));
+            printLeafPage(tableFile.readPageFromDisk(next1.getRightChildPageID()));
+        }
+    }
+
+    private void printLeafPage(BTreePage bTreePage) {
+        Iterator<Row> rowIterator = bTreePage.getRowIterator();
+        while (rowIterator.hasNext()) {
+            Row next1 = rowIterator.next();
+            System.out.println(next1);
+        }
+    }
+
+    public void checkChildCorrect() {
+
+    }
+    public void printInternalPage(BTreeInternalPage page) {
+        Iterator<BTreeEntry> iterator = page.getIterator();
+        while (iterator.hasNext()) {
+            BTreeEntry next = iterator.next();
+            System.out.println(next);
+        }
+    }
+
 }

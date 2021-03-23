@@ -36,6 +36,9 @@ public abstract class Operator implements IOperatorIterator {
 
     @Override
     public Row next() throws DbException, NoSuchElementException {
+        if (!isOpen) {
+            throw new DbException("iterator not open ");
+        }
         if (nextRow == null) {
             nextRow = fetchNextMatched();
             if (nextRow == null)

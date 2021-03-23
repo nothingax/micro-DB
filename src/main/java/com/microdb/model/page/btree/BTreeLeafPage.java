@@ -111,7 +111,7 @@ public class BTreeLeafPage extends BTreePage {
     @Override
     public byte[] serialize() throws IOException {
         check(this);
-        print(this);
+        // print(this);
 
         if (this.getPageID().getPageNo() > 2) {
             if (this.getParentPageID().getPageNo() == 0) {
@@ -301,9 +301,25 @@ public class BTreeLeafPage extends BTreePage {
         return new BTreeLeafPageReverseIterator(this);
     }
 
-    public boolean isLessThanHalfFull() {
-        return this.getExistRowCount() < this.getMaxSlotNum() / 2;
+    public boolean isLessThanHalfFullForSplit() {
+        if ((this.getMaxSlotNum() & 1) == 1) {
+            return this.getExistRowCount() < this.getMaxSlotNum() / 2;
+        } else {
+            return this.getExistRowCount() < (this.getMaxSlotNum() + 1) / 2;
+        }
     }
+
+    public boolean isLessThanHalfFull() {
+        if ((this.getMaxSlotNum() & 1) == 1) {
+            return this.getExistRowCount() <= this.getMaxSlotNum() / 2;
+        } else {
+            return this.getExistRowCount() <= (this.getMaxSlotNum() + 1) / 2;
+        }
+    }
+
+    // public boolean isMoreThanHalfFull() {
+    //     return this.getExistRowCount() > this.getMaxSlotNum() / 2;
+    // }
 
     /**
      * 当前页已经存储的行数

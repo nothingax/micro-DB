@@ -49,6 +49,10 @@ public class BTreePageID implements PageID {
         return pageType;
     }
 
+    public void setPageNo(int pageNo) {
+        this.pageNo = pageNo;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

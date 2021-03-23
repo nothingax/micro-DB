@@ -1,5 +1,6 @@
 package com.microdb.model.dbfile;
 
+import com.microdb.annotation.PublicForTest;
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
 import com.microdb.model.Row;
@@ -107,7 +108,7 @@ public class BTreeFile implements TableFile {
         page.deleteRow(row);
 
         // 数量不足一半时，与兄弟节点重新分布元素
-        if (page.isLessThanHalfFull()) {
+        if (page.isLessThanHalfFullForSplit()) {
             redistributePage(page);
         }
         writePageToDisk(page);
@@ -305,14 +306,15 @@ public class BTreeFile implements TableFile {
                                    BTreeInternalPage parentPage,
                                    BTreeEntry entry) throws IOException {
 
-        if (leftPage.getExistCount() == leftPage.getMaxSlotNum()-1 || rightPage.getExistCount() == leftPage.getMaxSlotNum()-1) {
-            throw new DbException("mergeInternalPage异常： page 已满 无法合并");
-        }
+        // if (leftPage.getExistCount() == leftPage.getMaxSlotNum() - 1 || rightPage.getExistCount() == leftPage.getMaxSlotNum() - 1) {
+        //     throw new DbException("mergeInternalPage异常： page 已满 无法合并");
+        // }
         // 两页合并，父页中指向两个子页的的entry应删除
         deleteParentEntry(leftPage, parentPage, entry);
         writePageToDisk(parentPage);
 
         // 将原来在父页的entry拉下来到下一级
+        // TODO 可能出现没有leftPage中没有元素的情况，获取不到RightChildPageID
         entry.setLeftChildPageID(leftPage.getReverseIterator().next().getRightChildPageID());
         entry.setRightChildPageID(rightPage.getIterator().next().getLeftChildPageID());
         leftPage.insertEntry(entry);
@@ -503,8 +505,9 @@ public class BTreeFile implements TableFile {
                                    BTreeEntry entryToDelete) throws IOException {
 
         // 由于合并后删除右页
-        parentPage.deleteEntryFromTheRight(entryToDelete);
-        if (parentPage.isEmpty()) {
+        parentPage.deleteEntryAndRightChildPage(entryToDelete);
+        // if (parentPage.getParentPageID().getPageType() == BTreePageType.ROOT_PTR && parentPage.isEmpty()) {
+            if (parentPage.isEmpty()) {
             // 当父页变空，说明没有可以合并的页，即不再有其他internal page了，需要将leafPage挂在rootPtr下
             BTreePageID rootPrtPageID = parentPage.getParentPageID();
             if (rootPrtPageID.getPageType() != BTreePageType.ROOT_PTR) {
@@ -522,6 +525,8 @@ public class BTreeFile implements TableFile {
             markPageUnused(parentPage.getPageID().getPageNo());
         } else if (parentPage.isLessThanHalfFullOpen()) {
             redistributePage(parentPage);
+        } else {
+            writePageToDisk(parentPage);
         }
     }
 
@@ -602,7 +607,7 @@ public class BTreeFile implements TableFile {
                 if (bytesRead < BTreeRootPtrPage.rootPtrPageSizeInByte) {
                     throw new IllegalArgumentException("未从btree file 中读取到" + BTreeRootPtrPage.rootPtrPageSizeInByte + "字节");
                 }
-                System.out.println("btree file read  page ,pageNo=" + BTreePageID.getPageNo() + ",BTree type=" + BTreePageID.getPageType());
+                // System.out.println("btree file read  page ,pageNo=" + BTreePageID.getPageNo() + ",BTree type=" + BTreePageID.getPageType());
                 return new BTreeRootPtrPage(BTreePageID, bytes);
             } else {
                 byte[] pageData = new byte[Page.defaultPageSizeInByte];
@@ -619,7 +624,7 @@ public class BTreeFile implements TableFile {
                     throw new IllegalArgumentException("未从btree file 中读取到" + Page.defaultPageSizeInByte + "字节");
                 }
 
-                System.out.println("btree file read  page ,pageNo=" + BTreePageID.getPageNo() + ",BTree type=" + BTreePageID.getPageType());
+                // System.out.println("btree file read  page ,pageNo=" + BTreePageID.getPageNo() + ",BTree type=" + BTreePageID.getPageType());
 
                 if (BTreePageID.getPageType() == BTreePageType.HEADER) {
                     return new BTreeHeaderPage(BTreePageID, pageData);
@@ -772,6 +777,10 @@ public class BTreeFile implements TableFile {
         // 父节点没有空槽位则分裂
         if (!parentPage.hasEmptySlot()) {
             parentPage = splitInternalPage(parentPage, keyToInsert);
+
+            // BTreeRootPtrPage rootPrtPage = getRootPrtPage();
+            // rootPrtPage.setRootNodePageID(parentPage.getPageID());
+            // writePageToDisk(rootPrtPage);
         }
 
         return parentPage;
@@ -784,7 +793,9 @@ public class BTreeFile implements TableFile {
      * @param keyToInsert           索引字段
      * @return 返回可用的页
      */
-    private BTreeInternalPage splitInternalPage(BTreeInternalPage internalPageNeedSplit, Field keyToInsert) throws IOException {
+
+    @PublicForTest
+    public BTreeInternalPage splitInternalPage(BTreeInternalPage internalPageNeedSplit, Field keyToInsert) throws IOException {
 
         // 获取一个可用的页
         BTreeInternalPage newInternalPage = (BTreeInternalPage) getEmptyPage(BTreePageType.INTERNAL);

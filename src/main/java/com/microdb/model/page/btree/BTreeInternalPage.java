@@ -264,49 +264,6 @@ public class BTreeInternalPage extends BTreePage {
     }
 
     /**
-     * 获取第index个子节点pageID
-     * 通过页内存储的子节点的pageNo，构造并返回pageID
-     */
-    private BTreePageID getChildPageIDFromLeft(int index) {
-        if (index < 0 || index >= childPages.length) {
-            throw new NoSuchElementException(String.format("不存在索引为%s的元素", index));
-        }
-        if (!isSlotUsed(index)) {
-            return null;
-        }
-        int leftPageNo = childPages[index].leftPageNo;
-        return new BTreePageID(pageID.getTableId(), leftPageNo, childrenPageType);
-    }
-
-    /**
-     * 获取第index个子节点pageID
-     * 通过页内存储的子节点的pageNo，构造并返回pageID
-     */
-    private BTreePageID getChildPageIDFromRight(int index) {
-        if (index < 0 || index >= childPages.length) {
-            throw new NoSuchElementException(String.format("不存在索引为%s的元素", index));
-        }
-        if (!isSlotUsed(index)) {
-            return null;
-        }
-        int rightPageNo = childPages[index].rightPageNo;
-        return new BTreePageID(pageID.getTableId(), rightPageNo, childrenPageType);
-    }
-
-    /**
-     * 获取第index个节点的键值
-     */
-    protected Field getKey(int index) {
-        if (index < 0 || index >= keys.length) {
-            throw new NoSuchElementException(String.format("不存在索引为%s的元素", index));
-        }
-        if (!isSlotUsed(index)) {
-            return null;
-        }
-        return keys[index];
-    }
-
-    /**
      * 返回该页的迭代器
      */
     public Iterator<BTreeEntry> getIterator() {
@@ -509,27 +466,112 @@ public class BTreeInternalPage extends BTreePage {
     }
 
     /**
-     * 从左边开始删除entry
+     * 从左侧开始删除entry
      */
     public void deleteEntryFromTheLeft(BTreeEntry entry) {
-        KeyItem keyItem = entry.getKeyItem();
-        markSlotUsed(keyItem.getSlotIndex(), false);
-        entry.setKeyItem(null);
-        keys[keyItem.getSlotIndex()] = null;
-        KeyItem keyItem1 = entry.getKeyItem();
-        for (int i = keyItem1.getSlotIndex() - 1; i >= 0; i--) {
-            if (isSlotUsed(i)) {
-                childPages[i].rightPageNo = childPages[keyItem1.getSlotIndex()].leftPageNo;
-                break;
+
+        int slotIndexDeleted = entry.getKeyItem().getSlotIndex();
+        // 第一个或最后一个直接删除
+        if (slotIndexDeleted != findFirstUsedSlot() && slotIndexDeleted != findLastUsedSlot()) {
+            // 删除entry，并连接子页
+            int prevUsedSlotExclusive = findPrevUsedSlotExclusive(slotIndexDeleted);
+            int nextUsedSlotExclusive = findNextUsedSlotExclusive(slotIndexDeleted);
+            int pageNo = entry.getRightChildPageID().getPageNo();
+
+            if (prevUsedSlotExclusive != -1) {
+                childPages[prevUsedSlotExclusive].rightPageNo = pageNo;
             }
+            // if (nextUsedSlotExclusive != -1) {
+            //     childPages[nextUsedSlotExclusive].leftPageNo = pageNo;
+            // }
         }
+
+        // delete
+        slotUsageStatusBitMap[slotIndexDeleted] = false;
+        keys[slotIndexDeleted] = null;
+        childPages[slotIndexDeleted] = null;
+    }
+    /**
+     * 从由右开始删除entry
+     */
+    public void deleteEntryAndRightChildPage(BTreeEntry entry) {
+        int slotIndexDeleted = entry.getKeyItem().getSlotIndex();
+        // 第一个或最后一个直接删除
+        // if (slotIndexDeleted != findFirstUsedSlot() && slotIndexDeleted != findLastUsedSlot()) {
+        //     // 删除entry，并连接子页
+        //     int prevUsedSlotExclusive = findPrevUsedSlotExclusive(slotIndexDeleted);
+        //     int nextUsedSlotExclusive = findNextUsedSlotExclusive(slotIndexDeleted);
+        //     int pageNo = entry.getLeftChildPageID().getPageNo();
+        //
+        //     // 保留entry的left，并赋值给next的left
+        //     // if (prevUsedSlotExclusive != -1) {
+        //     //     childPages[prevUsedSlotExclusive].rightPageNo = pageNo;
+        //     // }
+        //     if (nextUsedSlotExclusive != -1) {
+        //         childPages[nextUsedSlotExclusive].leftPageNo = pageNo;
+        //     }
+        // }
+
+        int prevUsedSlotExclusive = findPrevUsedSlotExclusive(slotIndexDeleted);
+        int nextUsedSlotExclusive = findNextUsedSlotExclusive(slotIndexDeleted);
+        int pageNo = entry.getLeftChildPageID().getPageNo();
+
+        // 保留entry的left，并赋值给next的left
+        // if (prevUsedSlotExclusive != -1) {
+        //     childPages[prevUsedSlotExclusive].rightPageNo = pageNo;
+        // }
+        if (nextUsedSlotExclusive != -1) {
+            childPages[nextUsedSlotExclusive].leftPageNo = pageNo;
+        }
+
+        // delete
+        slotUsageStatusBitMap[slotIndexDeleted] = false;
+        keys[slotIndexDeleted] = null;
+        childPages[slotIndexDeleted] = null;
     }
 
+    /**
+     * 从由右开始删除entry
+     */
     public void deleteEntryFromTheRight(BTreeEntry entry) {
-        KeyItem keyItem = entry.getKeyItem();
-        markSlotUsed(keyItem.getSlotIndex(), false);
-        entry.setKeyItem(null);
-        keys[keyItem.getSlotIndex()] = null;
+        int slotIndexDeleted = entry.getKeyItem().getSlotIndex();
+        // 第一个或最后一个直接删除
+        if (slotIndexDeleted != findFirstUsedSlot() && slotIndexDeleted != findLastUsedSlot()) {
+            // 删除entry，并连接子页
+            int prevUsedSlotExclusive = findPrevUsedSlotExclusive(slotIndexDeleted);
+            int nextUsedSlotExclusive = findNextUsedSlotExclusive(slotIndexDeleted);
+            int pageNo = entry.getLeftChildPageID().getPageNo();
+
+            // if (prevUsedSlotExclusive != -1) {
+            //     childPages[prevUsedSlotExclusive].rightPageNo = pageNo;
+            // }
+            if (nextUsedSlotExclusive != -1) {
+                childPages[nextUsedSlotExclusive].leftPageNo = pageNo;
+            }
+        }
+
+        // delete
+        slotUsageStatusBitMap[slotIndexDeleted] = false;
+        keys[slotIndexDeleted] = null;
+        childPages[slotIndexDeleted] = null;
+    }
+
+    private int findLastUsedSlot() {
+        for (int i = maxSlotNum - 1; i >= 0; i--) {
+            if (isSlotUsed(i)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private int findFirstUsedSlot() {
+        for (int i = 0; i < this.maxSlotNum; i++) {
+            if (isSlotUsed(i)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public boolean isLessThanHalfFullOpen() {
