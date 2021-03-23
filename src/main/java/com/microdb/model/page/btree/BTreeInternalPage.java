@@ -343,11 +343,11 @@ public class BTreeInternalPage extends BTreePage {
 
                 setEntry(entry, 0);
 
-                int after = findEntryAfter(0);
+                int after = findNextUsedSlotExclusive(0);
                 childPages[after].leftPageNo = childPages[0].rightPageNo;
             } else {
                 setEntry(entry, 0);
-                int after = findEntryAfter(0);
+                int after = findNextUsedSlotExclusive(0);
                 childPages[after].leftPageNo = childPages[0].rightPageNo;
             }
         } else if (entry.getKey().compare(PredicateEnum.GREATER_THAN_OR_EQ, keys[last])) {
@@ -357,7 +357,7 @@ public class BTreeInternalPage extends BTreePage {
                     shift(i, i - 1);
                 }
                 setEntry(entry, last);
-                int entryBefore = findEntryBefore(last);
+                int entryBefore = findPrevUsedSlotExclusive(last);
                 childPages[entryBefore].rightPageNo = childPages[last].leftPageNo;
             } else {
                 int insertIndex = last + 1;
@@ -389,14 +389,16 @@ public class BTreeInternalPage extends BTreePage {
 
     private void updateChild(BTreeEntry entry, int slotIndex) {
         // 更新子页
-        int before = findEntryBefore(slotIndex);
+        int before = findPrevUsedSlotExclusive(slotIndex);
         if (before == -1) {
             throw new DbException("should not happen");
         }
-        int after = findEntryAfter(slotIndex);
+        int after = findNextUsedSlotExclusive(slotIndex);
         if (after == -1) {
             throw new DbException("should not happen");
         }
+
+        // 链接子页
         if (childPages[before].rightPageNo == entry.getLeftChildPageID().getPageNo()) {
             childPages[after].leftPageNo = entry.getRightChildPageID().getPageNo();
         } else if (childPages[after].leftPageNo == entry.getRightChildPageID().getPageNo()) {
@@ -445,10 +447,17 @@ public class BTreeInternalPage extends BTreePage {
     }
 
     /**
-     * 查找左侧使用的槽位下标
+     * 查找左侧使用的槽位下标,不包括slot
      */
-    private int findEntryBefore(int slot) {
-        for (int i = slot - 1; i >= 0; i--) {
+    private int findPrevUsedSlotExclusive(int slot) {
+        return findPrevUsedSlotInclusive(slot - 1);
+    }
+
+    /**
+     * 查找左侧使用的槽位下标,包括slot
+     */
+    private int findPrevUsedSlotInclusive(int slot) {
+        for (int i = slot; i >= 0; i--) {
             if (slotUsageStatusBitMap[i]) {
                 return i;
             }
@@ -457,9 +466,9 @@ public class BTreeInternalPage extends BTreePage {
     }
 
     /**
-     * 查找右侧使用的槽位下标，包括slot本身
+     * 查找右侧使用的槽位下标，包括slot
      */
-    private int findEntryAfterClosed(int slot) {
+    private int findNextUsedSlotInclusive(int slot) {
         for (int i = slot; i < slotUsageStatusBitMap.length; i++) {
             if (slotUsageStatusBitMap[i]) {
                 return i;
@@ -468,16 +477,11 @@ public class BTreeInternalPage extends BTreePage {
         return -1;
     }
 
-
-
-
-    private int findEntryAfter(int matchedSlot) {
-        for (int i = matchedSlot + 1; i < slotUsageStatusBitMap.length; i++) {
-            if (slotUsageStatusBitMap[i]) {
-                return i;
-            }
-        }
-        return -1;
+    /**
+     * 查找右侧使用的槽位下标，不包括slot
+     */
+    private int findNextUsedSlotExclusive(int slot) {
+        return findNextUsedSlotInclusive(slot + 1);
     }
 
     private void shift(int from, int to) {
@@ -610,7 +614,7 @@ public class BTreeInternalPage extends BTreePage {
 
         public BTreeInternalPageIterator(BTreeInternalPage internalPage) {
             this.internalPage = internalPage;
-            curIndex = findEntryAfterClosed(curIndex);
+            curIndex = findNextUsedSlotInclusive(curIndex);
         }
 
         public boolean hasNext() {
@@ -623,7 +627,7 @@ public class BTreeInternalPage extends BTreePage {
             }
 
             BTreeEntry entry = getEntry(curIndex);
-            curIndex = findEntryAfter(curIndex);
+            curIndex = findNextUsedSlotExclusive(curIndex);
             return entry;
         }
     }
@@ -642,10 +646,9 @@ public class BTreeInternalPage extends BTreePage {
         public BTreeInternalPageReverseIterator(BTreeInternalPage internalPage) {
             this.internalPage = internalPage;
             this.curIndex = getMaxSlotNum() - 1;
-            // 将游标指向最右侧的不为空的entry
-            while (!isSlotUsed(curIndex) && curIndex > 0) {
-                curIndex--;
-            }
+            // 从右往左，知道第一个使用的槽位
+            // findEntryBeforeClosed()
+            curIndex = findPrevUsedSlotInclusive(curIndex);
         }
 
         public boolean hasNext() {
@@ -657,7 +660,7 @@ public class BTreeInternalPage extends BTreePage {
                 throw new NoSuchElementException();
             }
             BTreeEntry entry = getEntry(curIndex);
-            curIndex = findEntryBefore(curIndex);
+            curIndex = findPrevUsedSlotExclusive(curIndex);
             return entry;
         }
     }
