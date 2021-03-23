@@ -43,6 +43,10 @@ public class BTreeInternalPage extends BTreePage {
             this.leftPageNo = entry.getLeftChildPageID().getPageNo();
             this.rightPageNo = entry.getRightChildPageID().getPageNo();
         }
+
+        BTreePageID toPageID(int pageNo) {
+            return new BTreePageID(pageID.getTableId(), pageNo, childrenPageType);
+        }
     }
 
     /**
@@ -218,6 +222,7 @@ public class BTreeInternalPage extends BTreePage {
     public int calculateMaxSlotNum(TableDesc tableDesc) {
         return getMaxEntryNum(tableDesc);
     }
+
 
     private int getMaxEntryNum(TableDesc tableDesc) {
         int slotStatusSizeInByte = 1;
@@ -644,39 +649,11 @@ public class BTreeInternalPage extends BTreePage {
          */
         int curIndex;
 
-        /**
-         * 暂存上一次取得的childPageID，在构造BtreeEntry时做临时变量使用
-         */
-        // BTreePageID prevChildPageID = null;
-
-        /**
-         * 做临时变量使用，在next()中返回
-         */
-        BTreeEntry nextEntryToReturn = null;
-
         BTreeInternalPage internalPage;
-
-
-        /**
-         * 暂存迭代器访问的前一个子PageID，在构造BtreeEntry时做临时变量使用
-         */
-        BTreePageID reversePrevChildPageID = null;
-
-        /**
-         * 索引值
-         */
-        Field key = null;
-
-        /**
-         * 暂存迭代器访问的前一个keyItem，在构造BtreeEntry时做临时变量使用
-         */
-        KeyItem keyItem = null;
-
 
         public BTreeInternalPageReverseIterator(BTreeInternalPage internalPage) {
             this.internalPage = internalPage;
-            this.curIndex = getMaxSlotNum() - 1;//entry个数
-
+            this.curIndex = getMaxSlotNum() - 1;
             // 将游标指向最右侧的不为空的entry
             while (!isSlotUsed(curIndex) && curIndex > 0) {
                 curIndex--;
@@ -684,56 +661,28 @@ public class BTreeInternalPage extends BTreePage {
         }
 
         public boolean hasNext() {
-            if (nextEntryToReturn != null) {
-                return true;
-            }
-
-            // 首次访问
-            if (reversePrevChildPageID == null
-                    || key == null
-                    || keyItem == null) {
-                reversePrevChildPageID = internalPage.getChildPageIDFromRight(curIndex);
-                key = internalPage.getKey(curIndex);
-                keyItem = new KeyItem(internalPage.getPageID(), curIndex);
-
-                if (reversePrevChildPageID == null || key == null) {
-                    return false;
-                }
-            }
-
-            // 遍历 [lastSlot,1]
-            while (curIndex > 0) {
-                --curIndex;
-                int index = curIndex;
-                BTreePageID childPageID = internalPage.getChildPageIDFromRight(index);
-
-                // 如果找到子pageID，封装entry
-                if (childPageID != null) {
-                    nextEntryToReturn = new BTreeEntry(key, childPageID, reversePrevChildPageID);
-                    nextEntryToReturn.setKeyItem(keyItem);
-                    reversePrevChildPageID = childPageID;
-                    key = internalPage.getKey(index);
-                    keyItem = new KeyItem(internalPage.getPageID(), index);
-                    return true;
-                }
-            }
-            return false;
+            return getEntry(curIndex) != null;
         }
 
         public BTreeEntry next() {
-            BTreeEntry next = nextEntryToReturn;
-            if (next == null) {
-                if (hasNext()) {
-                    next = nextEntryToReturn;
-                    nextEntryToReturn = null;
-                    return next;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            } else {
-                nextEntryToReturn = null;
-                return next;
+            if (curIndex == -1) {
+                throw new NoSuchElementException();
             }
+            BTreeEntry entry = getEntry(curIndex);
+            curIndex = findEntryBefore(curIndex);
+            return entry;
         }
+    }
+
+    private BTreeEntry getEntry(int index) {
+        if (index < 0 || !isSlotUsed(index)) {
+            // throw new DbException(String.format("不存在索引为%s的Entry", index));
+            return null;
+        }
+        BTreePageID leftPageID = new BTreePageID(this.pageID.getTableId(), childPages[index].leftPageNo, childrenPageType);
+        BTreePageID rightPageID = new BTreePageID(this.pageID.getTableId(), childPages[index].rightPageNo, childrenPageType);
+        BTreeEntry entry = new BTreeEntry(keys[index], leftPageID, rightPageID);
+        entry.setKeyItem(new KeyItem(this.pageID, index));
+        return entry;
     }
 }

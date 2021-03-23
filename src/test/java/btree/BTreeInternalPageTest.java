@@ -220,12 +220,21 @@ public class BTreeInternalPageTest {
         //     System.out.println(next);
         // }
 
-        // TODO
         Iterator<BTreeEntry> reverseIterator = page.getReverseIterator();
         while (reverseIterator.hasNext()) {
             BTreeEntry next = reverseIterator.next();
             System.out.println(next);
         }
+
+        System.out.println("====================");
+
+        reverseIterator = page.getReverseIterator();
+        System.out.println(reverseIterator.next());
+        System.out.println(reverseIterator.next());
+        System.out.println(reverseIterator.next());
+
+        // NoSuchElementException
+        System.out.println(reverseIterator.next());
 
     }
 }
