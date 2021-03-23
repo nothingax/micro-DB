@@ -16,6 +16,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
+import static org.junit.Assert.fail;
+
 /**
  * BTreeInternalPageTest
  *
@@ -214,12 +216,27 @@ public class BTreeInternalPageTest {
             page.insertEntry(e);
         }
 
-        // Iterator<BTreeEntry> iterator = page.getIterator();
-        // while (iterator.hasNext()) {
-        //     BTreeEntry next = iterator.next();
-        //     System.out.println(next);
-        // }
 
+        System.out.println("正向迭代器---");
+        Iterator<BTreeEntry> iterator = page.getIterator();
+        while (iterator.hasNext()) {
+            BTreeEntry next = iterator.next();
+            System.out.println(next);
+        }
+
+        System.out.println("===========");
+        iterator = page.getIterator();
+        System.out.println(iterator.next());
+        System.out.println(iterator.next());
+        System.out.println(iterator.next());
+
+        try {
+            iterator.next();
+            fail("expected NoSuchElementException");
+        } catch (NoSuchElementException e) {
+        }
+
+        System.out.println("反向迭代器---");
         Iterator<BTreeEntry> reverseIterator = page.getReverseIterator();
         while (reverseIterator.hasNext()) {
             BTreeEntry next = reverseIterator.next();
@@ -233,8 +250,11 @@ public class BTreeInternalPageTest {
         System.out.println(reverseIterator.next());
         System.out.println(reverseIterator.next());
 
-        // NoSuchElementException
-        System.out.println(reverseIterator.next());
+        try {
+            iterator.next();
+            fail("expected NoSuchElementException");
+        } catch (NoSuchElementException e) {
+        }
 
     }
 }
