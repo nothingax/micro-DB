@@ -574,24 +574,21 @@ public class BTreeInternalPage extends BTreePage {
         return -1;
     }
 
-    public boolean isLessThanHalfFullOpen() {
-        return this.getExistCount() < this.getMaxSlotNum() / 2;
+    public boolean isLessThanHalfFull() {
+        if ((this.getMaxSlotNum() & 1) == 1) {
+            return this.getExistCount() < (this.getMaxSlotNum() + 1) / 2;
+        } else {
+            return this.getExistCount() < this.getMaxSlotNum() / 2;
+        }
     }
 
 
-    public boolean isLessThanHalfFull() {
-        // 4/2=2
-        // 5/2=2 2<=2
-        // TODO
-
-        // int maxEnty = this.getMaxSlotNum() - 1;
-        //
-        // int maxEmptySlots = maxEnty - maxEnty / 2;
-        // int numEmpy = maxEnty - this.getExistCount();
-
-        // return numEmpy >= maxEmptySlots;
-        // return - this.getExistCount() >= -maxEnty / 2;
-        return this.getExistCount() <= this.getMaxSlotNum() / 2;
+    public boolean isLessThanOrEqHalfFull() {
+        if ((this.getMaxSlotNum() & 1) == 1) {
+            return this.getExistCount() <= (this.getMaxSlotNum() + 1) / 2;
+        } else {
+            return this.getExistCount() <= this.getMaxSlotNum() / 2;
+        }
     }
 
     private void markSlotUsed(int keyItemNo, boolean isUsed) {

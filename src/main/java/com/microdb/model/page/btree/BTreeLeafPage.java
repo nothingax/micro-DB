@@ -301,20 +301,28 @@ public class BTreeLeafPage extends BTreePage {
         return new BTreeLeafPageReverseIterator(this);
     }
 
-    public boolean isLessThanHalfFullForSplit() {
-        if ((this.getMaxSlotNum() & 1) == 1) {
-            return this.getExistRowCount() < this.getMaxSlotNum() / 2;
-        } else {
-            return this.getExistRowCount() < (this.getMaxSlotNum() + 1) / 2;
-        }
+    /**
+     * 小于半满
+     * 举例：
+     *      容量为5时，[0,2]
+     *      容量为6时，[0,2]
+     */
+    public boolean isLessThanHalfFull() {
+        return this.getExistRowCount() < this.getMaxSlotNum() / 2;
+        // if ((this.getMaxSlotNum() & 1) == 1) {
+        //     return this.getExistRowCount() < (this.getMaxSlotNum() + 1) / 2;
+        // } else {
+        //     return this.getExistRowCount() < this.getMaxSlotNum() / 2;
+        // }
     }
 
-    public boolean isLessThanHalfFull() {
-        if ((this.getMaxSlotNum() & 1) == 1) {
-            return this.getExistRowCount() <= this.getMaxSlotNum() / 2;
-        } else {
-            return this.getExistRowCount() <= (this.getMaxSlotNum() + 1) / 2;
-        }
+    /**
+     * 小于等于 半满
+     * 举例：容量为5时，[0,3]
+     *      容量为6时，[0,3]
+     */
+    public boolean isLessThanOrEqHalfFull() {
+        return this.getExistRowCount() <= this.getMaxSlotNum() / 2;
     }
 
     // public boolean isMoreThanHalfFull() {

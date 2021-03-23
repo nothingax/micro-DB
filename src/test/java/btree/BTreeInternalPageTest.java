@@ -323,14 +323,9 @@ public class BTreeInternalPageTest {
      */
     @Test
     public void deleteRowAndEntryOneInternalPage() throws IOException {
-        byte[] data = BTreeInternalPage.createEmptyPageData();
-        BTreePageID pageID =
-                new BTreePageID(DataBase.getInstance().getDbTableByName("t_person").getTableId(), 1, BTreePageType.INTERNAL);
-        BTreeInternalPage page = new BTreeInternalPage(pageID, data, 0);
-        System.out.println(page.getPageID());
         BTreeFile tableFile = (BTreeFile) dataBase.getDbTableByName("t_person").getTableFile();
         int tableId = tableFile.getTableId();
-        for (int i = 0; i < 10; i++) {
+        for (int i = 1; i <= 10; i++) {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
             row.setField(1, new IntField(18));
@@ -341,7 +336,7 @@ public class BTreeInternalPageTest {
 
         System.out.println("开始打印====");
         // 删除并打印
-        for (int i = 0; i < 10; i++) {
+        for (int i = 1; i <= 10; i++) {
             deleteOne(tableFile, scan);
             printTree(tableFile, tableId);
         }
@@ -350,6 +345,68 @@ public class BTreeInternalPageTest {
         scan.open();
         assertFalse(scan.hasNext());
     }
+
+    /**
+     * 删除测试
+     * 表中超过1页internalPage，但internal page 均不满的情况
+     */
+    @Test
+    public void deleteRowAndEntryForSeveralInternalPage() throws IOException {
+        BTreeFile tableFile = (BTreeFile) dataBase.getDbTableByName("t_person").getTableFile();
+        int tableId = tableFile.getTableId();
+        for (int i = 1; i <= 11; i++) {
+            Row row = new Row(personTableDesc);
+            row.setField(0, new IntField(i));
+            row.setField(1, new IntField(18));
+            tableFile.insertRow(row);
+        }
+
+        System.out.println("开始打印表数据====");
+        printTree(tableFile, tableId);
+
+        BtreeScan scan = new BtreeScan(tableFile.getTableId(), null);
+
+        System.out.println("开始打印====");
+        // 删除并打印
+        for (int i = 1; i <= 11; i++) {
+            deleteOne(tableFile, scan);
+            printTree(tableFile, tableId);
+        }
+
+        scan.open();
+        assertFalse(scan.hasNext());
+    }
+
+
+    /**
+     * 删除测试
+     * 大量数据
+     */
+    @Test
+    public void deleteRowAndEntryMassData() throws IOException {
+        BTreeFile tableFile = (BTreeFile) dataBase.getDbTableByName("t_person").getTableFile();
+        int tableId = tableFile.getTableId();
+        for (int i = 1; i <= 100; i++) {
+            Row row = new Row(personTableDesc);
+            row.setField(0, new IntField(i));
+            row.setField(1, new IntField(18));
+            tableFile.insertRow(row);
+        }
+
+        BtreeScan scan = new BtreeScan(tableFile.getTableId(), null);
+
+        System.out.println("开始打印====");
+        // 删除并打印
+        for (int i = 1; i <= 100; i++) {
+            deleteOne(tableFile, scan);
+            printTree(tableFile, tableId);
+        }
+
+
+        scan.open();
+        assertFalse(scan.hasNext());
+    }
+
 
     private void deleteOne(BTreeFile tableFile, BtreeScan scan) throws IOException {
         scan.open();
