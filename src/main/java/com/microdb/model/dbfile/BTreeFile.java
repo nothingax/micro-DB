@@ -319,16 +319,11 @@ public class BTreeFile implements TableFile {
                                    BTreeInternalPage rightPage,
                                    BTreeInternalPage parentPage,
                                    BTreeEntry entry) throws IOException {
-
-        // if (leftPage.getExistCount() == leftPage.getMaxSlotNum() - 1 || rightPage.getExistCount() == leftPage.getMaxSlotNum() - 1) {
-        //     throw new DbException("mergeInternalPage异常： page 已满 无法合并");
-        // }
         // 两页合并，父页中指向两个子页的的entry应删除
         deleteParentEntry(leftPage, parentPage, entry);
         writePageToDisk(parentPage);
 
         // 将原来在父页的entry拉下来到下一级
-        // TODO 可能出现没有leftPage中没有元素的情况，获取不到RightChildPageID
         entry.setLeftChildPageID(leftPage.getReverseIterator().next().getRightChildPageID());
         entry.setRightChildPageID(rightPage.getIterator().next().getLeftChildPageID());
         leftPage.insertEntry(entry);
