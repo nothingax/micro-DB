@@ -86,6 +86,18 @@ public class BTreeLeafPage extends BTreePage {
             cnt += b != null ? 1 : 0;
         }
 
+        for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
+            Row b = rows[i];
+            if (b != null) {
+                if (b.getKeyItem() == null) {
+                    throw new DbException("keyItem不能为空");
+                }
+                if (b.getKeyItem().getSlotIndex() != i) {
+                    throw new DbException("keyItem slotIndex 与下标不匹配");
+                }
+            }
+        }
+
         if (existRowCount != cnt) {
 
             throw new DbException("页状态不一致，bitmap与实际存储rows的数量不一致，pageID=" + leafPage.getPageID());
@@ -289,6 +301,7 @@ public class BTreeLeafPage extends BTreePage {
 
         // 将新数据插入到正确位置上
         slotUsageStatusBitMap[matchedSlot] = true;
+        row.setKeyItem(new KeyItem(pageID, matchedSlot));
         rows[matchedSlot] = row;
     }
 
@@ -339,7 +352,11 @@ public class BTreeLeafPage extends BTreePage {
         if (!isSlotUsed(to) && isSlotUsed(from)) {
             slotUsageStatusBitMap[to] = true;
             rows[to] = rows[from];
+            rows[to].setKeyItem(new KeyItem(pageID, to));
+
+            // 清空from
             slotUsageStatusBitMap[from] = false;
+            rows[from] = null;
         }
     }
 
