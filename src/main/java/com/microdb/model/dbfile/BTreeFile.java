@@ -303,12 +303,12 @@ public class BTreeFile implements TableFile {
     }
 
     /**
-     * 两个内部页合并：
-     * 将右页的entry挪到左页中
-     * 在父页中指向原右侧页的entry要拉下来，删除其子指针；
+     * leftPage 与 rightPage合并：
+     * rightPage元素挪到leftPage中
+     * 在父页中指向rightPage的entry要拉下来，删除其子指针，放入leftPage
      * 由于父页中少了一个entry，可能触发递归合并
      * 更新父指针
-     * 将右侧页标记为'未使用'
+     * 将rightPage标记为'未使用'
      *
      * @param leftPage   左页
      * @param rightPage  右页
@@ -510,30 +510,30 @@ public class BTreeFile implements TableFile {
      * 删除internal页中entry，如果删除后，元素不足容量一半，从兄弟页面中挪来元素补充，或者与兄弟页面合并
      * 如果页中没有元素了，说明只剩这最后一个internal页，删除后，需要将子级的leafPage设置为根
      *
-     * @param leafPage      待删除entry所指向的子页（其中的一个）
+     * @param leftPage      待删除entry所指向的子页（其中的一个）
      * @param parentPage    父页
      * @param entryToDelete 待删除entry
      */
-    private void deleteParentEntry(BTreePage leafPage,
+    private void deleteParentEntry(BTreePage leftPage,
                                    BTreeInternalPage parentPage,
                                    BTreeEntry entryToDelete) throws IOException {
 
-        // 由于合并后删除右页
+        // 由于合并后删除右页，entryToDelete需要删除指向右页的rightChildPageNo指针
         parentPage.deleteEntryAndRightChildPage(entryToDelete);
         writePageToDisk(parentPage);
-        if (parentPage.getParentPageID().getPageType() == BTreePageType.ROOT_PTR && parentPage.isEmpty()) {
-            // if (parentPage.isEmpty()) {
+        // if (parentPage.getParentPageID().getPageType() == BTreePageType.ROOT_PTR && parentPage.isEmpty()) {
+        if (parentPage.isEmpty()) {
             // 当父页变空，说明没有可以合并的页，即不再有其他internal page了，需要将leafPage挂在rootPtr下
             BTreePageID rootPrtPageID = parentPage.getParentPageID();
             if (rootPrtPageID.getPageType() != BTreePageType.ROOT_PTR) {
                 throw new DbException("try delete none root ptr page");
             }
             BTreeRootPtrPage rootPtrPage = (BTreeRootPtrPage) this.readPageFromDisk(rootPrtPageID);
-            leafPage.setParentPageID(rootPrtPageID);
-            rootPtrPage.setRootNodePageID(leafPage.getPageID());
+            leftPage.setParentPageID(rootPrtPageID);
+            rootPtrPage.setRootNodePageID(leftPage.getPageID());
 
             // 刷盘
-            writePageToDisk(leafPage);
+            writePageToDisk(leftPage);
             writePageToDisk(rootPtrPage);
 
             // 父page标记为未使用
@@ -838,6 +838,7 @@ public class BTreeFile implements TableFile {
         // 将原页中右半部分的数据移入到新页中，右半部分的首个元素midEntry升级为上级索引
         for (int i = entryToMove.length - 1; i >= 0; --i) {
             if (i == 0) {
+                // 从右侧开始删除
                 internalPageNeedSplit.deleteEntryFromTheRight(entryToMove[i]);
                 midEntry = entryToMove[0];
             } else {

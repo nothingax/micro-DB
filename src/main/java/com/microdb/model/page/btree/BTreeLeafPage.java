@@ -406,94 +406,99 @@ public class BTreeLeafPage extends BTreePage {
         row.setKeyItem(null);
     }
 
+    /**
+     * 查找右侧使用的槽位下标，包括slot
+     */
+    private int findNextUsedSlotInclusive(int slot) {
+        for (int i = slot; i < slotUsageStatusBitMap.length; i++) {
+            if (slotUsageStatusBitMap[i]) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * 查找右侧使用的槽位下标，不包括slot
+     */
+    private int findNextUsedSlotExclusive(int slot) {
+        return findNextUsedSlotInclusive(slot + 1);
+    }
+
+
+    /**
+     * 查找左侧使用的槽位下标,不包括slot
+     */
+    private int findPrevUsedSlotExclusive(int slot) {
+        return findPrevUsedSlotInclusive(slot - 1);
+    }
+
+    /**
+     * 查找左侧使用的槽位下标,包括slot
+     */
+    private int findPrevUsedSlotInclusive(int slot) {
+        for (int i = slot; i >= 0; i--) {
+            if (slotUsageStatusBitMap[i]) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     // ===============================迭代器=========================================
-    public static class BTreeLeafPageReverseIterator implements Iterator<Row> {
+    /**
+     * 正向迭代器
+     */
+    public class BTreeLeafPageIterator implements Iterator<Row> {
+        int curIndex;
+        Row nextRowToReturn = null;
+        BTreeLeafPage leafPage;
+
+
+        public BTreeLeafPageIterator(BTreeLeafPage leafPage) {
+            this.leafPage = leafPage;
+            this.curIndex = 0;
+            curIndex = findNextUsedSlotInclusive(curIndex);
+        }
+
+        public boolean hasNext() {
+            return curIndex != -1;
+        }
+
+        public Row next() {
+            if (curIndex == -1) {
+                throw new NoSuchElementException();
+            }
+            nextRowToReturn = getRow(curIndex);
+            curIndex = findNextUsedSlotExclusive(curIndex);
+            return nextRowToReturn;
+        }
+    }
+
+    /**
+     * 反向迭代器
+     */
+    public class BTreeLeafPageReverseIterator implements Iterator<Row> {
         int curIndex;
         Row nextRowToReturn = null;
         BTreeLeafPage leafPage;
 
         public BTreeLeafPageReverseIterator(BTreeLeafPage leafPage) {
             this.leafPage = leafPage;
-            this.curIndex = leafPage.getMaxSlotNum() - 1;
+            this.curIndex = findPrevUsedSlotInclusive(leafPage.getMaxSlotNum() - 1);
         }
 
         public boolean hasNext() {
-            if (nextRowToReturn != null) {
-                return true;
-            }
-
-            try {
-                while (curIndex >= 0) {
-                    nextRowToReturn = leafPage.getRow(curIndex--);
-                    if (nextRowToReturn != null) {
-                        return true;
-                    }
-                }
-                return false;
-            } catch (NoSuchElementException e) {
-                return false;
-            }
+            return curIndex != -1;
         }
 
         public Row next() {
-            Row next = nextRowToReturn;
-            if (next == null) {
-                if (hasNext()) {
-                    next = nextRowToReturn;
-                    nextRowToReturn = null;
-                    return next;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            } else {
-                nextRowToReturn = null;
-                return next;
+            if (curIndex == -1) {
+                throw new NoSuchElementException();
             }
-        }
-    }
-
-    public static class BTreeLeafPageIterator implements Iterator<Row> {
-        int curIndex;
-        Row nextRowToReturn = null;
-        BTreeLeafPage leafPage;
-
-        public BTreeLeafPageIterator(BTreeLeafPage leafPage) {
-            this.leafPage = leafPage;
-            this.curIndex = 0;
-        }
-
-        public boolean hasNext() {
-            if (nextRowToReturn != null) {
-                return true;
-            }
-
-            try {
-                while (curIndex >= 0) {
-                    nextRowToReturn = leafPage.getRow(curIndex++);
-                    if (nextRowToReturn != null) {
-                        return true;
-                    }
-                }
-                return false;
-            } catch (NoSuchElementException e) {
-                return false;
-            }
-        }
-
-        public Row next() {
-            Row next = nextRowToReturn;
-            if (next == null) {
-                if (hasNext()) {
-                    next = nextRowToReturn;
-                    nextRowToReturn = null;
-                    return next;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            } else {
-                nextRowToReturn = null;
-                return next;
-            }
+            nextRowToReturn = getRow(curIndex);
+            curIndex = findPrevUsedSlotExclusive(curIndex);
+            return nextRowToReturn;
         }
     }
 

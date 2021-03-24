@@ -388,6 +388,7 @@ public class BTreeInternalPageTest {
         BTreeFile tableFile = (BTreeFile) dataBase.getDbTableByName("t_person").getTableFile();
         int tableId = tableFile.getTableId();
         int num = 3000;
+        long l1 = System.currentTimeMillis();
         for (int i = 1; i <= num; i++) {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
@@ -409,6 +410,7 @@ public class BTreeInternalPageTest {
 
         scan.open();
         assertFalse(scan.hasNext());
+        System.out.println("耗时ms:" + (System.currentTimeMillis() - l1));
     }
 
 
