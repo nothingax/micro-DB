@@ -85,7 +85,6 @@ public class BTreeLeafPage extends BTreePage {
         for (Row b : rows) {
             cnt += b != null ? 1 : 0;
         }
-
         for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
             Row b = rows[i];
             if (b != null) {
@@ -93,13 +92,12 @@ public class BTreeLeafPage extends BTreePage {
                     throw new DbException("keyItem不能为空");
                 }
                 if (b.getKeyItem().getSlotIndex() != i) {
-                    throw new DbException("keyItem slotIndex 与下标不匹配");
+                    throw new DbException("keyItem 与下标不匹配");
                 }
             }
         }
 
         if (existRowCount != cnt) {
-
             throw new DbException("页状态不一致，bitmap与实际存储rows的数量不一致，pageID=" + leafPage.getPageID());
         }
     }
@@ -125,11 +123,11 @@ public class BTreeLeafPage extends BTreePage {
         check(this);
         // print(this);
 
-        if (this.getPageID().getPageNo() > 2) {
-            if (this.getParentPageID().getPageNo() == 0) {
-                throw new DbException("leafPage 序列化写入磁盘: parent page_no should not be 0");
-            }
-        }
+        // if (this.getPageID().getPageNo() > 2) {
+        //     if (this.getParentPageID().getPageNo() == 0) {
+        //         throw new DbException("leafPage 序列化写入磁盘: parent page_no should not be 0");
+        //     }
+        // }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream(Page.defaultPageSizeInByte);
         DataOutputStream dos = new DataOutputStream(baos);
@@ -301,6 +299,7 @@ public class BTreeLeafPage extends BTreePage {
 
         // 将新数据插入到正确位置上
         slotUsageStatusBitMap[matchedSlot] = true;
+
         row.setKeyItem(new KeyItem(pageID, matchedSlot));
         rows[matchedSlot] = row;
     }
@@ -463,6 +462,7 @@ public class BTreeLeafPage extends BTreePage {
     }
 
     // ===============================迭代器=========================================
+
     /**
      * 正向迭代器
      */

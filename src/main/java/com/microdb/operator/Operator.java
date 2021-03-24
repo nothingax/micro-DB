@@ -46,6 +46,10 @@ public abstract class Operator implements IOperatorIterator {
         }
         Row result = nextRow;
         nextRow = null;
+
+        if (result.getKeyItem() == null) {
+            throw new DbException("aaaaaaa");
+        }
         return result;
     }
 

@@ -1,13 +1,14 @@
 package com.microdb.model.dbfile;
 
+import com.microdb.connection.Connection;
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
-import com.microdb.model.page.heap.HeapPage;
 import com.microdb.model.page.Page;
-import com.microdb.model.page.heap.HeapPageID;
 import com.microdb.model.page.PageID;
+import com.microdb.model.page.heap.HeapPage;
+import com.microdb.model.page.heap.HeapPageID;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -56,16 +57,16 @@ public class HeapTableFile implements TableFile {
      * @return page
      */
     @Override
-    public Page readPageFromDisk(PageID pageID) throws IOException {
+    public Page readPageFromDisk(PageID pageID) {
         byte[] pageData = HeapPage.createEmptyPageData();
         try {
             FileInputStream in = new FileInputStream(file);
             in.skip(pageID.getPageNo() * HeapPage.defaultPageSizeInByte);
             in.read(pageData);
+            return new HeapPage(pageID, pageData);
         } catch (IOException e) {
-            throw new RuntimeException("todo ,read Page from disk error", e);
+            throw new DbException("read Page from disk error", e);
         }
-        return new HeapPage(pageID, pageData);
     }
 
     /**
@@ -114,7 +115,7 @@ public class HeapTableFile implements TableFile {
             availablePage = new HeapPage(pageID, HeapPage.createEmptyPageData());
         }
         availablePage.insertRow(row);
-        this.writePageToDisk(availablePage);
+        Connection.cacheDirtyPage(availablePage);
     }
 
     @Override
@@ -130,7 +131,7 @@ public class HeapTableFile implements TableFile {
 
         for (int pageNo = 0; pageNo < existPageCount; pageNo++) {
             PageID pageID = new HeapPageID(this.getTableId(), pageNo);
-            Page pg = this.readPageFromDisk(pageID);
+            Page pg = DataBase.getBufferPool().getPage(pageID);
             if (pg.hasEmptySlot()) {
                 return pg;
             }
@@ -198,7 +199,7 @@ public class HeapTableFile implements TableFile {
 
         private Iterator<Row> getRowIterator(Integer pageNo) {
             PageID pageID = new HeapPageID(tableId, pageNo);
-            return DataBase.getInstance().getPage(pageID).getRowIterator();
+            return DataBase.getBufferPool().getPage(pageID).getRowIterator();
         }
     }
 

@@ -27,7 +27,7 @@ public interface TableFile {
      * @param pageID pageID
      * @return page
      */
-    Page readPageFromDisk(PageID pageID) throws IOException;
+    Page readPageFromDisk(PageID pageID);
 
     /**
      * 写数据至磁盘

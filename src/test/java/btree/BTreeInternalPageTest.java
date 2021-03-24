@@ -283,8 +283,8 @@ public class BTreeInternalPageTest {
         }
         int tableId = tableFile.getTableId();
         BTreePageID rootPtrPageID = BTreeRootPtrPage.getRootPtrPageID(tableId);
-        BTreeRootPtrPage rootPtrPage = (BTreeRootPtrPage) tableFile.readPageFromDisk(rootPtrPageID);
-        BTreePage rootNodePage = tableFile.readPageFromDisk(rootPtrPage.getRootNodePageID());
+        BTreeRootPtrPage rootPtrPage;
+        BTreePage rootNodePage;
 
 
         Row row = new Row(personTableDesc);
@@ -292,8 +292,8 @@ public class BTreeInternalPageTest {
                 row.setField(1, new IntField(18));
                 tableFile.insertRow(row);
 
-        rootPtrPage = (BTreeRootPtrPage) tableFile.readPageFromDisk(rootPtrPageID);
-        rootNodePage = tableFile.readPageFromDisk(rootPtrPage.getRootNodePageID());
+        rootPtrPage = (BTreeRootPtrPage) DataBase.getBufferPool().getPage(rootPtrPageID);
+        rootNodePage = (BTreePage) DataBase.getBufferPool().getPage(rootPtrPage.getRootNodePageID());
         System.out.println("打印rootNodePage======");
         IntField key = (IntField) ((BTreeInternalPage) rootNodePage).getIterator().next().getKey();
         assertTrue(key.getValue() == 5);
@@ -304,13 +304,13 @@ public class BTreeInternalPageTest {
             // should be internal
 
             System.out.println("left=====:");
-            BTreePage bTreePage = tableFile.readPageFromDisk(next.getLeftChildPageID());
+            BTreePage bTreePage = (BTreePage) DataBase.getBufferPool().getPage(next.getLeftChildPageID());
             printInternalPage((BTreeInternalPage) bTreePage);
             printLeafByInternalPage(tableFile, (BTreeInternalPage) bTreePage);
 
 
             System.out.println("right=====:");
-            BTreePage bTreePage1 = tableFile.readPageFromDisk(next.getRightChildPageID());
+            BTreePage bTreePage1 = (BTreePage) DataBase.getBufferPool().getPage(next.getRightChildPageID());
             printInternalPage((BTreeInternalPage) bTreePage1);
             printLeafByInternalPage(tableFile, (BTreeInternalPage) bTreePage1);
         }
@@ -354,12 +354,12 @@ public class BTreeInternalPageTest {
     public void deleteRowAndEntryForSeveralInternalPage() throws IOException {
         BTreeFile tableFile = (BTreeFile) dataBase.getDbTableByName("t_person").getTableFile();
         int tableId = tableFile.getTableId();
-        int num = 300;
+        int num = 200;
         for (int i = 1; i <= num; i++) {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
             row.setField(1, new IntField(18));
-            tableFile.insertRow(row);
+            DataBase.getBufferPool().insertRow(row,"t_person");
         }
 
         System.out.println("开始打印表数据====");
@@ -393,13 +393,20 @@ public class BTreeInternalPageTest {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
             row.setField(1, new IntField(18));
-            tableFile.insertRow(row);
+            DataBase.getBufferPool().insertRow(row,"t_person");
         }
 
         System.out.println("开始打印表数据====");
         printTree(tableFile, tableId);
 
         BtreeScan scan = new BtreeScan(tableFile.getTableId(), null);
+
+        scan.open();
+        while (scan.hasNext()) {
+            System.out.println(scan.next());
+
+        }
+
         System.out.println("开始打印====");
         // 删除并打印
         for (int i = 1; i <= num; i++) {
@@ -416,16 +423,16 @@ public class BTreeInternalPageTest {
 
     private void deleteOne(BTreeFile tableFile, BtreeScan scan) throws IOException {
         scan.open();
-        tableFile.deleteRow(scan.next());
+        Row next = scan.next();
+        // tableFile.deleteRow(scan.next());
+        DataBase.getBufferPool().deleteRow(next);
         scan.close();
     }
 
     private void printTree(BTreeFile tableFile, int tableId) {
         BTreePageID rootPtrPageID = BTreeRootPtrPage.getRootPtrPageID(tableId);
-        BTreeRootPtrPage rootPtrPage = (BTreeRootPtrPage) tableFile.readPageFromDisk(rootPtrPageID);
-        BTreePage rootNodePage = tableFile.readPageFromDisk(rootPtrPage.getRootNodePageID());
-        rootPtrPage = (BTreeRootPtrPage) tableFile.readPageFromDisk(rootPtrPageID);
-        rootNodePage = tableFile.readPageFromDisk(rootPtrPage.getRootNodePageID());
+        BTreeRootPtrPage rootPtrPage = (BTreeRootPtrPage) DataBase.getBufferPool().getPage(rootPtrPageID);
+        BTreePage rootNodePage = (BTreePage) DataBase.getBufferPool().getPage(rootPtrPage.getRootNodePageID());
         System.out.println("打印rootNodePage======");
         if (rootNodePage instanceof BTreeInternalPage) {
             printBtreePage(rootNodePage);
@@ -435,11 +442,11 @@ public class BTreeInternalPageTest {
                 BTreeEntry next = iterator.next();
 
                 System.out.println("left=====:");
-                BTreePage bTreePage = tableFile.readPageFromDisk(next.getLeftChildPageID());
+                BTreePage bTreePage = (BTreePage) DataBase.getBufferPool().getPage(next.getLeftChildPageID());
                 printBtreePage(bTreePage);
 
                 System.out.println("right=====:");
-                BTreePage bTreePage1 = tableFile.readPageFromDisk(next.getRightChildPageID());
+                BTreePage bTreePage1 = (BTreePage) DataBase.getBufferPool().getPage(next.getRightChildPageID());
                 printBtreePage(bTreePage1);
             }
         } else if (rootNodePage instanceof BTreeLeafPage) {
@@ -460,8 +467,8 @@ public class BTreeInternalPageTest {
         Iterator<BTreeEntry> iterator1 = bTreePage.getIterator();
         while (iterator1.hasNext()) {
             BTreeEntry next1 = iterator1.next();
-            printLeafPage(tableFile.readPageFromDisk(next1.getLeftChildPageID()));
-            printLeafPage(tableFile.readPageFromDisk(next1.getRightChildPageID()));
+            printLeafPage((BTreePage) DataBase.getBufferPool().getPage(next1.getLeftChildPageID()));
+            printLeafPage((BTreePage) DataBase.getBufferPool().getPage(next1.getRightChildPageID()));
         }
     }
 
