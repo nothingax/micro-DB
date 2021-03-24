@@ -181,7 +181,7 @@ public class BtreeTest {
         int num = 12;
         // 完成内部页分裂
         // FIXME 3000 以内数据能跑通测试，页重分布还是有问题
-        for (int i = 1; i < 12; i++) {
+        for (int i = 1; i < 1000; i++) {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
             row.setField(1, new IntField(18));
@@ -189,6 +189,7 @@ public class BtreeTest {
         }
 
         BtreeScan scan = new BtreeScan(person.getTableId(), null);
+        scan.open();
         Row next = scan.next();
 
 
