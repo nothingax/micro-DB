@@ -470,7 +470,13 @@ public class BTreeInternalPage extends BTreePage {
      */
     public void deleteEntryFromTheLeft(BTreeEntry entry) {
 
-        int slotIndexDeleted = entry.getKeyItem().getSlotIndex();
+        int slotIndexDeleted = 0;
+        try {
+            slotIndexDeleted = entry.getKeyItem().getSlotIndex();
+        } catch (Exception e) {
+            throw new DbException(e);
+            // e.printStackTrace();
+        }
         // 第一个或最后一个直接删除
         if (slotIndexDeleted != findFirstUsedSlot() && slotIndexDeleted != findLastUsedSlot()) {
             // 删除entry，并连接子页
@@ -491,6 +497,7 @@ public class BTreeInternalPage extends BTreePage {
         keys[slotIndexDeleted] = null;
         childPages[slotIndexDeleted] = null;
     }
+
     /**
      * 从由右开始删除entry
      */
@@ -574,7 +581,10 @@ public class BTreeInternalPage extends BTreePage {
         return -1;
     }
 
-    public boolean isLessThanHalfFull() {
+    /**
+     * 页内剩余元素数量是否满足重分布条件
+     */
+    public boolean isNeedRedistribute() {
         if ((this.getMaxSlotNum() & 1) == 1) {
             return this.getExistCount() < (this.getMaxSlotNum() + 1) / 2;
         } else {
@@ -583,12 +593,13 @@ public class BTreeInternalPage extends BTreePage {
     }
 
 
-    public boolean isLessThanOrEqHalfFull() {
-        if ((this.getMaxSlotNum() & 1) == 1) {
-            return this.getExistCount() <= (this.getMaxSlotNum() + 1) / 2;
-        } else {
-            return this.getExistCount() <= this.getMaxSlotNum() / 2;
-        }
+    /**
+     * 剩余元素数量是否满足合并条件
+     * 奇数 e.g. 5: <=2
+     * 偶数 e.g. 6: <=3
+     */
+    public boolean isMeetMergeCount() {
+        return this.getExistCount() <= (this.getMaxSlotNum()) / 2;
     }
 
     private void markSlotUsed(int keyItemNo, boolean isUsed) {

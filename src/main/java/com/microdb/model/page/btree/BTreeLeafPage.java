@@ -302,32 +302,24 @@ public class BTreeLeafPage extends BTreePage {
     }
 
     /**
-     * 小于半满
-     * 举例：
-     *      容量为5时，[0,2]
-     *      容量为6时，[0,2]
+     * 页内剩余元素数量是否满足重分布条件
      */
-    public boolean isLessThanHalfFull() {
-        return this.getExistRowCount() < this.getMaxSlotNum() / 2;
-        // if ((this.getMaxSlotNum() & 1) == 1) {
-        //     return this.getExistRowCount() < (this.getMaxSlotNum() + 1) / 2;
-        // } else {
-        //     return this.getExistRowCount() < this.getMaxSlotNum() / 2;
-        // }
+    public boolean isNeedRedistribute() {
+        if ((this.getMaxSlotNum() & 1) == 1) {
+            return this.getExistRowCount() < (this.getMaxSlotNum() + 1) / 2;
+        } else {
+            return this.getExistRowCount() < this.getMaxSlotNum() / 2;
+        }
     }
 
     /**
-     * 小于等于 半满
-     * 举例：容量为5时，[0,3]
-     *      容量为6时，[0,3]
+     * 剩余元素数量是否满足合并条件
+     * 奇数 e.g. 5: <=2
+     * 偶数 e.g. 6: <=3
      */
-    public boolean isLessThanOrEqHalfFull() {
-        return this.getExistRowCount() <= this.getMaxSlotNum() / 2;
+    public boolean isMeetMergeCount() {
+        return this.getExistRowCount() <= (this.getMaxSlotNum()) / 2;
     }
-
-    // public boolean isMoreThanHalfFull() {
-    //     return this.getExistRowCount() > this.getMaxSlotNum() / 2;
-    // }
 
     /**
      * 当前页已经存储的行数

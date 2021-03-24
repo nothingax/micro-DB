@@ -108,7 +108,7 @@ public class BTreeFile implements TableFile {
         page.deleteRow(row);
 
         // 数量不足一半时，与兄弟节点重新分布元素
-        if (page.isLessThanHalfFull()) {
+        if (page.isNeedRedistribute()) {
             redistributePage(page);
         }
         writePageToDisk(page);
@@ -169,7 +169,7 @@ public class BTreeFile implements TableFile {
         if (leftEntry != null && leftEntry.getLeftChildPageID() != null) {
             BTreePageID leftSibPageID = leftEntry.getLeftChildPageID();
             BTreeInternalPage leftSibPage = (BTreeInternalPage) readPageFromDisk(leftSibPageID);
-            if (leftSibPage.isLessThanOrEqHalfFull()) {
+            if (leftSibPage.isMeetMergeCount()) {
                 mergeInternalPage(leftSibPage, pageLessThanHalfFull, parentPage, leftEntry);
             } else {
                 fetchFromLeftInternalPage(pageLessThanHalfFull, leftSibPage, parentPage, leftEntry);
@@ -177,7 +177,7 @@ public class BTreeFile implements TableFile {
         } else if (rightEntry != null && rightEntry.getRightChildPageID() != null) {
             BTreePageID rightSibPageID = rightEntry.getRightChildPageID();
             BTreeInternalPage rightSibPage = (BTreeInternalPage) readPageFromDisk(rightSibPageID);
-            if (rightSibPage.isLessThanOrEqHalfFull()) {
+            if (rightSibPage.isMeetMergeCount()) {
                 mergeInternalPage(pageLessThanHalfFull, rightSibPage, parentPage, rightEntry);
             } else {
                 fetchFromRightInternalPage(pageLessThanHalfFull, rightSibPage, parentPage, rightEntry);
@@ -200,6 +200,13 @@ public class BTreeFile implements TableFile {
 
         // 计算需要移动的个数，使移动后，两个page里的entry数量均等
         int entryNumToMove = (leftPage.getExistCount() - pageLessHalfFull.getExistCount()) / 2;
+
+        // fetch 余下的元素数量必须>2
+        // 如果余下0，1，后续该页删除元素时，无法处理merge或fetch或过程中的子叶关系更新条件
+        // 当internal page 的容量过小时，无法满足条件，需要调大 page size
+        if (leftPage.getExistCount() - entryNumToMove < 2) {
+            throw new DbException("internal page 容量过小,无法处理页合并或元素挪用，请调大page size");
+        }
 
         BTreeEntry[] bTreeEntries = new BTreeEntry[entryNumToMove];
         // 需要移动的元素装入entryToMove，当从左侧page取元素时，从最右端取entryNumToMove个元素
@@ -249,17 +256,25 @@ public class BTreeFile implements TableFile {
                                             BTreeInternalPage rightPage,
                                             BTreeInternalPage parentPage,
                                             BTreeEntry rightEntry) throws IOException {
-        // 计算需要移动的个数，使移动后，两个page里的entry数量均等
+        // 计算需要移动的个数，使移动后，
+        // 两个page里的entry数量均等
         int entryNumToMove = (rightPage.getExistCount() - pageLessHalfFull.getExistCount()) / 2;
 
-        BTreeEntry[] bTreeEntries = new BTreeEntry[entryNumToMove];
-        Iterator<BTreeEntry> iterator = pageLessHalfFull.getIterator();
-        int cntIndex = 0;
-        while (cntIndex < bTreeEntries.length && iterator.hasNext()) {
-            bTreeEntries[cntIndex++] = iterator.next();
+        // fetch 余下的元素数量必须>2
+        // 如果余下0，1，后续该页删除元素时，无法处理merge或fetch或过程中的子叶关系更新条件
+        // 当internal page 的容量过小时，无法满足条件，需要调大 page size
+        if (rightPage.getExistCount() - entryNumToMove < 2) {
+            throw new DbException("internal page 容量过小,无法处理页合并或元素挪用，请调大page size");
         }
 
-        for (BTreeEntry entryToMove : bTreeEntries) {
+        BTreeEntry[] entriesToMove = new BTreeEntry[entryNumToMove];
+        Iterator<BTreeEntry> iterator = rightPage.getIterator();
+        int cntIndex = 0;
+        while (cntIndex < entriesToMove.length && iterator.hasNext()) {
+            entriesToMove[cntIndex++] = iterator.next();
+        }
+
+        for (BTreeEntry entryToMove : entriesToMove) {
             rightPage.deleteEntryFromTheLeft(entryToMove);
             BTreePageID leftChildPageIDOfEntryToMove = entryToMove.getLeftChildPageID();
 
@@ -347,13 +362,13 @@ public class BTreeFile implements TableFile {
                                       BTreeInternalPage parentPage,
                                       BTreeEntry leftParentEntry,
                                       BTreeEntry rightParentEntry) throws IOException {
-        // 找到同一个父节点的左侧page，判断他容量是否不足一半，若是，则合并，不是则stealFromLeafPage 右侧page同理
+        // 找到同一个父节点的左侧page，判断他容量是否不足一半，则合并，否则stealFromLeafPage，右侧page同理
 
         if (leftParentEntry != null && leftParentEntry.getLeftChildPageID() != null) {
             // 与left兄弟页分配
             BTreePageID leftChildPageID = leftParentEntry.getLeftChildPageID();
             BTreeLeafPage leftLeafPage = (BTreeLeafPage) readPageFromDisk(leftChildPageID);
-            if (leftLeafPage.isLessThanOrEqHalfFull()) {
+            if (leftLeafPage.isMeetMergeCount()) {
                 mergeLeafPage(leftLeafPage, leafPageLessThanHalfFull, parentPage, leftParentEntry);
             } else {
                 fetchFromLeftLeafPage(leafPageLessThanHalfFull, leftLeafPage, parentPage, leftParentEntry);
@@ -362,7 +377,7 @@ public class BTreeFile implements TableFile {
             // 与right兄弟页分配
             BTreePageID rightChildPageID = rightParentEntry.getRightChildPageID();
             BTreeLeafPage rightLeafPage = (BTreeLeafPage) readPageFromDisk(rightChildPageID);
-            if (rightLeafPage.isLessThanOrEqHalfFull()) {
+            if (rightLeafPage.isMeetMergeCount()) {
                 mergeLeafPage(leafPageLessThanHalfFull, rightLeafPage, parentPage, rightParentEntry);
             } else {
                 fetchFromRightLeafPage(leafPageLessThanHalfFull, rightLeafPage, parentPage, rightParentEntry);
@@ -506,8 +521,8 @@ public class BTreeFile implements TableFile {
         // 由于合并后删除右页
         parentPage.deleteEntryAndRightChildPage(entryToDelete);
         writePageToDisk(parentPage);
-        // if (parentPage.getParentPageID().getPageType() == BTreePageType.ROOT_PTR && parentPage.isEmpty()) {
-        if (parentPage.isEmpty()) {
+        if (parentPage.getParentPageID().getPageType() == BTreePageType.ROOT_PTR && parentPage.isEmpty()) {
+            // if (parentPage.isEmpty()) {
             // 当父页变空，说明没有可以合并的页，即不再有其他internal page了，需要将leafPage挂在rootPtr下
             BTreePageID rootPrtPageID = parentPage.getParentPageID();
             if (rootPrtPageID.getPageType() != BTreePageType.ROOT_PTR) {
@@ -523,7 +538,7 @@ public class BTreeFile implements TableFile {
 
             // 父page标记为未使用
             markPageUnused(parentPage.getPageID().getPageNo());
-        } else if (parentPage.isLessThanHalfFull()) {
+        } else if (parentPage.isNeedRedistribute()) {
             redistributePage(parentPage);
         }
         // else {
