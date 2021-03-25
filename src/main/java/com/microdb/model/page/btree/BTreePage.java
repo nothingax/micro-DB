@@ -37,6 +37,12 @@ public abstract class BTreePage implements Page {
      */
     protected TableDesc tableDesc;
 
+    /**
+     * 是否是脏页
+     * 如果页面被修改过，在未刷盘之前为'脏页'状态
+     */
+    protected boolean isDirty = false;
+
     @Override
     public BTreePageID getPageID() {
         return pageID;
@@ -53,6 +59,16 @@ public abstract class BTreePage implements Page {
     // public abstract int calculateMaxSlotNum(TableDesc tableDesc);
 
     public abstract Iterator<Row> getRowIterator();
+
+    @Override
+    public void markDirty() {
+        isDirty = true;
+    }
+
+    @Override
+    public boolean isDirty() {
+        return isDirty;
+    }
 
 
     /**

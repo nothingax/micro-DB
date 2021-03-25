@@ -36,19 +36,15 @@ public class BufferPool {
 
     /**
      * 首先从缓存中获取，
-     * 缓存中没有时，从磁盘读取；从磁盘读取前先检查缓存是否满，已满则执行驱逐
+     * 缓存中没有时，从磁盘读取，并放入缓存；从磁盘读取前先检查缓存是否满，已满则先执行驱逐
      *
      * @param pageID pageID
      */
     public Page getPage(PageID pageID) {
         Page page = pool.get(pageID);
         if (page == null) {
-            // HashMap<PageID, Page> dirtyPages = Connection.getDirtyPages();
-            // if (dirtyPages.containsKey(pageID)) {
-            //     return dirtyPages.get(pageID);
-            // }
             if (isFull()) {
-                // 驱逐页面 TODO 设计驱逐策略
+                // 驱逐页面
                 this.evictPages();
             }
             page = DataBase.getInstance().getDbTableById(pageID.getTableId()).getTableFile().readPageFromDisk(pageID);
@@ -65,17 +61,28 @@ public class BufferPool {
     }
 
     /**
-     * 驱逐页面，不常使用的页面从缓冲区移除
+     * 驱逐页面，不常使用的页面从缓冲区移除，移除前将脏页刷盘
+     * <p>
+     * TODO 目前实现是对整个池中的页全部移除，后续优化根据使用频率驱逐页面:LFU，或使用其他缓存失效算法
      */
     private void evictPages() {
         for (Map.Entry<PageID, Page> entry : pool.entrySet()) {
-            int tableId = entry.getKey().getTableId();
             Page page = entry.getValue();
+
             // 刷盘
-            DataBase.getInstance().getDbTableById(tableId).getTableFile().writePageToDisk(page);
-            // 移除缓存 // TODO 根据脏页状态来移除
+            if (page.isDirty()) {
+                flushPage(page);
+            }
+
+            // 移除缓存
             pool.remove(page.getPageID());
         }
+    }
+
+    private void flushPage(Page page) {
+        // 脏页刷盘
+        int tableId = page.getPageID().getTableId();
+        DataBase.getInstance().getDbTableById(tableId).getTableFile().writePageToDisk(page);
     }
 
     public void insertRow(Row row, String tableName) throws IOException {
@@ -89,7 +96,7 @@ public class BufferPool {
         }
 
         // TODO dirtyPages.size 极限值过大说明page size 配置不合理
-        System.out.println("dirtyPages.size():"+dirtyPages.size());
+        System.out.println("dirtyPages.size():" + dirtyPages.size());
         for (Map.Entry<PageID, Page> entry : dirtyPages.entrySet()) {
             PageID pageID = entry.getKey();
             if (isFull()) {
@@ -111,7 +118,7 @@ public class BufferPool {
 
         // 所有脏页都放在了thread 里
         HashMap<PageID, Page> dirtyPages = Connection.getDirtyPages();
-        System.out.println("del.dirtyPages.size():"+dirtyPages.size());
+        System.out.println("del.dirtyPages.size():" + dirtyPages.size());
         for (Map.Entry<PageID, Page> entry : dirtyPages.entrySet()) {
             PageID pageID = entry.getKey();
             if (isFull()) {

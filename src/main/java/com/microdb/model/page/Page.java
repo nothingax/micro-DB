@@ -13,10 +13,14 @@ import java.util.Iterator;
  * @version 1.0
  */
 public interface Page {
+    int SIZE_64B = 64;
+    int SIZE_4KB = 4096;
+    int SIZE_16KB = SIZE_4KB * 4;
+
     /**
      * 默认每页4KB
      */
-    int defaultPageSizeInByte = 64;
+    int defaultPageSizeInByte = SIZE_16KB;
 
     PageID getPageID();
 
@@ -45,4 +49,11 @@ public interface Page {
     boolean hasEmptySlot();
 
     Iterator<Row> getRowIterator();
+
+    /**
+     * 标记为脏页
+     */
+    void markDirty();
+
+    boolean isDirty();
 }

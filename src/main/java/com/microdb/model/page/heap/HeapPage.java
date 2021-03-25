@@ -43,6 +43,14 @@ public class HeapPage implements Page {
      */
     private boolean[] slotUsageStatusBitMap;
 
+
+    /**
+     * 是否是脏页
+     * 如果页面被修改过，在未刷盘之前为'脏页'状态
+     */
+    protected boolean isDirty = false;
+
+
     public HeapPage(PageID pageID, byte[] pageData) throws IOException {
         this.pageID = pageID;
         this.tableDesc = DataBase.getInstance().getDbTableById(pageID.getTableId()).getTableDesc();
@@ -191,6 +199,16 @@ public class HeapPage implements Page {
     @Override
     public Iterator<Row> getRowIterator() {
         return new RowIterator();
+    }
+
+    @Override
+    public void markDirty() {
+        isDirty = true;
+    }
+
+    @Override
+    public boolean isDirty() {
+        return isDirty;
     }
 
     //====================================迭代器======================================

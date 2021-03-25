@@ -6,15 +6,15 @@ import com.microdb.model.page.PageID;
 import java.util.HashMap;
 
 /**
- * TODO
+ * 用于跟踪执行过程中的脏页
  *
  * @author zhangjw
  * @version 1.0
  */
 public class Connection {
-    public static ThreadLocal<HashMap<String, HashMap<PageID, Page>>> connection = new ThreadLocal<>();
+    private static ThreadLocal<HashMap<String, HashMap<PageID, Page>>> connection = new ThreadLocal<>();
 
-    public static String DIRTY_PAGE_KEY = "dp";
+    private static String DIRTY_PAGE_KEY = "dp";
 
     /**
      * 缓存更新表过程中产生的脏页
@@ -26,6 +26,7 @@ public class Connection {
             connection.set(map);
         }
         HashMap<PageID, Page> pages = map.compute(DIRTY_PAGE_KEY, (k, v) -> v == null ? v = new HashMap<>() : v);
+        page.markDirty();
         pages.put(page.getPageID(), page);
     }
 

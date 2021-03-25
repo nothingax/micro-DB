@@ -7,6 +7,7 @@ import com.microdb.model.dbfile.BTreeFile;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
 import com.microdb.model.page.btree.*;
+import com.microdb.operator.Delete;
 import com.microdb.operator.btree.BtreeScan;
 import org.junit.Before;
 import org.junit.Test;
@@ -387,7 +388,7 @@ public class BTreeInternalPageTest {
     public void deleteRowAndEntryMassData() throws IOException {
         BTreeFile tableFile = (BTreeFile) dataBase.getDbTableByName("t_person").getTableFile();
         int tableId = tableFile.getTableId();
-        int num = 3000;
+        int num = 30000;
         long l1 = System.currentTimeMillis();
         for (int i = 1; i <= num; i++) {
             Row row = new Row(personTableDesc);
@@ -407,12 +408,17 @@ public class BTreeInternalPageTest {
 
         }
 
-        System.out.println("开始打印====");
-        // 删除并打印
-        for (int i = 1; i <= num; i++) {
-            deleteOne(tableFile, scan);
-            printTree(tableFile, tableId);
-        }
+        // 通过Delete操作符删除，执行非常快速
+        Delete delete = new Delete(scan);
+        delete.loopDelete();
+
+        // 外部迭代删除，删除非常慢
+        // System.out.println("开始打印====");
+        // // 删除并打印
+        // for (int i = 1; i <= num; i++) {
+        //     deleteOne(tableFile, scan);
+        //     printTree(tableFile, tableId);
+        // }
 
 
         scan.open();
