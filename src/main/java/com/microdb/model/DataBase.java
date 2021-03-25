@@ -3,6 +3,7 @@ package com.microdb.model;
 import com.microdb.bufferpool.BufferPool;
 import com.microdb.exception.DbException;
 import com.microdb.model.dbfile.TableFile;
+import com.microdb.transaction.LockManager;
 
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -27,11 +28,20 @@ public class DataBase {
     private HashMap<Integer, DbTable> tableId2Table;
     private HashMap<String, DbTable> tableName2Table;
 
+    /**
+     * 缓冲池
+     */
     private BufferPool bufferPool;
+
+    /**
+     * 锁管理器
+     */
+    private LockManager lockManager;
 
     private DataBase() {
         this.tableId2Table = new HashMap<>();
         this.tableName2Table = new HashMap<>();
+        this.lockManager = new LockManager();
         this.bufferPool = new BufferPool(100);
     }
 
@@ -41,6 +51,10 @@ public class DataBase {
 
     public static BufferPool getBufferPool() {
         return singleton.get().bufferPool;
+    }
+
+    public static LockManager getLockManager() {
+        return singleton.get().lockManager;
     }
 
     /**
