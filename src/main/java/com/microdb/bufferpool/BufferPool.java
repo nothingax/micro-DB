@@ -108,14 +108,8 @@ public class BufferPool {
     }
 
     public void deleteRow(Row row) throws IOException {
-        DbTable dbTable = null;
-        try {
-            dbTable = DataBase.getInstance().getDbTableById(row.getKeyItem().getPageID().getTableId());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        DbTable dbTable = DataBase.getInstance().getDbTableById(row.getKeyItem().getPageID().getTableId());
         dbTable.deleteRow(row);
-
         // 所有脏页都放在了thread 里
         HashMap<PageID, Page> dirtyPages = Connection.getDirtyPages();
         System.out.println("del.dirtyPages.size():" + dirtyPages.size());

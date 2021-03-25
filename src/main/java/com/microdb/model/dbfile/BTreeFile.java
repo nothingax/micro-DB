@@ -104,12 +104,7 @@ public class BTreeFile implements TableFile {
      */
     @Override
     public void deleteRow(Row row) throws IOException {
-        BTreePageID BTreePageID = null;
-        try {
-            BTreePageID = new BTreePageID(tableId, row.getKeyItem().getPageID().getPageNo(), BTreePageType.LEAF);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        BTreePageID BTreePageID = new BTreePageID(tableId, row.getKeyItem().getPageID().getPageNo(), BTreePageType.LEAF);
         BTreeLeafPage page = (BTreeLeafPage) DataBase.getBufferPool().getPage(BTreePageID);
         page.deleteRow(row);
         Connection.cacheDirtyPage(page);
@@ -332,12 +327,7 @@ public class BTreeFile implements TableFile {
 
         // 将原来在父页的entry拉下来到下一级
         entry.setLeftChildPageID(leftPage.getReverseIterator().next().getRightChildPageID());
-        try {
-            entry.setRightChildPageID(rightPage.getIterator().next().getLeftChildPageID());
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new DbException("error");
-        }
+        entry.setRightChildPageID(rightPage.getIterator().next().getLeftChildPageID());
         leftPage.insertEntry(entry);
 
         // 右侧页的数据挪到左侧页中
