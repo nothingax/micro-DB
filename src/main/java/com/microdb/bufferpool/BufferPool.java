@@ -62,7 +62,6 @@ public class BufferPool {
 
     /**
      * 驱逐页面，不常使用的页面从缓冲区移除，移除前将脏页刷盘
-     * <p>
      * TODO 目前实现是对整个池中的页全部移除，后续优化根据使用频率驱逐页面:LFU，或使用其他缓存失效算法
      */
     private void evictPages() {
@@ -83,26 +82,23 @@ public class BufferPool {
         // 脏页刷盘
         int tableId = page.getPageID().getTableId();
         DataBase.getInstance().getDbTableById(tableId).getTableFile().writePageToDisk(page);
+
+        // TODO 加入缓存失效算法后，需要设置为非脏页
     }
 
     public void insertRow(Row row, String tableName) throws IOException {
         DbTable dbTable = DataBase.getInstance().getDbTableByName(tableName);
         dbTable.insertRow(row);
 
-        // 获取插入过程中产生的脏页
+        // 获取插入过程中产生的脏页，放入缓存
         HashMap<PageID, Page> dirtyPages = Connection.getDirtyPages();
         if (dirtyPages.isEmpty()) {
             throw new DbException("插入数据应产生脏页脏页");
         }
-
         // TODO dirtyPages.size 极限值过大说明page size 配置不合理
         System.out.println("dirtyPages.size():" + dirtyPages.size());
         for (Map.Entry<PageID, Page> entry : dirtyPages.entrySet()) {
-            PageID pageID = entry.getKey();
-            if (isFull()) {
-                evictPages();
-            }
-            pool.put(pageID, entry.getValue());
+            pool.put(entry.getKey(), entry.getValue());
         }
         Connection.clearDirtyPages();
     }
@@ -110,15 +106,11 @@ public class BufferPool {
     public void deleteRow(Row row) throws IOException {
         DbTable dbTable = DataBase.getInstance().getDbTableById(row.getKeyItem().getPageID().getTableId());
         dbTable.deleteRow(row);
-        // 所有脏页都放在了thread 里
+
         HashMap<PageID, Page> dirtyPages = Connection.getDirtyPages();
         System.out.println("del.dirtyPages.size():" + dirtyPages.size());
         for (Map.Entry<PageID, Page> entry : dirtyPages.entrySet()) {
-            PageID pageID = entry.getKey();
-            if (isFull()) {
-                evictPages();
-            }
-            pool.put(pageID, entry.getValue());
+            pool.put(entry.getKey(), entry.getValue());
         }
         // 如果不清，会严重降低性能
         Connection.clearDirtyPages();
