@@ -58,7 +58,7 @@ public class TransactionTest {
 
         Transaction transaction = new Transaction();
         TransactionID transactionId = transaction.getTransactionId();
-        Connection.setTransactionID(transactionId);
+        Connection.passingTransaction(transactionId);
 
 
         BTreeFile tableFile = (BTreeFile) dataBase.getDbTableByName("t_person").getTableFile();

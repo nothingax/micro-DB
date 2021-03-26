@@ -17,12 +17,18 @@ public class Connection {
     private static String TRANSACTION_ID_KEY = "tid";
     private static ThreadLocal<HashMap<String, Object>> connection = new ThreadLocal<>();
 
-    public static TransactionID getTransactionID() {
+    /**
+     * 获取当前的事务ID
+     */
+    public static TransactionID currentTransaction() {
         HashMap<String, Object> map = getOrInitThreadMap();
         return (TransactionID) map.get(TRANSACTION_ID_KEY);
     }
 
-    public static void setTransactionID(TransactionID transactionID) {
+    /**
+     * connection-passing的方式传递事务：事务ID存储在当前线程/连接中，在调用链的任何位置可以获取
+     */
+    public static void passingTransaction(TransactionID transactionID) {
         HashMap<String, Object> map = getOrInitThreadMap();
         map.put(TRANSACTION_ID_KEY, transactionID);
     }

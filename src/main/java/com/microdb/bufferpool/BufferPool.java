@@ -49,11 +49,11 @@ public class BufferPool {
      * @param pageID pageID
      */
     public Page getPage(PageID pageID) {
-        TransactionID transactionID = Connection.getTransactionID();
+        TransactionID currentTransactionID = Connection.currentTransaction();
         try {
-            DataBase.getLockManager().acquireLock(transactionID, pageID);
+            DataBase.getLockManager().acquireLock(currentTransactionID, pageID);
         } catch (TransactionException e) {
-            System.out.println(String.format("acquire lock 失败,transactionID=%s,pageID=%s", transactionID, pageID));
+            System.out.println(String.format("acquire lock 失败,transactionID=%s,pageID=%s", currentTransactionID, pageID));
             throw e;
         }
 

@@ -42,7 +42,7 @@ public class DataBase {
         this.tableId2Table = new HashMap<>();
         this.tableName2Table = new HashMap<>();
         this.lockManager = new LockManager();
-        this.bufferPool = new BufferPool(100);
+        this.bufferPool = new BufferPool(bufferPoolCapacity);
     }
 
     public static DataBase getInstance() {
