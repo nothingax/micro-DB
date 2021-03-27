@@ -1,5 +1,6 @@
 package com.microdb.connection;
 
+import com.microdb.exception.DbException;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 import com.microdb.transaction.TransactionID;
@@ -22,7 +23,13 @@ public class Connection {
      */
     public static TransactionID currentTransaction() {
         HashMap<String, Object> map = getOrInitThreadMap();
-        return (TransactionID) map.get(TRANSACTION_ID_KEY);
+        TransactionID transactionID = (TransactionID) map.get(TRANSACTION_ID_KEY);
+
+        if (transactionID == null) {
+            throw new DbException("当前线程没有事务");
+        }
+
+        return transactionID;
     }
 
     /**

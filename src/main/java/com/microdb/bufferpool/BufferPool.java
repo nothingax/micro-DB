@@ -57,7 +57,7 @@ public class BufferPool {
             throw e;
         }
 
-        System.out.println(String.format("页%s获取锁成功", pageID));
+        System.out.println(String.format("访问页%s，获取锁成功", pageID));
 
         Page page = pool.get(pageID);
         if (page == null) {

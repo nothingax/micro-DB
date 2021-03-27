@@ -52,7 +52,7 @@ public class LockManager {
      */
     public synchronized void acquireLock(TransactionID transactionID, PageID pageID)
             throws TransactionException {
-        System.out.println(String.format("事务开始获取开页锁,pageID=%s,transactionID=%s", transactionID, pageID));
+        System.out.println(String.format("事务开始获取页锁,transactionID=%s,pageID=%s", transactionID, pageID));
 
         // 独占锁实现：
         // 判断该页是否被锁定

@@ -1,6 +1,6 @@
 package com.microdb.model.dbfile;
 
-import com.microdb.annotation.PublicForTest;
+import com.microdb.annotation.VisibleForTest;
 import com.microdb.connection.Connection;
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
@@ -803,7 +803,7 @@ public class BTreeFile implements TableFile {
      * @return 返回可用的页
      */
 
-    @PublicForTest
+    @VisibleForTest
     public BTreeInternalPage splitInternalPage(BTreeInternalPage internalPageNeedSplit, Field keyToInsert) throws IOException {
 
         // 获取一个可用的页

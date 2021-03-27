@@ -289,9 +289,9 @@ public class BTreeInternalPageTest {
 
 
         Row row = new Row(personTableDesc);
-                row.setField(0, new IntField(11));
-                row.setField(1, new IntField(18));
-                tableFile.insertRow(row);
+        row.setField(0, new IntField(11));
+        row.setField(1, new IntField(18));
+        tableFile.insertRow(row);
 
         rootPtrPage = (BTreeRootPtrPage) DataBase.getBufferPool().getPage(rootPtrPageID);
         rootNodePage = (BTreePage) DataBase.getBufferPool().getPage(rootPtrPage.getRootNodePageID());
@@ -360,7 +360,7 @@ public class BTreeInternalPageTest {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
             row.setField(1, new IntField(18));
-            DataBase.getBufferPool().insertRow(row,"t_person");
+            DataBase.getBufferPool().insertRow(row, "t_person");
         }
 
         System.out.println("开始打印表数据====");
@@ -394,7 +394,7 @@ public class BTreeInternalPageTest {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
             row.setField(1, new IntField(18));
-            DataBase.getBufferPool().insertRow(row,"t_person");
+            DataBase.getBufferPool().insertRow(row, "t_person");
         }
 
         System.out.println("开始打印表数据====");
@@ -489,6 +489,7 @@ public class BTreeInternalPageTest {
     public void checkChildCorrect() {
 
     }
+
     public void printInternalPage(BTreeInternalPage page) {
         Iterator<BTreeEntry> iterator = page.getIterator();
         while (iterator.hasNext()) {
