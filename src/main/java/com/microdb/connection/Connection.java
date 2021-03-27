@@ -26,7 +26,7 @@ public class Connection {
         TransactionID transactionID = (TransactionID) map.get(TRANSACTION_ID_KEY);
 
         if (transactionID == null) {
-            throw new DbException("当前线程没有事务");
+            throw new DbException("error:未开启事务");
         }
 
         return transactionID;
@@ -42,7 +42,6 @@ public class Connection {
 
 
     public static void clearTransactionID() {
-
         HashMap<String, Object> map = getOrInitThreadMap();
         map.remove(TRANSACTION_ID_KEY);
     }
@@ -52,7 +51,7 @@ public class Connection {
      */
     @SuppressWarnings("unchecked")
     public static void cacheDirtyPage(Page page) {
-        HashMap<String, Object> map = connection.get();
+        HashMap<String, Object> map = getOrInitThreadMap();
         HashMap<PageID, Page> pages =
                 (HashMap<PageID, Page>) map.compute(DIRTY_PAGE_KEY, (k, v) -> v == null ? v = new HashMap<>() : v);
         page.markDirty();
