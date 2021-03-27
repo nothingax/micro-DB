@@ -2,6 +2,8 @@ package com.microdb.model.page.heap;
 
 import com.microdb.model.page.PageID;
 
+import java.util.Objects;
+
 /**
  * pageID用于封装页编号、引用tableId，便于在page中使用tableDesc
  *
@@ -32,5 +34,27 @@ public class HeapPageID implements PageID {
     @Override
     public int getPageNo() {
         return pageNo;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HeapPageID that = (HeapPageID) o;
+        return tableId == that.tableId &&
+                pageNo == that.pageNo;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tableId, pageNo);
+    }
+
+    @Override
+    public String toString() {
+        return "HeapPageID{" +
+                "tableId=" + tableId +
+                ", pageNo=" + pageNo +
+                '}';
     }
 }

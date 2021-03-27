@@ -113,6 +113,7 @@ public class HeapTableFile implements TableFile {
             int pageNo = existPageCount; // 由于pageNo从0开始
             PageID pageID = new HeapPageID(this.getTableId(), pageNo);
             availablePage = new HeapPage(pageID, HeapPage.createEmptyPageData());
+            writePageToDisk(availablePage);
         }
         availablePage.insertRow(row);
         Connection.cacheDirtyPage(availablePage);
@@ -120,7 +121,10 @@ public class HeapTableFile implements TableFile {
 
     @Override
     public void deleteRow(Row row) {
-
+        PageID pageID = row.getKeyItem().getPageID();
+        HeapPage page = (HeapPage) DataBase.getBufferPool().getPage(pageID);
+        page.deleteRow(row);
+        Connection.cacheDirtyPage(page);
     }
 
     private Page getFirstPageHasEmptySlot(int existPageCount) throws IOException {
@@ -150,19 +154,22 @@ public class HeapTableFile implements TableFile {
         private Integer pageNo;
         private int tableId;
         private int existPageCount;
+        private Page curPage;
         private Iterator<Row> rowIterator;
 
         public HeapTableFileIterator() {
             this.pageNo = null;
             this.tableId = getTableId();
             this.existPageCount = getExistPageCount();
+            this.curPage = null;
             this.rowIterator = null;
         }
 
         @Override
         public void open() throws DbException {
             pageNo = 0;
-            rowIterator = getRowIterator(pageNo);
+            curPage = getPage(pageNo);
+            rowIterator = curPage.getRowIterator();
         }
 
         @Override
@@ -170,13 +177,13 @@ public class HeapTableFile implements TableFile {
             if (pageNo == null) {
                 return false; // TableFileIterator 尚未open
             }
-
             while (pageNo < existPageCount - 1) {
                 if (rowIterator.hasNext()) {
                     return true;
                 } else {
                     pageNo += 1;
-                    rowIterator = getRowIterator(pageNo);
+                    curPage = getPage(pageNo);
+                    rowIterator = curPage.getRowIterator();
                 }
             }
             return rowIterator.hasNext();
@@ -197,10 +204,15 @@ public class HeapTableFile implements TableFile {
             rowIterator = null;
         }
 
-        private Iterator<Row> getRowIterator(Integer pageNo) {
+        private Page getPage(Integer pageNo) {
             PageID pageID = new HeapPageID(tableId, pageNo);
-            return DataBase.getBufferPool().getPage(pageID).getRowIterator();
+            return DataBase.getBufferPool().getPage(pageID);
         }
+        //
+        // private Iterator<Row> getRowIterator(Integer pageNo) {
+        //     PageID pageID = new HeapPageID(tableId, pageNo);
+        //     return DataBase.getBufferPool().getPage(pageID).getRowIterator();
+        // }
     }
 
 }

@@ -7,6 +7,7 @@ import com.microdb.model.TableDesc;
 import com.microdb.model.field.Field;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
+import com.microdb.model.page.btree.KeyItem;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -131,6 +132,7 @@ public class HeapPage implements Page {
                         .map(x -> x.parse(dis))
                         .toArray(Field[]::new);
                 row.setFields(fields);
+                row.setKeyItem(new KeyItem(pageID, i));
                 rows[i] = row;
             } else {
                 rows[i] = null;
@@ -186,12 +188,24 @@ public class HeapPage implements Page {
         for (int i = 0; i < this.maxSlotNum; i++) {
             if (!slotUsageStatusBitMap[i]) {
                 slotUsageStatusBitMap[i] = true;
+                row.setKeyItem(new KeyItem(pageID, i));
                 rows[i] = row;
                 return;
             }
         }
         throw new DbException("insert row error: no empty slot");
     }
+
+    public void deleteRow(Row row) {
+        if (row == null) {
+            throw new DbException("delete row error: row can not be null");
+        }
+
+        int slotIndex = row.getKeyItem().getSlotIndex();
+        slotUsageStatusBitMap[slotIndex] = false;
+        rows[slotIndex] = null;
+    }
+
 
     /**
      * 反回迭代器，迭代该页的每一行
@@ -215,7 +229,8 @@ public class HeapPage implements Page {
 
     private class RowIterator implements Iterator<Row> {
         private Iterator<Row> rowIterator;
-        public  RowIterator() {
+
+        public RowIterator() {
             ArrayList<Row> rowList = new ArrayList<>();
             for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
                 if (isSlotUsed(i)) {
