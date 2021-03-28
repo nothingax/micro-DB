@@ -11,6 +11,7 @@ import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
 import com.microdb.operator.Delete;
 import com.microdb.operator.SeqScan;
+import com.microdb.transaction.Lock;
 import com.microdb.transaction.Transaction;
 import org.junit.Assert;
 import org.junit.Before;
@@ -54,8 +55,8 @@ public class TransactionTest {
         // 表中初始化数据
         int num = 100;
 
-        Transaction transaction = new Transaction();
-        Connection.passingTransaction(transaction.getTransactionId());
+        Transaction transaction = new Transaction(Lock.LockType.XLock);
+        Connection.passingTransaction(transaction);
         for (int i = 1; i <= num; i++) {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
@@ -67,8 +68,8 @@ public class TransactionTest {
 
     @Test
     public void testInsertAndDeleteWithTransaction() throws IOException {
-        Transaction transaction = new Transaction();
-        Connection.passingTransaction(transaction.getTransactionId());
+        Transaction transaction = new Transaction(Lock.LockType.XLock);
+        Connection.passingTransaction(transaction);
         TableFile tableFile = dataBase.getDbTableByName("t_person").getTableFile();
 
         int num = 5;
@@ -101,8 +102,8 @@ public class TransactionTest {
 
     @Test
     public void testTransactionCommit() throws IOException {
-        Transaction transaction = new Transaction();
-        Connection.passingTransaction(transaction.getTransactionId());
+        Transaction transaction = new Transaction(Lock.LockType.XLock);
+        Connection.passingTransaction(transaction);
         TableFile tableFile = dataBase.getDbTableByName("t_person").getTableFile();
         int num = 30000;
         long l1 = System.currentTimeMillis();

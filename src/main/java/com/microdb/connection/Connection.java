@@ -3,7 +3,7 @@ package com.microdb.connection;
 import com.microdb.exception.DbException;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
-import com.microdb.transaction.TransactionID;
+import com.microdb.transaction.Transaction;
 
 import java.util.HashMap;
 
@@ -16,28 +16,29 @@ import java.util.HashMap;
 public class Connection {
     private static String DIRTY_PAGE_KEY = "dp";
     private static String TRANSACTION_ID_KEY = "tid";
+    private static String TRANSACTION_KEY = "trans";
     private static ThreadLocal<HashMap<String, Object>> connection = new ThreadLocal<>();
 
     /**
-     * 获取当前的事务ID
+     * 获取当前的事务
      */
-    public static TransactionID currentTransaction() {
+    public static Transaction currentTransaction() {
         HashMap<String, Object> map = getOrInitThreadMap();
-        TransactionID transactionID = (TransactionID) map.get(TRANSACTION_ID_KEY);
+        Transaction transaction = (Transaction) map.get(TRANSACTION_KEY);
 
-        if (transactionID == null) {
+        if (transaction == null) {
             throw new DbException("error:未开启事务");
         }
 
-        return transactionID;
+        return transaction;
     }
 
     /**
-     * connection-passing的方式传递事务：事务ID存储在当前线程/连接中，在调用链的任何位置可以获取
+     * connection-passing的方式传递事务：事务对象存储在当前线程/连接中，在调用链的任何位置可以获取
      */
-    public static void passingTransaction(TransactionID transactionID) {
+    public static void passingTransaction(Transaction transaction) {
         HashMap<String, Object> map = getOrInitThreadMap();
-        map.put(TRANSACTION_ID_KEY, transactionID);
+        map.put(TRANSACTION_KEY, transaction);
     }
 
 

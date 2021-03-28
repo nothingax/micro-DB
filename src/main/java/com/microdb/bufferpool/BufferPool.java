@@ -9,7 +9,6 @@ import com.microdb.model.Row;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 import com.microdb.transaction.Transaction;
-import com.microdb.transaction.TransactionID;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -49,11 +48,11 @@ public class BufferPool {
      * @param pageID pageID
      */
     public Page getPage(PageID pageID) {
-        TransactionID currentTransactionID = Connection.currentTransaction();
+        Transaction currentTransaction = Connection.currentTransaction();
         try {
-            DataBase.getLockManager().acquireLock(currentTransactionID, pageID);
+            DataBase.getLockManager().acquireLock(currentTransaction, pageID);
         } catch (TransactionException e) {
-            System.out.println(String.format("acquire lock 失败,transactionID=%s,pageID=%s", currentTransactionID, pageID));
+            System.out.println(String.format("acquire lock 失败,transaction=%s,pageID=%s", currentTransaction, pageID));
             throw e;
         }
 

@@ -12,11 +12,8 @@ import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.heap.HeapPageID;
-import com.microdb.operator.Delete;
-import com.microdb.operator.SeqScan;
+import com.microdb.transaction.Lock;
 import com.microdb.transaction.Transaction;
-import com.microdb.transaction.TransactionID;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -63,8 +60,8 @@ public class LockTest {
         // 表中初始化数据
         int num = 100;
 
-        Transaction transaction = new Transaction();
-        Connection.passingTransaction(transaction.getTransactionId());
+        Transaction transaction = new Transaction(Lock.LockType.XLock);
+        Connection.passingTransaction(transaction);
         for (int i = 1; i <= num; i++) {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
@@ -72,73 +69,6 @@ public class LockTest {
             DataBase.getBufferPool().insertRow(row, "t_person");
         }
         transaction.commit();
-    }
-
-
-    @Test
-    public void testInsertAndDeleteWithTransaction() throws IOException {
-        Transaction transaction = new Transaction();
-        Connection.passingTransaction(transaction.getTransactionId());
-        TableFile tableFile = dataBase.getDbTableByName("t_person").getTableFile();
-
-        int num = 5;
-        long l1 = System.currentTimeMillis();
-        for (int i = 1; i <= num; i++) {
-            Row row = new Row(personTableDesc);
-            row.setField(0, new IntField(i));
-            row.setField(1, new IntField(18));
-            DataBase.getBufferPool().insertRow(row, "t_person");
-        }
-
-        System.out.println("开始打印表数据====");
-
-        SeqScan scan = new SeqScan(tableFile.getTableId());
-
-        scan.open();
-        while (scan.hasNext()) {
-            System.out.println(scan.next());
-        }
-
-        // 通过Delete操作符删除，执行非常快速
-        //
-        Delete delete = new Delete(scan);
-        delete.loopDelete();
-
-        scan.open();
-        Assert.assertFalse(scan.hasNext());
-        System.out.println("耗时ms:" + (System.currentTimeMillis() - l1));
-
-    }
-
-    @Test
-    public void testTransactionCommit() throws IOException {
-        Transaction transaction = new Transaction();
-        Connection.passingTransaction(transaction.getTransactionId());
-        TableFile tableFile = dataBase.getDbTableByName("t_person").getTableFile();
-        int num = 30000;
-        long l1 = System.currentTimeMillis();
-        for (int i = 1; i <= num; i++) {
-            Row row = new Row(personTableDesc);
-            row.setField(0, new IntField(i));
-            row.setField(1, new IntField(18));
-            DataBase.getBufferPool().insertRow(row, "t_person");
-        }
-
-        System.out.println("开始打印表数据====");
-        SeqScan scan = new SeqScan(tableFile.getTableId());
-        scan.open();
-        while (scan.hasNext()) {
-            System.out.println(scan.next());
-        }
-        System.out.println("耗时ms:" + (System.currentTimeMillis() - l1));
-
-
-        // 添加不经过缓存的读取文件 用于测试
-
-        scan.open();
-        Assert.assertFalse(scan.hasNext());
-
-
     }
 
     /**
@@ -150,13 +80,14 @@ public class LockTest {
         DbTable table = DataBase.getInstance().getDbTableByName("t_person");
         ExecutorService threadPool = Executors.newCachedThreadPool();
         int threadNum = 2;
+        // 同页
         HeapPageID heapPageID = new HeapPageID(table.getTableId(), 0);
 
         ArrayList<Future<Page>> futureResult = new ArrayList<>();
         for (int i = 0; i < threadNum; i++) {
-            TransactionID transactionId = new Transaction().getTransactionId();
+            Transaction transaction = new Transaction(Lock.LockType.XLock);
             Future<Page> pageFuture = threadPool.submit(() -> {
-                Connection.passingTransaction(transactionId);
+                Connection.passingTransaction(transaction);
                 return DataBase.getBufferPool().getPage(heapPageID);
             });
             futureResult.add(pageFuture);
@@ -192,10 +123,11 @@ public class LockTest {
 
         ArrayList<Future<Page>> futureResult = new ArrayList<>();
         for (int i = 0; i < threadNum; i++) {
+            // 不同页
             HeapPageID heapPageID = new HeapPageID(table.getTableId(), i);
-            TransactionID transactionId = new Transaction().getTransactionId();
+            Transaction transaction = new Transaction(Lock.LockType.XLock);
             Future<Page> pageFuture = threadPool.submit(() -> {
-                Connection.passingTransaction(transactionId);
+                Connection.passingTransaction(transaction);
                 return DataBase.getBufferPool().getPage(heapPageID);
             });
             futureResult.add(pageFuture);
@@ -213,4 +145,174 @@ public class LockTest {
         threadPool.shutdownNow();
     }
 
+    /**
+     * 并发获取同一个页S锁，应互不阻塞，均成功
+     */
+    @Test
+    public void concurrentGetSLockSamePage() throws ExecutionException, InterruptedException {
+        DbTable table = DataBase.getInstance().getDbTableByName("t_person");
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        int threadNum = 2;
+        // 同一页
+        HeapPageID heapPageID = new HeapPageID(table.getTableId(), 0);
+
+        ArrayList<Future<Page>> futureResult = new ArrayList<>();
+        for (int i = 0; i < threadNum; i++) {
+            Transaction transaction = new Transaction(Lock.LockType.SLock);
+            Future<Page> pageFuture = threadPool.submit(() -> {
+                Connection.passingTransaction(transaction);
+                return DataBase.getBufferPool().getPage(heapPageID);
+            });
+            futureResult.add(pageFuture);
+        }
+
+        // 线程1获取锁成功
+        Page page = futureResult.get(0).get();
+        assertNotNull(page);
+
+        // 线程2获取锁成功
+        Page page2 = futureResult.get(1).get();
+        assertNotNull(page2);
+
+        // 终止所有线程
+        threadPool.shutdownNow();
+    }
+
+    /**
+     * 并发获取不同页S锁，应互不阻塞，均成功
+     */
+    @Test
+    public void concurrentGetSLockOnDifferentPage() throws ExecutionException, InterruptedException {
+        DbTable table = DataBase.getInstance().getDbTableByName("t_person");
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        int threadNum = 2;
+        ArrayList<Future<Page>> futureResult = new ArrayList<>();
+        for (int i = 0; i < threadNum; i++) {
+            // 不同页
+            HeapPageID heapPageID = new HeapPageID(table.getTableId(), i);
+            Transaction transaction = new Transaction(Lock.LockType.SLock);
+            Future<Page> pageFuture = threadPool.submit(() -> {
+                Connection.passingTransaction(transaction);
+                return DataBase.getBufferPool().getPage(heapPageID);
+            });
+            futureResult.add(pageFuture);
+        }
+
+        // 线程1获取锁成功
+        Page page = futureResult.get(0).get();
+        assertNotNull(page);
+
+        // 线程2获取锁成功
+        Page page2 = futureResult.get(1).get();
+        assertNotNull(page2);
+
+        // 终止所有线程
+        threadPool.shutdownNow();
+    }
+
+    // 锁升级：一个事务先后获取一个页s锁、x锁 ，锁应升级为x锁
+    @Test
+    public void getSAndXLockOnSamePage() throws ExecutionException, InterruptedException {
+        DbTable table = DataBase.getInstance().getDbTableByName("t_person");
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        int threadNum = 2;
+        ArrayList<Future<Page>> futureResult = new ArrayList<>();
+        HeapPageID heapPageID = new HeapPageID(table.getTableId(), 0);
+
+        Transaction transaction = new Transaction(Lock.LockType.SLock);
+        Future<Page> pageFuture = threadPool.submit(() -> {
+            Connection.passingTransaction(transaction);
+            return DataBase.getBufferPool().getPage(heapPageID);
+        });
+        futureResult.add(pageFuture);
+
+        transaction.setLockType(Lock.LockType.XLock);
+        Future<Page> pageFuture2 = threadPool.submit(() -> {
+            Connection.passingTransaction(transaction);
+            return DataBase.getBufferPool().getPage(heapPageID);
+        });
+        futureResult.add(pageFuture2);
+
+        Thread.sleep(100);
+        // 锁应升级为x锁,新的事务获取应获取不到
+        Transaction transaction3 = new Transaction(Lock.LockType.SLock);
+        Future<Page> pageFuture3 = threadPool.submit(() -> {
+            Connection.passingTransaction(transaction3);
+            return DataBase.getBufferPool().getPage(heapPageID);
+        });
+        futureResult.add(pageFuture3);
+
+        // 1获取锁成功
+        Page page = futureResult.get(0).get();
+        assertNotNull(page);
+
+        // 2获取锁成功
+        Page page2 = futureResult.get(1).get();
+        assertNotNull(page2);
+
+        // 线程3获取锁失败
+        try {
+            futureResult.get(2).get(1, TimeUnit.SECONDS);
+            fail("expected timeout");
+        } catch (Exception ignored) {
+        }
+
+
+        // 终止所有线程
+        threadPool.shutdownNow();
+    }
+
+
+    // 锁升级：一个事务先后获取一个页x锁、s锁 ，应保持x锁不变
+    @Test
+    public void getXAndSLockOnSamePage() throws ExecutionException, InterruptedException {
+        DbTable table = DataBase.getInstance().getDbTableByName("t_person");
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        int threadNum = 2;
+        ArrayList<Future<Page>> futureResult = new ArrayList<>();
+        HeapPageID heapPageID = new HeapPageID(table.getTableId(), 0);
+
+        Transaction transaction = new Transaction(Lock.LockType.XLock);
+        Future<Page> pageFuture = threadPool.submit(() -> {
+            Connection.passingTransaction(transaction);
+            return DataBase.getBufferPool().getPage(heapPageID);
+        });
+        futureResult.add(pageFuture);
+
+
+        Thread.sleep(100);
+        transaction.setLockType(Lock.LockType.SLock);
+        Future<Page> pageFuture2 = threadPool.submit(() -> {
+            Connection.passingTransaction(transaction);
+            return DataBase.getBufferPool().getPage(heapPageID);
+        });
+        futureResult.add(pageFuture2);
+
+        Thread.sleep(100);
+        // 锁应保持为x锁,新的事务获取应获取不到锁
+        Transaction transaction3 = new Transaction(Lock.LockType.SLock);
+        Future<Page> pageFuture3 = threadPool.submit(() -> {
+            Connection.passingTransaction(transaction3);
+            return DataBase.getBufferPool().getPage(heapPageID);
+        });
+        futureResult.add(pageFuture3);
+
+        // 1获取锁成功
+        Page page = futureResult.get(0).get();
+        assertNotNull(page);
+
+        // 2获取锁成功
+        Page page2 = futureResult.get(1).get();
+        assertNotNull(page2);
+
+        // 线程3获取锁失败
+        try {
+            futureResult.get(2).get(1, TimeUnit.SECONDS);
+            fail("expected timeout");
+        } catch (Exception ignored) {
+        }
+
+        // 终止所有线程
+        threadPool.shutdownNow();
+    }
 }

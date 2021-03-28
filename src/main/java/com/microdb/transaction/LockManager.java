@@ -50,33 +50,72 @@ public class LockManager {
      * <p>
      * 支持重入(一个事务中某页可能被访问多次)
      */
-    public synchronized void acquireLock(TransactionID transactionID, PageID pageID)
+    public synchronized void acquireLock(Transaction transaction, PageID pageID)
             throws TransactionException {
-        System.out.println(String.format("事务开始获取页锁,transactionID=%s,pageID=%s", transactionID, pageID));
+        System.out.println(String.format("事务开始获取页锁,transaction=%s,pageID=%s", transaction, pageID));
+        TransactionID currentTransId = transaction.getTransactionId();
 
-        // 独占锁实现：
-        // 判断该页是否被锁定
-        // 如果未被锁定：可成功获取锁，锁定并返回
-        // 如果被锁定：判断锁定它的事务是否为当前事务，如果是，锁重入，获取成功；如果不是，则阻塞。
-        while (true) {
-            if (!lockTable.containsKey(pageID)) {
-                Lock lock = new Lock(pageID);
-                lock.setLockHolder(transactionID);
-                lockTable.put(pageID, lock);
-
-                List<PageID> pageIDS = transactionTable.getOrDefault(transactionID, new ArrayList<>());
-                pageIDS.add(pageID);
-                transactionTable.put(transactionID, pageIDS);
-
-                return;
-            } else {
-                if (Objects.equals(lockTable.get(pageID).getLockHolder(), transactionID)) {
+        // 申请x锁
+        if (Objects.equals(transaction.getLockType(), Lock.LockType.XLock)) {
+            // 独占锁实现：
+            // 判断该页是否被锁定
+            // 如果未被锁定：可成功获取锁，锁定并返回
+            // 如果被锁定：判断锁定它的事务表是否包含当前事务，如果包含，锁重入或升级，获取成功；如果不包含，则阻塞。
+            while (true) {
+                if (!lockTable.containsKey(pageID)) {
+                    grantLock(transaction, pageID, currentTransId);
                     return;
                 } else {
-                    block(System.currentTimeMillis());
+                    if (lockTable.get(pageID).getLockHolders().contains(currentTransId)) {
+                        Lock lock = lockTable.get(pageID);
+                        // 锁升级
+                        if (Objects.equals(lock.getLockType(), Lock.LockType.SLock)) {
+                            lock.setLockType(Lock.LockType.XLock);
+                            lockTable.put(pageID, lock);
+                        }
+                        return;
+                    } else {
+                        block(System.currentTimeMillis());
+                    }
+                }
+            }
+        } else { // 申请s锁
+            // 共享锁实现：
+            // 判断该页是否被锁定
+            // 如果未被锁定：可成功获取锁，锁定并返回
+            // 如果被锁定：判断现有锁类型，若是x锁,判断是否由当前事务持有，若是获取成功，否则阻塞；
+            //                        若是s锁，获取成功，更新锁的持有者
+            while (true) {
+                if (!lockTable.containsKey(pageID)) {
+                    grantLock(transaction, pageID, currentTransId);
+                    return;
+                } else {
+                    Lock existingLock = lockTable.get(pageID);
+                    if (Objects.equals(existingLock.getLockType(), Lock.LockType.XLock)) {
+                        if (existingLock.getLockHolders().size() == 1
+                                && existingLock.getLockHolders().contains(currentTransId)) {
+                            return;
+                        } else {
+                            block(System.currentTimeMillis());
+                        }
+                    } else {
+                        existingLock.addHolder(currentTransId);
+                        return;
+                    }
                 }
             }
         }
+    }
+
+    private void grantLock(Transaction transaction, PageID pageID, TransactionID currentTransId) {
+        Lock existingLock = new Lock(pageID, transaction.getLockType());
+        existingLock.addHolder(currentTransId);
+        lockTable.put(pageID, existingLock);
+
+        List<PageID> pageIDS = transactionTable.getOrDefault(currentTransId, new ArrayList<>());
+        pageIDS.add(pageID);
+        transactionTable.put(currentTransId, pageIDS);
+        return;
     }
 
     /**
@@ -123,4 +162,5 @@ public class LockManager {
     public List<PageID> getPageIDs(TransactionID transactionId) {
         return transactionTable.get(transactionId);
     }
+
 }

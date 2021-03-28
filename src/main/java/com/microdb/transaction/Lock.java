@@ -2,16 +2,31 @@ package com.microdb.transaction;
 
 import com.microdb.model.page.PageID;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * 锁
- * 初步设计：支持独占锁(x lock)
- * <p>
- * TODO 实现共享锁(s lock)
+ * 支持独占锁、共享锁
  *
  * @author zhangjw
  * @version 1.0
  */
 public class Lock {
+    /**
+     * 锁类型枚举
+     */
+    public enum LockType {
+        /**
+         * 共享锁
+         */
+        SLock,
+
+        /**
+         * 独占锁
+         */
+        XLock
+    }
 
     /**
      * 被锁的页
@@ -19,34 +34,53 @@ public class Lock {
     private PageID pageID;
 
     /**
-     * 持有该锁的事务,独占锁：一个页只能被一个事务持有
-     * 后续实现共享锁(s lock)
+     * 锁类型
      */
-    private TransactionID lockHolder;
+    private LockType lockType;
 
     // /**
-    //  * 持有该锁的事务
+    //  * 持有该锁的事务,独占锁：一个页只能被一个事务持有
+    //  * 后续实现共享锁(s lock)
     //  */
-    // private List<TransactionID> lockHolders;
+    // private TransactionID lockHolder;
 
+    /**
+     * 持有该锁的事务
+     */
+    private Set<TransactionID> lockHolders;
 
-    public Lock(PageID pageID) {
+    public Lock(PageID pageID, LockType lockType) {
         this.pageID = pageID;
-        // lockHolders = new ArrayList<>();
+        this.lockType = lockType;
+        lockHolders = new HashSet<>();
     }
-
-    public void setLockHolder(TransactionID lockHolder) {
-        this.lockHolder = lockHolder;
-    }
-
-    public TransactionID getLockHolder() {
-        return lockHolder;
-    }
-
-    // /**
-    //  * 添加持有锁的事务
-    //  */
-    // public void addHolder(TransactionID transactionID) {
-    //     lockHolders.add(transactionID);
+    //
+    // public Lock(PageID pageID) {
+    //     this.pageID = pageID;
+    //     lockHolders = new ArrayList<>();
     // }
+    //
+    // public TransactionID getLockHolder() {
+    //     return lockHolder;
+    // }
+
+
+    public void setLockType(LockType lockType) {
+        this.lockType = lockType;
+    }
+
+    public LockType getLockType() {
+        return lockType;
+    }
+
+    /**
+     * 添加持有锁的事务
+     */
+    public void addHolder(TransactionID transactionID) {
+        lockHolders.add(transactionID);
+    }
+
+    public Set<TransactionID> getLockHolders() {
+        return lockHolders;
+    }
 }

@@ -1,5 +1,6 @@
 package com.microdb.transaction;
 
+import com.microdb.annotation.VisibleForTest;
 import com.microdb.connection.Connection;
 import com.microdb.model.DataBase;
 import com.microdb.model.page.PageID;
@@ -19,14 +20,32 @@ public class Transaction {
     private TransactionID transactionId;
 
     /**
-     * 构造事务，事务ID自增
+     * 事务使用的锁
      */
-    public Transaction() {
+    private Lock.LockType lockType;
+
+    private Transaction() {
+    }
+
+    /**
+     * 构造事务,事务ID自增
+     */
+    public Transaction(Lock.LockType lockType) {
         this.transactionId = new TransactionID();
+        this.lockType = lockType;
     }
 
     public TransactionID getTransactionId() {
         return transactionId;
+    }
+
+    public Lock.LockType getLockType() {
+        return lockType;
+    }
+
+    @VisibleForTest
+    public void setLockType(Lock.LockType lockType) {
+        this.lockType = lockType;
     }
 
     public void start() {
@@ -56,6 +75,12 @@ public class Transaction {
 
     }
 
-
+    @Override
+    public String toString() {
+        return "[" +
+                "transactionId=" + transactionId +
+                ", lockType=" + lockType +
+                ']';
+    }
 }
 
