@@ -53,7 +53,7 @@ public interface Page {
     /**
      * 标记为脏页
      */
-    void markDirty();
+    void markDirty(boolean isDirty);
 
     boolean isDirty();
 }

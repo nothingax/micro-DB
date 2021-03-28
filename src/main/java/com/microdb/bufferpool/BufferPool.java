@@ -140,8 +140,10 @@ public class BufferPool {
         }
     }
 
+    /**
+     * 刷盘
+     */
     private void flushPage(Page page) {
-        // 脏页刷盘
         int tableId = page.getPageID().getTableId();
         DataBase.getInstance().getDbTableById(tableId).getTableFile().writePageToDisk(page);
 
@@ -156,7 +158,9 @@ public class BufferPool {
         for (PageID pageID : pageIDs) {
             Page page = pool.get(pageID);
             if (page.isDirty()) {
-                flushPage(pool.get(pageID));
+                page.markDirty(false);
+                pool.put(pageID, page);
+                flushPage(page);
             }
         }
     }

@@ -61,7 +61,7 @@ public class Connection {
             HashMap<String, Object> map = getOrInitThreadMap();
             HashMap<PageID, Page> pages =
                     (HashMap<PageID, Page>) map.compute(DIRTY_PAGE_KEY, (k, v) -> v == null ? v = new HashMap<>() : v);
-            page.markDirty();
+            page.markDirty(true);
             pages.put(page.getPageID(), page);
         }
     }
