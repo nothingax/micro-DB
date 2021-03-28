@@ -58,8 +58,6 @@ public class Transaction {
      * 由于实现的是NO-STEAL策略，所以事务提交时需要将脏页刷盘，事务提交前要确保脏页不被刷盘。
      */
     public void commit() {
-        // DataBase.getBufferPool().transactionComplete();
-
         // NO-STEAL 事务中产生的脏页刷盘
         List<PageID> pageIDs = DataBase.getLockManager().getPageIDs(transactionId);
         DataBase.getBufferPool().flushPages(pageIDs);
@@ -68,11 +66,22 @@ public class Transaction {
         DataBase.getLockManager().releaseLock(transactionId);
 
         // 清除ThreadLocal中的事务
-        Connection.clearTransactionID();
+        Connection.clearTransaction();
     }
 
+    /**
+     * 终止事务，并回滚事务中修改的的脏页
+     * 由于NO-STEAL策略，事务提交前脏页都没有刷盘，直接丢弃缓冲池中的相关页即可
+     */
     public void abort() {
+        List<PageID> pageIDs = DataBase.getLockManager().getPageIDs(transactionId);
+        DataBase.getBufferPool().discardPages(pageIDs);
 
+        // 释放锁
+        DataBase.getLockManager().releaseLock(transactionId);
+
+        // 清除ThreadLocal中的事务
+        Connection.clearTransaction();
     }
 
     @Override

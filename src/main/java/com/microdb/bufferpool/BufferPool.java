@@ -8,6 +8,7 @@ import com.microdb.model.DbTable;
 import com.microdb.model.Row;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
+import com.microdb.transaction.Lock;
 import com.microdb.transaction.Transaction;
 
 import java.io.IOException;
@@ -71,6 +72,11 @@ public class BufferPool {
     }
 
     public void insertRow(Row row, String tableName) throws IOException {
+        Transaction transaction = Connection.currentTransaction();
+        if (!Objects.equals(transaction.getLockType(), Lock.LockType.XLock)) {
+            throw new TransactionException("x lock must be granted in updating");
+        }
+
         DbTable dbTable = DataBase.getInstance().getDbTableByName(tableName);
         dbTable.insertRow(row);
 
@@ -88,6 +94,10 @@ public class BufferPool {
     }
 
     public void deleteRow(Row row) throws IOException {
+        Transaction transaction = Connection.currentTransaction();
+        if (!Objects.equals(transaction.getLockType(), Lock.LockType.XLock)) {
+            throw new TransactionException("x lock must be granted in updating");
+        }
         DbTable dbTable = DataBase.getInstance().getDbTableById(row.getKeyItem().getPageID().getTableId());
         dbTable.deleteRow(row);
 
@@ -144,7 +154,26 @@ public class BufferPool {
             return;
         }
         for (PageID pageID : pageIDs) {
-            flushPage(pool.get(pageID));
+            Page page = pool.get(pageID);
+            if (page.isDirty()) {
+                flushPage(pool.get(pageID));
+            }
+        }
+    }
+
+    /**
+     * 丢弃脏页
+     */
+    public void discardPages(List<PageID> pageIDs) {
+        if (Objects.isNull(pageIDs) || pageIDs.isEmpty()) {
+            System.out.println("discardPages : pageIDs is null or empty ");
+            return;
+        }
+        for (PageID pageID : pageIDs) {
+            Page page = pool.get(pageID);
+            if (page.isDirty()) {
+                pool.remove(pageID);
+            }
         }
     }
 }
