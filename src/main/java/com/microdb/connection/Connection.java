@@ -91,7 +91,6 @@ public class Connection {
         map.put(DIRTY_PAGE_KEY, new HashMap<>());
     }
 
-
     private static HashMap<String, Object> getOrInitThreadMap() {
         HashMap<String, Object> map = connection.get();
         if (map == null) {

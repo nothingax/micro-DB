@@ -802,7 +802,6 @@ public class BTreeFile implements TableFile {
      * @param keyToInsert           索引字段
      * @return 返回可用的页
      */
-
     @VisibleForTest
     public BTreeInternalPage splitInternalPage(BTreeInternalPage internalPageNeedSplit, Field keyToInsert) throws IOException {
 
@@ -964,7 +963,6 @@ public class BTreeFile implements TableFile {
 
         return emptyPageNo;
     }
-
 
     private BTreeLeafPage findLeafPageWithIndex(BTreePageID rootNodePageID,
                                                 IndexPredicate indexPredicate) {
