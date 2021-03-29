@@ -216,7 +216,7 @@ public class HeapPage implements Page {
     }
 
     @Override
-    public void markDirty() {
+    public void markDirty(boolean isDirty) {
         isDirty = true;
     }
 

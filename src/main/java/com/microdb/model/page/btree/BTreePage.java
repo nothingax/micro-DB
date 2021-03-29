@@ -61,7 +61,7 @@ public abstract class BTreePage implements Page {
     public abstract Iterator<Row> getRowIterator();
 
     @Override
-    public void markDirty() {
+    public void markDirty(boolean isDirty) {
         isDirty = true;
     }
 
