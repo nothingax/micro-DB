@@ -2,9 +2,12 @@ package com.microdb.model;
 
 import com.microdb.bufferpool.BufferPool;
 import com.microdb.exception.DbException;
+import com.microdb.logging.UndoLogFile;
 import com.microdb.model.dbfile.TableFile;
 import com.microdb.transaction.LockManager;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -22,6 +25,8 @@ public class DataBase {
      */
     private int bufferPoolCapacity = 100;
 
+    private static final String undoLogName = "undo";
+
     /**
      * dbTableFile id to DbTable
      */
@@ -38,11 +43,21 @@ public class DataBase {
      */
     private LockManager lockManager;
 
+    /**
+     * undo 日志
+     */
+    private UndoLogFile undoLogFile;
+
     private DataBase() {
         this.tableId2Table = new HashMap<>();
         this.tableName2Table = new HashMap<>();
         this.lockManager = new LockManager();
         this.bufferPool = new BufferPool(bufferPoolCapacity);
+        try {
+            this.undoLogFile = new UndoLogFile(new File(undoLogName));
+        } catch (FileNotFoundException e) {
+            throw new DbException("init data base error", e);
+        }
     }
 
     public static DataBase getInstance() {
@@ -55,6 +70,10 @@ public class DataBase {
 
     public static LockManager getLockManager() {
         return singleton.get().lockManager;
+    }
+
+    public UndoLogFile getUndoLogFile() {
+        return singleton.get().undoLogFile;
     }
 
     /**
