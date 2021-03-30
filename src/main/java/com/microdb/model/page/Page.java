@@ -58,6 +58,8 @@ public interface Page {
 
     boolean isDirty();
 
+    TransactionID getDirtyTid();
+
     /**
      * 保留页原始数据
      */

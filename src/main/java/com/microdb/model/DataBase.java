@@ -72,7 +72,7 @@ public class DataBase {
         return singleton.get().lockManager;
     }
 
-    public UndoLogFile getUndoLogFile() {
+    public static UndoLogFile getUndoLogFile() {
         return singleton.get().undoLogFile;
     }
 

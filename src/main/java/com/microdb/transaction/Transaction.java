@@ -60,7 +60,7 @@ public class Transaction {
     public void commit() {
         // NO-STEAL 事务中产生的脏页刷盘
         List<PageID> pageIDs = DataBase.getLockManager().getPageIDs(transactionId);
-        DataBase.getBufferPool().flushPages(pageIDs, transactionId);
+        // DataBase.getBufferPool().flushPages(pageIDs, transactionId);
 
         // 释放锁
         DataBase.getLockManager().releaseLock(transactionId);

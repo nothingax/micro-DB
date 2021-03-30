@@ -135,6 +135,7 @@ public class BufferPool {
             //     flushPage(page);
             // }
 
+            flushPage(page);
             // 移除缓存
             pool.remove(page.getPageID());
         }
@@ -144,9 +145,14 @@ public class BufferPool {
      * 刷盘
      */
     private void flushPage(Page page) {
+
+        // 刷盘前，将页的原始数据写入日志保存
+        if (page.isDirty()) {
+            DataBase.getUndoLogFile().writeUpdateLog(page.getDirtyTid(), page.getBeforePage());
+        }
+
         int tableId = page.getPageID().getTableId();
         DataBase.getInstance().getDbTableById(tableId).getTableFile().writePageToDisk(page);
-
         // TODO 加入缓存失效算法后，需要设置为非脏页
     }
 

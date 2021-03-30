@@ -23,4 +23,9 @@ public abstract class DirtyPage implements Page {
     public boolean isDirty() {
         return dirtyTid != null;
     }
+
+    @Override
+    public TransactionID getDirtyTid() {
+        return dirtyTid;
+    }
 }
