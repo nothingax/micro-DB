@@ -158,7 +158,7 @@ public class BufferPool {
         for (PageID pageID : pageIDs) {
             Page page = pool.get(pageID);
             if (page.isDirty()) {
-                page.markDirty(transactionId);
+                page.markDirty(null);
                 pool.put(pageID, page);
                 flushPage(page);
             }
