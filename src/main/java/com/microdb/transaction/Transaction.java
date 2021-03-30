@@ -74,8 +74,14 @@ public class Transaction {
      * 由于NO-STEAL策略，事务提交前脏页都没有刷盘，直接丢弃缓冲池中的相关页即可
      */
     public void abort() {
-        List<PageID> pageIDs = DataBase.getLockManager().getPageIDs(transactionId);
-        DataBase.getBufferPool().discardPages(pageIDs);
+
+        // NO-Steal/force策略
+        // List<PageID> pageIDs = DataBase.getLockManager().getPageIDs(transactionId);
+        // DataBase.getBufferPool().discardPages(pageIDs);
+
+        // Steal/No-force策略
+        // 将事务修改过的页面，在磁盘刷回原始版本，缓存中丢弃
+        DataBase.getUndoLogFile().rollback(transactionId);
 
         // 释放锁
         DataBase.getLockManager().releaseLock(transactionId);
