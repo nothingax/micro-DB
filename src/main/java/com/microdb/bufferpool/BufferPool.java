@@ -10,6 +10,7 @@ import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 import com.microdb.transaction.Lock;
 import com.microdb.transaction.Transaction;
+import com.microdb.transaction.TransactionID;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -149,7 +150,7 @@ public class BufferPool {
         // TODO 加入缓存失效算法后，需要设置为非脏页
     }
 
-    public void flushPages(List<PageID> pageIDs) {
+    public void flushPages(List<PageID> pageIDs, TransactionID transactionId) {
         if (Objects.isNull(pageIDs) || pageIDs.isEmpty()) {
             System.out.println("flushPages : pageIDs is null or empty ");
             return;
@@ -157,7 +158,7 @@ public class BufferPool {
         for (PageID pageID : pageIDs) {
             Page page = pool.get(pageID);
             if (page.isDirty()) {
-                page.markDirty(false);
+                page.markDirty(transactionId);
                 pool.put(pageID, page);
                 flushPage(page);
             }

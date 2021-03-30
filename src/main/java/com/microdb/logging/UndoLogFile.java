@@ -30,7 +30,7 @@ public class UndoLogFile {
     }
 
     /**
-     * 写入更新
+     * 写入更新日志
      *
      * @param transactionID
      * @param beforePage

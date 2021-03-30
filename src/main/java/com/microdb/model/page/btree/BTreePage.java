@@ -3,6 +3,7 @@ package com.microdb.model.page.btree;
 import com.microdb.exception.DbException;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
+import com.microdb.model.page.DirtyPage;
 import com.microdb.model.page.Page;
 
 import java.io.DataOutputStream;
@@ -15,7 +16,7 @@ import java.util.Iterator;
  * @author zhangjw
  * @version 1.0
  */
-public abstract class BTreePage implements Page {
+public abstract class BTreePage extends DirtyPage implements Page {
 
     /**
      * 页ID
@@ -37,12 +38,6 @@ public abstract class BTreePage implements Page {
      */
     protected TableDesc tableDesc;
 
-    /**
-     * 是否是脏页
-     * 如果页面被修改过，在未刷盘之前为'脏页'状态
-     */
-    protected boolean isDirty = false;
-
     @Override
     public BTreePageID getPageID() {
         return pageID;
@@ -61,13 +56,13 @@ public abstract class BTreePage implements Page {
     public abstract Iterator<Row> getRowIterator();
 
     @Override
-    public void markDirty(boolean isDirty) {
-        isDirty = true;
+    public void saveBeforePage(byte[] pageData) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean isDirty() {
-        return isDirty;
+    public Page getBeforePage() {
+        throw new UnsupportedOperationException();
     }
 
 

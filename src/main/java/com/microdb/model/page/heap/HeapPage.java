@@ -5,6 +5,7 @@ import com.microdb.model.DataBase;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
 import com.microdb.model.field.Field;
+import com.microdb.model.page.DirtyPage;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 import com.microdb.model.page.btree.KeyItem;
@@ -19,7 +20,7 @@ import java.util.Iterator;
  * @author zhangjw
  * @version 1.0
  */
-public class HeapPage implements Page {
+public class HeapPage extends DirtyPage implements Page {
 
     /**
      * page 编号
@@ -44,13 +45,10 @@ public class HeapPage implements Page {
      */
     private boolean[] slotUsageStatusBitMap;
 
-
     /**
-     * 是否是脏页
-     * 如果页面被修改过，在未刷盘之前为'脏页'状态
+     * 原始页数据
      */
-    protected boolean isDirty = false;
-
+    private byte[] beforePageData;
 
     public HeapPage(PageID pageID, byte[] pageData) throws IOException {
         this.pageID = pageID;
@@ -59,6 +57,9 @@ public class HeapPage implements Page {
         this.rows = new Row[this.maxSlotNum];
         this.slotUsageStatusBitMap = new boolean[this.maxSlotNum];
         deserialize(pageData);
+
+        // 保留页原始数据
+        saveBeforePage(pageData);
     }
 
     @Override
@@ -216,13 +217,17 @@ public class HeapPage implements Page {
     }
 
     @Override
-    public void markDirty(boolean isDirty) {
-        isDirty = true;
+    public void saveBeforePage(byte[] pageData) {
+        beforePageData = pageData.clone();
     }
 
     @Override
-    public boolean isDirty() {
-        return isDirty;
+    public HeapPage getBeforePage() {
+        try {
+            return new HeapPage(pageID, beforePageData);
+        } catch (IOException e) {
+            throw new DbException("get before page error", e);
+        }
     }
 
     //====================================迭代器======================================

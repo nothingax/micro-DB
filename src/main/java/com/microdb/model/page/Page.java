@@ -1,6 +1,7 @@
 package com.microdb.model.page;
 
 import com.microdb.model.Row;
+import com.microdb.transaction.TransactionID;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -51,9 +52,18 @@ public interface Page {
     Iterator<Row> getRowIterator();
 
     /**
-     * 标记为脏页
+     * 标记是否为脏页
      */
-    void markDirty(boolean isDirty);
+    void markDirty(TransactionID transactionID);
 
     boolean isDirty();
+
+    /**
+     * 保留页原始数据
+     */
+    void saveBeforePage(byte[] pageData);
+    /**
+     * 获取页在修改前的数据
+     */
+    Page getBeforePage();
 }
