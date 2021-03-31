@@ -2,10 +2,12 @@ package com.microdb.transaction;
 
 import com.microdb.annotation.VisibleForTest;
 import com.microdb.connection.Connection;
+import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -51,6 +53,12 @@ public class Transaction {
 
     public void start() {
         DataBase.getUndoLogFile().recordTxStart(transactionId);
+
+        try {
+            DataBase.getRedoLogFile().recordTxStart(transactionId);
+        } catch (IOException e) {
+            throw new DbException(" redo log recordTxStart error ", e);
+        }
     }
 
     /**
@@ -65,7 +73,12 @@ public class Transaction {
         // List<PageID> pageIDs = DataBase.getLockManager().getPageIDs(transactionId);
         // DataBase.getBufferPool().flushPages(pageIDs, transactionId);
 
-        // STEAL/No-force策略，事务提交，脏页也可不刷盘
+        // STEAL/No-force策略，事务提交，脏页也可不刷盘,需记录日志到redolog
+        try {
+            DataBase.getRedoLogFile().recordTxCommit(transactionId);
+        } catch (IOException e) {
+            throw new DbException("redo log recordTxCommit error", e);
+        }
         List<PageID> pageIDs = DataBase.getLockManager().getPageIDs(transactionId);
         // 事务提交后更新页快照
         for (PageID pageID : pageIDs) {
