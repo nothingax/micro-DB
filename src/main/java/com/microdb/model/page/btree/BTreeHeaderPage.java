@@ -15,7 +15,9 @@ import java.util.Iterator;
  * @author zhangjw
  * @version 1.0
  */
-public class BTreeHeaderPage extends BTreePage {
+public class BTreeHeaderPage extends BTreePage implements Serializable{
+    private static final long serialVersionUID = 6252559806123400153L;
+
     /**
      * prevHeaderPageNo指针 和 nextHeaderPageNo指针的占用空间
      */

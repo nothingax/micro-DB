@@ -6,14 +6,12 @@ import com.microdb.model.DbTable;
 import com.microdb.model.page.Page;
 import com.microdb.transaction.TransactionID;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.util.Collections;
+import java.util.HashMap;
 
 /**
- * 日志文件
+ * undo 日志，用于回滚
  *
  * @author zhangjw
  * @version 1.0
@@ -35,13 +33,30 @@ public class UndoLogFile {
     private long offset = -1;
 
     /**
-     * long 长度
+     * 存储偏移地址占用的字节数，以long存储，占用8字节
      */
-    private int long_size = 8;
+    private int offsetAddrInByte = 8;
+
+    /**
+     * 事务开始时的偏移地址
+     */
+    HashMap<Long, Long> txId2StartOffset = new HashMap<>();
+
 
     public UndoLogFile(File file) throws FileNotFoundException {
         this.file = file;
         raf = new RandomAccessFile(file, "rw");
+    }
+
+    /**
+     * 记录事务开始
+     */
+    public synchronized void recordTxStart(TransactionID transactionID) {
+        // 如果文件没有记录过信息，从头开始
+        if (offset == -1) {
+            offset = 0;
+        }
+        txId2StartOffset.put(transactionID.getId(), offset);
     }
 
     /**
@@ -56,9 +71,17 @@ public class UndoLogFile {
 
         try {
             // 事务ID
-            raf.writeLong(transactionID.serialize());
-            // 原始数据
-            raf.write(beforePage.serialize());
+            raf.writeLong(transactionID.getId());
+
+            // 序列化
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ObjectOutputStream outputStream = new ObjectOutputStream(baos);
+            outputStream.writeObject(beforePage);
+            byte[] bytes = baos.toByteArray();
+            // 写入page占用字节数和page数据
+            raf.writeInt(bytes.length);
+            raf.write(bytes);
+
             // 本次写入的起始位置
             raf.writeLong(offset);
 
@@ -79,30 +102,41 @@ public class UndoLogFile {
      */
     public synchronized void rollback(TransactionID transactionID) {
         try {
-            // TODO 页大小并不固定，需要根据记录的偏移量来取
-            raf.seek(raf.length() - long_size);
-            long location = raf.readLong();
-            raf.seek(raf.length() - long_size - Page.defaultPageSizeInByte - long_size);
-            long lastTid = raf.readLong();
-            while (transactionID.serialize() <= lastTid) {
-                if (transactionID.serialize() == lastTid) {
-                    // TODO 反序列化，log存储时，需要存储序列化class名等
-                    byte[] bytes = new byte[Page.defaultPageSizeInByte];
+            // 事务开始位置
+            Long txStartOffset = txId2StartOffset.get(transactionID.getId());
+
+            // 待读取的偏移位置
+            raf.seek(raf.length() - offsetAddrInByte);
+            long offsetToRead = raf.readLong();
+
+            while (txStartOffset <= offsetToRead) {
+                raf.seek(offsetToRead);
+                long txId = raf.readLong();
+                if (transactionID.getId() == txId) {
+                    int pageSize = raf.readInt();
+                    byte[] bytes = new byte[pageSize];
                     raf.read(bytes);
-                    Page beforePage = null;
+
+                    ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+                    ObjectInputStream inputStream = new ObjectInputStream(bais);
+                    Page beforePage = (Page) inputStream.readObject();
+
                     DbTable dbTableById = DataBase.getInstance().getDbTableById(beforePage.getPageID().getTableId());
                     dbTableById.getTableFile().writePageToDisk(beforePage);
                     DataBase.getBufferPool().discardPages(Collections.singletonList(beforePage.getPageID()));
                 }
 
-                raf.seek(location - long_size);
-                location = raf.readLong();
-                raf.seek(location - long_size - Page.defaultPageSizeInByte - long_size);
-                lastTid = raf.readLong();
+                // 已经到开始为在，结束循环
+                if (txStartOffset == offsetToRead) {
+                    break;
+                }
+
+                raf.seek(offsetToRead - offsetAddrInByte);
+                offsetToRead = raf.readLong();
             }
             // 复位
             raf.seek(offset);
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             throw new DbException("undo file rollback failed", e);
         }
     }

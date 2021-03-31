@@ -38,7 +38,7 @@ public class TransactionID {
         return Objects.hash(id);
     }
 
-    public long serialize() {
+    public long getId() {
         return id;
     }
 }

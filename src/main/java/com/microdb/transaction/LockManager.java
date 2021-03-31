@@ -148,10 +148,11 @@ public class LockManager {
 
         // 获取事务中使用的页，删除页的锁
         List<PageID> pageIDS = transactionTable.get(transactionID);
-        for (PageID pageID : pageIDS) {
-            lockTable.remove(pageID);
+        if (pageIDS != null && !pageIDS.isEmpty()) {
+            for (PageID pageID : pageIDS) {
+                lockTable.remove(pageID);
+            }
         }
-
         // 删除事务
         transactionTable.remove(transactionID);
 

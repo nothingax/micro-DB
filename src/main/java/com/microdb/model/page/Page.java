@@ -63,7 +63,7 @@ public interface Page {
     /**
      * 保留页原始数据
      */
-    void saveBeforePage(byte[] pageData);
+    void saveBeforePage();
     /**
      * 获取页在修改前的数据
      */

@@ -2,6 +2,7 @@ package com.microdb.model.page.heap;
 
 import com.microdb.model.page.PageID;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -10,7 +11,8 @@ import java.util.Objects;
  * @author zhangjw
  * @version 1.0
  */
-public class HeapPageID implements PageID {
+public class HeapPageID implements PageID, Serializable {
+    private static final long serialVersionUID = -1414021678836415955L;
     /**
      * 表Id
      */

@@ -2,6 +2,7 @@ package com.microdb.model.page.btree;
 
 import com.microdb.model.page.PageID;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -10,8 +11,9 @@ import java.util.Objects;
  * @author zhangjw
  * @version 1.0
  */
-public class BTreePageID implements PageID {
+public class BTreePageID implements PageID, Serializable {
 
+    private static final long serialVersionUID = -4673705142358467380L;
     /**
      * 表ID
      */

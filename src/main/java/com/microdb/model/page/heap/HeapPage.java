@@ -20,8 +20,9 @@ import java.util.Iterator;
  * @author zhangjw
  * @version 1.0
  */
-public class HeapPage extends DirtyPage implements Page {
+public class HeapPage extends DirtyPage implements Page,Serializable {
 
+    private static final long serialVersionUID = 201055810875655321L;
     /**
      * page 编号
      */
@@ -59,7 +60,7 @@ public class HeapPage extends DirtyPage implements Page {
         deserialize(pageData);
 
         // 保留页原始数据
-        saveBeforePage(pageData);
+        saveBeforePage();
     }
 
     @Override
@@ -217,8 +218,12 @@ public class HeapPage extends DirtyPage implements Page {
     }
 
     @Override
-    public void saveBeforePage(byte[] pageData) {
-        beforePageData = pageData.clone();
+    public void saveBeforePage() {
+        try {
+            beforePageData = this.serialize().clone();
+        } catch (IOException e) {
+            throw new DbException("save before page error", e);
+        }
     }
 
     @Override

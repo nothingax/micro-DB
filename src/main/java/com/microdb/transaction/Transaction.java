@@ -3,6 +3,7 @@ package com.microdb.transaction;
 import com.microdb.annotation.VisibleForTest;
 import com.microdb.connection.Connection;
 import com.microdb.model.DataBase;
+import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 
 import java.util.List;
@@ -49,18 +50,28 @@ public class Transaction {
     }
 
     public void start() {
-
+        DataBase.getUndoLogFile().recordTxStart(transactionId);
     }
 
     /**
      * 提交事务
      * 根据2PL协议，提交事务时需要释放锁
-     * 由于实现的是NO-STEAL策略，所以事务提交时需要将脏页刷盘，事务提交前要确保脏页不被刷盘。
+     * NO-STEAL/force策略，所以事务提交时需要将脏页刷盘，事务提交前要确保脏页不被刷盘。
+     *
+     * STEAL/No-force策略，事务提交，脏页也可不刷盘
      */
     public void commit() {
         // NO-STEAL 事务中产生的脏页刷盘
-        List<PageID> pageIDs = DataBase.getLockManager().getPageIDs(transactionId);
+        // List<PageID> pageIDs = DataBase.getLockManager().getPageIDs(transactionId);
         // DataBase.getBufferPool().flushPages(pageIDs, transactionId);
+
+        // STEAL/No-force策略，事务提交，脏页也可不刷盘
+        List<PageID> pageIDs = DataBase.getLockManager().getPageIDs(transactionId);
+        // 事务提交后更新页快照
+        for (PageID pageID : pageIDs) {
+            Page page = DataBase.getBufferPool().getPage(pageID);
+            page.saveBeforePage();
+        }
 
         // 释放锁
         DataBase.getLockManager().releaseLock(transactionId);

@@ -13,8 +13,8 @@ import java.util.Iterator;
  * @author zhangjw
  * @version 1.0
  */
-public class BTreeRootPtrPage extends BTreePage {
-
+public class BTreeRootPtrPage extends BTreePage implements Serializable{
+    private static final long serialVersionUID = 8954163249356806976L;
     /**
      * 9字节 4+1+4
      * 4:rootNode的pageNo

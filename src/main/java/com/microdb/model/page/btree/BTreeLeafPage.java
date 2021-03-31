@@ -22,7 +22,8 @@ import java.util.stream.Collectors;
  * @author zhangjw
  * @version 1.0
  */
-public class BTreeLeafPage extends BTreePage {
+public class BTreeLeafPage extends BTreePage implements Serializable {
+    private static final long serialVersionUID = -7469925154877861517L;
 
     /**
      * 该页的左右兄弟page指针、父page指针

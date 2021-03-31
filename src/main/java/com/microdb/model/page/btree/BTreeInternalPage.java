@@ -25,7 +25,9 @@ import java.util.NoSuchElementException;
  * @author zhangjw
  * @version 1.0
  */
-public class BTreeInternalPage extends BTreePage {
+public class BTreeInternalPage extends BTreePage implements Serializable{
+
+    private static final long serialVersionUID = -375689079604630693L;
 
     public class ChildPages {
         int leftPageNo;

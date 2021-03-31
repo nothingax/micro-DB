@@ -1,5 +1,6 @@
 package com.microdb.bufferpool;
 
+import com.microdb.annotation.VisibleForTest;
 import com.microdb.connection.Connection;
 import com.microdb.exception.DbException;
 import com.microdb.exception.TransactionException;
@@ -184,6 +185,17 @@ public class BufferPool {
             if (page.isDirty()) {
                 pool.remove(pageID);
             }
+        }
+    }
+
+    /**
+     * 全部刷盘
+     * 用于测试
+     */
+    @VisibleForTest
+    public void flushAllPage() {
+        for (Map.Entry<PageID, Page> entry : pool.entrySet()) {
+            flushPage(entry.getValue());
         }
     }
 }

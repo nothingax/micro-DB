@@ -8,6 +8,7 @@ import com.microdb.model.page.Page;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Iterator;
 
 /**
@@ -16,8 +17,9 @@ import java.util.Iterator;
  * @author zhangjw
  * @version 1.0
  */
-public abstract class BTreePage extends DirtyPage implements Page {
+public abstract class BTreePage extends DirtyPage implements Page, Serializable {
 
+    private static final long serialVersionUID = -6147293644376452185L;
     /**
      * 页ID
      */
@@ -56,7 +58,7 @@ public abstract class BTreePage extends DirtyPage implements Page {
     public abstract Iterator<Row> getRowIterator();
 
     @Override
-    public void saveBeforePage(byte[] pageData) {
+    public void saveBeforePage() {
         throw new UnsupportedOperationException();
     }
 
