@@ -58,8 +58,17 @@ public class DbTable {
     }
 
     public void insertRow(Row row) throws IOException {
+        if (row == null) {
+            throw new DbException("insertRow error: row can not be null");
+        }
         if (!Objects.equals(row.getTableDesc(), this.getTableDesc())) {
             throw new DbException("insertRow error: TableDesc not match");
+        }
+        if (row.getFields() == null || row.getFields().isEmpty()) {
+            throw new DbException("insertRow error: have no fields value");
+        }
+        if (row.getFields().contains(null)) {
+            throw new DbException("insertRow error: 'null' field is not support");
         }
         this.tableFile.insertRow(row);
     }

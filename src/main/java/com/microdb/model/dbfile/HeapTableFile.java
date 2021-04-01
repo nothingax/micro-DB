@@ -114,6 +114,7 @@ public class HeapTableFile implements TableFile {
             PageID pageID = new HeapPageID(this.getTableId(), pageNo);
             availablePage = new HeapPage(pageID, HeapPage.createEmptyPageData());
             writePageToDisk(availablePage);
+            availablePage = (HeapPage) DataBase.getBufferPool().getPage(pageID);
         }
         availablePage.insertRow(row);
         Connection.cacheDirtyPage(availablePage);

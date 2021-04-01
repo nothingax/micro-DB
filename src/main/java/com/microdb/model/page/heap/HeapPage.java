@@ -221,7 +221,7 @@ public class HeapPage extends DirtyPage implements Page,Serializable {
     public void saveBeforePage() {
         try {
             beforePageData = this.serialize().clone();
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new DbException("save before page error", e);
         }
     }

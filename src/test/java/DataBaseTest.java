@@ -1,3 +1,5 @@
+import com.microdb.bufferpool.BufferPool;
+import com.microdb.connection.Connection;
 import com.microdb.model.DataBase;
 import com.microdb.model.DbTable;
 import com.microdb.model.Row;
@@ -8,6 +10,8 @@ import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
 import com.microdb.model.page.heap.HeapPage;
 import com.microdb.model.page.heap.HeapPageID;
+import com.microdb.transaction.Lock;
+import com.microdb.transaction.Transaction;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,6 +31,7 @@ import java.util.UUID;
 public class DataBaseTest {
 
     public DataBase dataBase;
+    private BufferPool bufferPool;
 
     @Before
     public void initDataBase() {
@@ -35,34 +40,29 @@ public class DataBaseTest {
         String fileName = UUID.randomUUID().toString();
         List<TableDesc.Attribute> attributes = Arrays.asList(new TableDesc.Attribute("f1", FieldType.INT));
         TableDesc tableDesc = new TableDesc(attributes);
-        TableFile tableFile = new HeapTableFile(new File(fileName),tableDesc);
+        File file = new File(fileName);
+        file.deleteOnExit();
+        TableFile tableFile = new HeapTableFile(file, tableDesc);
 
         // tableDesc
         dataBase.addTable(tableFile, "t_person", tableDesc);
 
         this.dataBase = dataBase;
-    }
-    //
-    // @Test
-    // public void writePageToDisk() {
-    //     DataBase dataBase = new DataBase();
-    //     // 创建数据库文件
-    //     // 路径修改
-    //     DbTableFile dbTableFile = new DbTableFile(new File("db_file.txt"));
-    //     List<TableDesc.Attribute> attributes = Arrays.asList(new TableDesc.Attribute("f1", FieldType.INT));
-    //     TableDesc tableDesc = new TableDesc(attributes);
-    //     // tableDesc
-    //     dataBase.addTable(dbTableFile, "t_person", tableDesc);
-    //     Page page = new Page(0, new byte[]{});
-    //     // 数据写入file
-    //     dbTableFile.writePageToDisk(page);
-    // }
+        this.bufferPool = DataBase.getBufferPool();
 
+    }
     @Test
     public void insertRow() throws IOException {
+        Transaction transaction = new Transaction(Lock.LockType.XLock);
+        transaction.start();
+        Connection.passingTransaction(transaction);
+
         DbTable tablePerson = this.dataBase.getDbTableByName("t_person");
         Row row = new Row(tablePerson.getTableDesc());
-        tablePerson.insertRow(row);
+        row.setField(0, new IntField(0));
+        bufferPool.insertRow(row, "t_person");
+
+        transaction.commit();
     }
 
     /**
@@ -77,6 +77,7 @@ public class DataBaseTest {
         System.out.println(i);
         Assert.assertEquals(819, i);
     }
+
     /**
      * t_person 表只有一个int类型字段
      */
@@ -84,6 +85,10 @@ public class DataBaseTest {
     public void insertRowTest() throws IOException {
         DbTable tablePerson = this.dataBase.getDbTableByName("t_person");
         Row row = new Row(tablePerson.getTableDesc());
+
+        Transaction transaction = new Transaction(Lock.LockType.XLock);
+        transaction.start();
+        Connection.passingTransaction(transaction);
 
         // 第1页
         for (int i = 0; i < 819; i++) {
@@ -106,5 +111,6 @@ public class DataBaseTest {
         int existPageCount = tablePerson.getTableFile().getExistPageCount();
         Assert.assertEquals(3, existPageCount);
 
+        transaction.commit();
     }
 }
