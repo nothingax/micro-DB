@@ -146,7 +146,7 @@ public class RedoLogFile {
         for (Map.Entry<Long, Long> entry : txId2StartOffset.entrySet()) {
             if (commitTxs2Pos.containsKey(entry.getKey())) {
                 // 事务已提交，刷盘
-                flushCommitPage(entry.getKey());
+                flushCommittedPage(entry.getKey());
             } else {
                 // 事务未提交，回滚
                 rollback(entry.getKey());
@@ -217,7 +217,7 @@ public class RedoLogFile {
         raf.write(bytes);
     }
 
-    private void flushCommitPage(Long txIdCommit) throws IOException {
+    private void flushCommittedPage(Long txIdCommit) throws IOException {
         // 事务开始位置
         Long txStartOffset = txId2StartOffset.get(txIdCommit);
         // 待读取的偏移位置
@@ -225,16 +225,19 @@ public class RedoLogFile {
         long offsetToRead = raf.readLong();
 
         while (txStartOffset <= offsetToRead) {
-            raf.seek(offsetToRead + 4);// 跳过log类型
-            long txId = raf.readLong();
-            if (txIdCommit == txId) {
-                Page beforePage = this.readPage();
-                Page afterPage = this.readPage();
-                DbTable dbTableById = DataBase.getInstance().getDbTableById(beforePage.getPageID().getTableId());
-                dbTableById.getTableFile().writePageToDisk(afterPage);
-                DataBase.getBufferPool().discardPages(Collections.singletonList(beforePage.getPageID()));
+            raf.seek(offsetToRead);// 跳过log类型
+            int recordType = raf.readInt();
+            if (recordType == LogRecordType.PAGE_FLUSH) {
+                raf.seek(offsetToRead + 4);// 跳过log类型
+                long txId = raf.readLong();
+                if (txIdCommit == txId) {
+                    Page beforePage = this.readPage();
+                    Page afterPage = this.readPage();
+                    DbTable dbTableById = DataBase.getInstance().getDbTableById(beforePage.getPageID().getTableId());
+                    dbTableById.getTableFile().writePageToDisk(afterPage);
+                    DataBase.getBufferPool().discardPages(Collections.singletonList(beforePage.getPageID()));
+                }
             }
-
             // 已经到开始位置，结束循环
             if (txStartOffset == offsetToRead) {
                 break;

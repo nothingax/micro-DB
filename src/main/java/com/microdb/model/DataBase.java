@@ -1,5 +1,6 @@
 package com.microdb.model;
 
+import com.microdb.annotation.VisibleForTest;
 import com.microdb.bufferpool.BufferPool;
 import com.microdb.exception.DbException;
 import com.microdb.logging.RedoLogFile;
@@ -87,6 +88,15 @@ public class DataBase {
     public static RedoLogFile getRedoLogFile() {
         return singleton.get().redoLogFile;
     }
+
+
+    @VisibleForTest
+    public static void resetWithFile(TableFile tableFile, String tableName) {
+        DataBase dataBase = new DataBase();
+        dataBase.addTable(tableFile, tableName);
+        singleton.set(dataBase);
+    }
+
     /**
      * 添加表
      *

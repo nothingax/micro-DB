@@ -1,12 +1,16 @@
 package com.microdb.transaction;
 
+import com.microdb.bufferpool.BufferPool;
 import com.microdb.exception.TransactionException;
+import com.microdb.model.DataBase;
+import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * 锁管理器：记录事务持有哪些页锁、页锁被哪些事务持有
@@ -164,4 +168,15 @@ public class LockManager {
         return transactionTable.get(transactionId);
     }
 
+    public List<Page> getPages(TransactionID transactionId) {
+        List<PageID> pageIDS = transactionTable.get(transactionId);
+        BufferPool bufferPool = DataBase.getBufferPool();
+
+        if (pageIDS != null ) {
+            return pageIDS.stream()
+                    .map(bufferPool::getPage)
+                    .collect(Collectors.toList());
+        }
+        return new ArrayList<>();
+    }
 }

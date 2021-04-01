@@ -3,6 +3,7 @@ package com.microdb.transaction;
 import com.microdb.annotation.VisibleForTest;
 import com.microdb.connection.Connection;
 import com.microdb.exception.DbException;
+import com.microdb.logging.RedoLogFile;
 import com.microdb.model.DataBase;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
@@ -75,7 +76,13 @@ public class Transaction {
 
         // STEAL/No-force策略，事务提交，脏页也可不刷盘,需记录日志到redolog
         try {
-            DataBase.getRedoLogFile().recordTxCommit(transactionId);
+            RedoLogFile redoLogFile = DataBase.getRedoLogFile();
+            redoLogFile.recordTxCommit(transactionId);
+            List<Page> pages = DataBase.getLockManager().getPages(transactionId);
+            for (Page page : pages) {
+                redoLogFile.recordBeforePageWhenFlushDisk(transactionId, page.getBeforePage(), page);
+            }
+
         } catch (IOException e) {
             throw new DbException("redo log recordTxCommit error", e);
         }

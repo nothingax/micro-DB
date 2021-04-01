@@ -187,10 +187,7 @@ public class BufferPool {
             return;
         }
         for (PageID pageID : pageIDs) {
-            Page page = pool.get(pageID);
-            if (page.isDirty()) {
-                pool.remove(pageID);
-            }
+            pool.remove(pageID);
         }
     }
 
