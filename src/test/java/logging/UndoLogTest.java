@@ -86,7 +86,7 @@ public class UndoLogTest {
         // 再次读取表，数据应不存在
         Transaction tx2 = new Transaction(Lock.LockType.SLock);
         tx2.start();
-        Connection.passingTransaction(transaction);
+        Connection.passingTransaction(tx2);
         SeqScan scan = new SeqScan(this.tableId);
         scan.open();
         Assert.assertFalse(scan.hasNext());

@@ -1,3 +1,4 @@
+import com.microdb.connection.Connection;
 import com.microdb.model.DataBase;
 import com.microdb.model.DbTable;
 import com.microdb.model.Row;
@@ -6,7 +7,12 @@ import com.microdb.model.dbfile.HeapTableFile;
 import com.microdb.model.dbfile.TableFile;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
-import com.microdb.operator.*;
+import com.microdb.operator.Join;
+import com.microdb.operator.JoinPredicate;
+import com.microdb.operator.PredicateEnum;
+import com.microdb.operator.SeqScan;
+import com.microdb.transaction.Lock;
+import com.microdb.transaction.Transaction;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -14,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * join
@@ -32,15 +37,22 @@ public class JoinTest {
                 Arrays.asList(new TableDesc.Attribute("person_id", FieldType.INT),
                         new TableDesc.Attribute("dept_id", FieldType.INT));
         TableDesc tableDesc = new TableDesc(attributes);
-        TableFile tableFile = new HeapTableFile(new File(UUID.randomUUID().toString()), tableDesc);
+        File person = new File("person");
+        person.deleteOnExit();
+        TableFile tableFile = new HeapTableFile(person, tableDesc);
         dataBase.addTable(tableFile, "t_person", tableDesc);
 
         // 部门表，2个int字段
         TableDesc depTableDesc = new TableDesc(
                 Arrays.asList(new TableDesc.Attribute("id", FieldType.INT)));
-        TableFile depTableFile = new HeapTableFile(new File(UUID.randomUUID().toString()), depTableDesc);
+        File dept = new File("dept");
+        dept.deleteOnExit();
+        TableFile depTableFile = new HeapTableFile(dept, depTableDesc);
         dataBase.addTable(depTableFile, "t_dept", depTableDesc);
 
+        Transaction transaction = new Transaction(Lock.LockType.XLock);
+        transaction.start();
+        Connection.passingTransaction(transaction);
 
         // dept 表插入两行数据，dept_id 分别为1、2
         DbTable tableDept = this.dataBase.getDbTableByName("t_dept");
@@ -71,6 +83,7 @@ public class JoinTest {
         tRow3.setFields(Arrays.asList(new IntField(201),new IntField(2)));
         tablePerson.insertRow(tRow3);
 
+        transaction.commit();
     }
 
 
@@ -80,6 +93,10 @@ public class JoinTest {
      */
     @Test
     public void testJoin() throws IOException {
+        Transaction transaction = new Transaction(Lock.LockType.XLock);
+        transaction.start();
+        Connection.passingTransaction(transaction);
+
         SeqScan personScan = new SeqScan(this.dataBase.getDbTableByName("t_person").getTableId());
         SeqScan deptScan = new SeqScan(this.dataBase.getDbTableByName("t_dept").getTableId());
 
@@ -95,5 +112,6 @@ public class JoinTest {
 
         join.close();
 
+        transaction.commit();
     }
 }

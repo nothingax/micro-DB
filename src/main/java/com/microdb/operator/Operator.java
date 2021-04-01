@@ -47,9 +47,9 @@ public abstract class Operator implements IOperatorIterator {
         Row result = nextRow;
         nextRow = null;
 
-        if (result.getKeyItem() == null) {
-            throw new DbException(" slot index must not be null ");
-        }
+        // if (result.getKeyItem() == null) {
+        //     throw new DbException(" slot index must not be null ");
+        // }
         return result;
     }
 

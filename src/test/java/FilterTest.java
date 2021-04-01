@@ -1,3 +1,4 @@
+import com.microdb.connection.Connection;
 import com.microdb.model.DataBase;
 import com.microdb.model.DbTable;
 import com.microdb.model.Row;
@@ -10,6 +11,8 @@ import com.microdb.operator.Filter;
 import com.microdb.operator.FilterPredicate;
 import com.microdb.operator.PredicateEnum;
 import com.microdb.operator.SeqScan;
+import com.microdb.transaction.Lock;
+import com.microdb.transaction.Transaction;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,7 +24,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * TODO
+ * FilterTest
  *
  * @author zhangjw
  * @version 1.0
@@ -45,6 +48,9 @@ public class FilterTest {
         DbTable tablePerson = this.dataBase.getDbTableByName("t_person");
         Row row = new Row(tablePerson.getTableDesc());
 
+        Transaction transaction = new Transaction(Lock.LockType.XLock);
+        transaction.start();
+        Connection.passingTransaction(transaction);
         // 第1页
         for (int i = 0; i < 20; i++) {
             row.setField(0, new IntField(i));
@@ -52,6 +58,7 @@ public class FilterTest {
             int existPageCount = tablePerson.getTableFile().getExistPageCount();
             Assert.assertEquals(1, existPageCount);
         }
+        transaction.commit();
     }
 
     /**
@@ -61,6 +68,10 @@ public class FilterTest {
      */
     @Test
     public void testSimpleQueryBasedOnSeqScan() throws IOException {
+        Transaction transaction = new Transaction(Lock.LockType.XLock);
+        transaction.start();
+        Connection.passingTransaction(transaction);
+
         SeqScan seqScan = new SeqScan(this.dataBase.getDbTableByName("t_person").getTableId());
         System.out.println("过滤第0字段等于'5'的行");
         FilterPredicate filterPredicateEQ = new FilterPredicate(0, PredicateEnum.EQUALS, new IntField(5));
@@ -82,5 +93,7 @@ public class FilterTest {
             next.getFields().forEach(x-> System.out.println(x.toString()));
         }
         filter2.close();
+
+        transaction.commit();
     }
 }

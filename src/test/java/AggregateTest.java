@@ -1,3 +1,4 @@
+import com.microdb.connection.Connection;
 import com.microdb.model.DataBase;
 import com.microdb.model.DbTable;
 import com.microdb.model.Row;
@@ -6,7 +7,11 @@ import com.microdb.model.dbfile.HeapTableFile;
 import com.microdb.model.dbfile.TableFile;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
-import com.microdb.operator.*;
+import com.microdb.operator.Aggregate;
+import com.microdb.operator.AggregateType;
+import com.microdb.operator.SeqScan;
+import com.microdb.transaction.Lock;
+import com.microdb.transaction.Transaction;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -42,6 +47,11 @@ public class AggregateTest {
 
         this.dataBase = dataBase;
 
+
+        Transaction transaction = new Transaction(Lock.LockType.XLock);
+        transaction.start();
+        Connection.passingTransaction(transaction);
+
         DbTable tablePerson = this.dataBase.getDbTableByName("t_person");
         Row row = new Row(tablePerson.getTableDesc());
 
@@ -66,6 +76,7 @@ public class AggregateTest {
             tablePerson.insertRow(row);
         }
 
+        transaction.commit();
     }
 
 
@@ -77,6 +88,9 @@ public class AggregateTest {
     @Test
     public void testAggregate() throws IOException {
         SeqScan seqScan = new SeqScan(this.dataBase.getDbTableByName("t_person").getTableId());
+        Transaction transaction = new Transaction(Lock.LockType.XLock);
+        transaction.start();
+        Connection.passingTransaction(transaction);
 
         // select max(f1) from t_person group by f2
         AggregateType max = AggregateType.MAX;
@@ -84,6 +98,8 @@ public class AggregateTest {
 
         // select count(f1) from t_person group by f2
         this.doAggregateAndPrint(seqScan, AggregateType.COUNT);
+
+        transaction.commit();
     }
 
     /**
