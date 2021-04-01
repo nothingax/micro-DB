@@ -149,7 +149,13 @@ public class BufferPool {
 
         // 刷盘前，将页的原始数据写入日志保存
         if (page.isDirty()) {
-            DataBase.getUndoLogFile().writeUpdateLog(page.getDirtyTid(), page.getBeforePage());
+            DataBase.getUndoLogFile().recordBeforePageWhenFlushDisk(page.getDirtyTid(), page.getBeforePage());
+            try {
+                DataBase.getRedoLogFile().recordBeforePageWhenFlushDisk(page.getDirtyTid(), page.getBeforePage(), page);
+            } catch (IOException e) {
+                throw new DbException("redo log recordBeforePageWhenFlushDisk error ", e);
+            }
+
         }
 
         int tableId = page.getPageID().getTableId();
@@ -181,10 +187,7 @@ public class BufferPool {
             return;
         }
         for (PageID pageID : pageIDs) {
-            Page page = pool.get(pageID);
-            if (page.isDirty()) {
-                pool.remove(pageID);
-            }
+            pool.remove(pageID);
         }
     }
 

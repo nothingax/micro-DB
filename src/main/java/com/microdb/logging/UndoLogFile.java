@@ -41,8 +41,7 @@ public class UndoLogFile {
      * 事务开始时的偏移地址
      */
     HashMap<Long, Long> txId2StartOffset = new HashMap<>();
-
-
+    
     public UndoLogFile(File file) throws FileNotFoundException {
         this.file = file;
         raf = new RandomAccessFile(file, "rw");
@@ -60,14 +59,14 @@ public class UndoLogFile {
     }
 
     /**
-     * 写入更新日志
+     * 记录原始页
      * 计入事务ID+页原始数据
      *
      * @param transactionID 事务ID
      * @param beforePage    原始页
      */
-    public synchronized void writeUpdateLog(TransactionID transactionID,
-                                            Page beforePage) {
+    public synchronized void recordBeforePageWhenFlushDisk(TransactionID transactionID,
+                                                           Page beforePage) {
 
         try {
             // 事务ID
@@ -126,7 +125,7 @@ public class UndoLogFile {
                     DataBase.getBufferPool().discardPages(Collections.singletonList(beforePage.getPageID()));
                 }
 
-                // 已经到开始为在，结束循环
+                // 已经到开始位置，结束循环
                 if (txStartOffset == offsetToRead) {
                     break;
                 }
@@ -136,9 +135,12 @@ public class UndoLogFile {
             }
             // 复位
             raf.seek(offset);
+
+            txId2StartOffset.remove(transactionID.getId());
         } catch (IOException | ClassNotFoundException e) {
             throw new DbException("undo file rollback failed", e);
         }
+
     }
 
 
