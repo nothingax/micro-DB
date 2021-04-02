@@ -7,6 +7,8 @@ package com.microdb.exception;
  * @version 1.0
  */
 public class DbException extends RuntimeException {
+    private static final long serialVersionUID = -234831968729282743L;
+
     public DbException() {
     }
 

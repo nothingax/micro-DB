@@ -7,6 +7,8 @@ package com.microdb.exception;
  * @version 1.0
  */
 public class ParseException extends RuntimeException {
+    private static final long serialVersionUID = -7697452912656585449L;
+
     public ParseException() {
     }
 

@@ -8,6 +8,8 @@ package com.microdb.exception;
  */
 public class TransactionException extends DbException {
 
+    private static final long serialVersionUID = 4452542527057000815L;
+
     public TransactionException() {
         super();
     }

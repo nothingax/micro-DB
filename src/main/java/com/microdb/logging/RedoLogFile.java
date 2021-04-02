@@ -49,7 +49,6 @@ public class RedoLogFile {
         raf = new RandomAccessFile(file, "rw");
     }
 
-
     /**
      * 记录事务开始
      */
@@ -104,7 +103,6 @@ public class RedoLogFile {
         // 更新写指针
         offset = raf.getFilePointer();
     }
-
 
     /**
      * 恢复已提交的事务为修改后的数据，恢复未提交的事务为修改前的数据，
