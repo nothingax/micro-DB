@@ -144,7 +144,7 @@ public class RedoLogFile {
         for (Map.Entry<Long, Long> entry : txId2StartOffset.entrySet()) {
             if (commitTxs2Pos.containsKey(entry.getKey())) {
                 // 事务已提交，刷盘
-                flushCommittedPage(entry.getKey());
+                recoverCommittedPage(entry.getKey());
             } else {
                 // 事务未提交，回滚
                 rollback(entry.getKey());
@@ -215,7 +215,7 @@ public class RedoLogFile {
         raf.write(bytes);
     }
 
-    private void flushCommittedPage(Long txIdCommit) throws IOException {
+    private void recoverCommittedPage(Long txIdCommit) throws IOException {
         // 事务开始位置
         Long txStartOffset = txId2StartOffset.get(txIdCommit);
         // 待读取的偏移位置
