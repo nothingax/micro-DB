@@ -93,5 +93,4 @@ public class RedoLogTest {
         Assert.assertTrue(scan.hasNext());
         t2.commit();
     }
-
 }

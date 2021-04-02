@@ -78,9 +78,9 @@ public class RedoLogFile {
      * @param transactionID 事务ID
      * @param beforePage    原始页
      */
-    public synchronized void recordBeforePageWhenFlushDisk(TransactionID transactionID,
-                                                           Page beforePage,
-                                                           Page afterPage) throws IOException {
+    public synchronized void recordCommittedPage(TransactionID transactionID,
+                                                 Page beforePage,
+                                                 Page afterPage) throws IOException {
 
         raf.writeInt(LogRecordType.PAGE_FLUSH);
         // 事务ID
@@ -91,7 +91,6 @@ public class RedoLogFile {
         raf.writeLong(offset);
         // 更新offset
         offset = raf.getFilePointer();
-        raf.getChannel().force(true);
     }
 
     /**
@@ -104,7 +103,6 @@ public class RedoLogFile {
         raf.writeLong(offset);
         // 更新写指针
         offset = raf.getFilePointer();
-        raf.getChannel().force(true);
     }
 
 
@@ -248,5 +246,13 @@ public class RedoLogFile {
         }
         // 复位
         raf.seek(offset);
+    }
+
+    /**
+     * 刷盘
+     */
+    public synchronized void flush() throws IOException {
+        raf.getChannel().force(true);
+
     }
 }

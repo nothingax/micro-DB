@@ -80,9 +80,9 @@ public class Transaction {
             redoLogFile.recordTxCommit(transactionId);
             List<Page> pages = DataBase.getLockManager().getPages(transactionId);
             for (Page page : pages) {
-                redoLogFile.recordBeforePageWhenFlushDisk(transactionId, page.getBeforePage(), page);
+                redoLogFile.recordCommittedPage(transactionId, page.getBeforePage(), page);
             }
-
+            redoLogFile.flush();
         } catch (IOException e) {
             throw new DbException("redo log recordTxCommit error", e);
         }

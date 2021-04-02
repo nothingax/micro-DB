@@ -151,7 +151,7 @@ public class BufferPool {
         if (page.isDirty()) {
             DataBase.getUndoLogFile().recordBeforePageWhenFlushDisk(page.getDirtyTid(), page.getBeforePage());
             try {
-                DataBase.getRedoLogFile().recordBeforePageWhenFlushDisk(page.getDirtyTid(), page.getBeforePage(), page);
+                DataBase.getRedoLogFile().recordCommittedPage(page.getDirtyTid(), page.getBeforePage(), page);
             } catch (IOException e) {
                 throw new DbException("redo log recordBeforePageWhenFlushDisk error ", e);
             }
