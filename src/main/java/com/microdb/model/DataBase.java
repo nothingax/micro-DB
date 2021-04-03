@@ -89,14 +89,6 @@ public class DataBase {
         return singleton.get().redoLogFile;
     }
 
-
-    @VisibleForTest
-    public static void resetWithFile(TableFile tableFile, String tableName) {
-        DataBase dataBase = new DataBase();
-        dataBase.addTable(tableFile, tableName);
-        singleton.set(dataBase);
-    }
-
     /**
      * 添加表
      *
@@ -142,4 +134,19 @@ public class DataBase {
         }
         return dbTable;
     }
+
+
+    @VisibleForTest
+    public static void resetWithFile(TableFile tableFile, String tableName) {
+        DataBase dataBase = new DataBase();
+        dataBase.addTable(tableFile, tableName);
+        singleton.set(dataBase);
+    }
+
+    @VisibleForTest
+    public static void reset() {
+        DataBase dataBase = new DataBase();
+        singleton.set(dataBase);
+    }
+
 }

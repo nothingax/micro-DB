@@ -80,7 +80,7 @@ public class Transaction {
             redoLogFile.recordTxCommit(transactionId);
             List<Page> pages = DataBase.getLockManager().getPages(transactionId);
             for (Page page : pages) {
-                redoLogFile.recordCommittedPage(transactionId, page.getBeforePage(), page);
+                redoLogFile.recordPageChange(transactionId, page.getBeforePage(), page);
             }
             redoLogFile.flush();
         } catch (IOException e) {

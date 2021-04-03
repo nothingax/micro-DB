@@ -147,9 +147,16 @@ public class BufferPool {
      */
     private void flushPage(Page page) {
 
-        // 刷盘前，将页的原始数据写入日志保存
         if (page.isDirty()) {
+            // 刷盘前，将页的原始数据写入undo日志保存
             DataBase.getUndoLogFile().recordBeforePageWhenFlushDisk(page.getDirtyTid(), page.getBeforePage());
+
+            // 记录 redo log
+            try {
+                DataBase.getRedoLogFile().recordPageChange(page.getDirtyTid(), page.getBeforePage(), page);
+            } catch (IOException e) {
+                throw new DbException("redo log recordBeforePageWhenFlushDisk error ", e);
+            }
         }
 
         int tableId = page.getPageID().getTableId();

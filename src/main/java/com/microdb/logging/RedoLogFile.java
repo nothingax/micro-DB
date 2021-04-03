@@ -71,15 +71,15 @@ public class RedoLogFile {
     }
 
     /**
-     * 记录原始页
-     * 计入事务ID+页原始数据
+     * 记录页的修改
+     * 计入事务ID+页原始数据+修改后数据
      *
      * @param transactionID 事务ID
      * @param beforePage    原始页
      */
-    public synchronized void recordCommittedPage(TransactionID transactionID,
-                                                 Page beforePage,
-                                                 Page afterPage) throws IOException {
+    public synchronized void recordPageChange(TransactionID transactionID,
+                                              Page beforePage,
+                                              Page afterPage) throws IOException {
 
         raf.writeInt(LogRecordType.PAGE_FLUSH);
         // 事务ID
@@ -163,17 +163,18 @@ public class RedoLogFile {
         // 待读取的偏移位置
         raf.seek(raf.length() - offsetAddrInByte);
         long offsetToRead = raf.readLong();
-
         while (txStartOffset <= offsetToRead) {
-            raf.seek(offsetToRead + 4);// 跳过log类型
-            long txId = raf.readLong();
-            if (txIdRollback == txId) {
-                Page beforePage = this.readPage();
-                DbTable dbTableById = DataBase.getInstance().getDbTableById(beforePage.getPageID().getTableId());
-                dbTableById.getTableFile().writePageToDisk(beforePage);
-                DataBase.getBufferPool().discardPages(Collections.singletonList(beforePage.getPageID()));
+            raf.seek(offsetToRead);
+            int recordType = raf.readInt();
+            if (recordType == LogRecordType.PAGE_FLUSH) {
+                long txId = raf.readLong();
+                if (txIdRollback == txId) {
+                    Page beforePage = this.readPage();
+                    DbTable dbTableById = DataBase.getInstance().getDbTableById(beforePage.getPageID().getTableId());
+                    dbTableById.getTableFile().writePageToDisk(beforePage);
+                    DataBase.getBufferPool().discardPages(Collections.singletonList(beforePage.getPageID()));
+                }
             }
-
             // 已经到开始位置，结束循环
             if (txStartOffset == offsetToRead) {
                 break;
