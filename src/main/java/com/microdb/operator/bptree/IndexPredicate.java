@@ -1,4 +1,4 @@
-package com.microdb.operator.btree;
+package com.microdb.operator.bptree;
 
 import com.microdb.model.field.Field;
 import com.microdb.operator.PredicateEnum;

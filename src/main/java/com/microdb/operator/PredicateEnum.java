@@ -12,7 +12,7 @@ import java.util.List;
 public enum PredicateEnum {
     EQUALS, GREATER_THAN, LESS_THAN, LESS_THAN_OR_EQ, GREATER_THAN_OR_EQ, NOT_EQUALS, LIKE, LEFT_LIKE, RIGHT_LIKE;
 
-    public static List<PredicateEnum> BTREE_INDEX_PREDICATES =
+    public static List<PredicateEnum> BPTREE_INDEX_PREDICATES =
             Arrays.asList(EQUALS, GREATER_THAN, GREATER_THAN_OR_EQ);
 
 }

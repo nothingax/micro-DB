@@ -9,9 +9,9 @@ import com.microdb.model.TableDesc;
 import com.microdb.model.field.Field;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
-import com.microdb.model.page.btree.*;
+import com.microdb.model.page.bptree.*;
 import com.microdb.operator.PredicateEnum;
-import com.microdb.operator.btree.IndexPredicate;
+import com.microdb.operator.bptree.IndexPredicate;
 
 import java.io.*;
 import java.util.Iterator;
@@ -23,7 +23,7 @@ import java.util.NoSuchElementException;
  * @author zhangjw
  * @version 1.0
  */
-public class BTreeFile implements TableFile {
+public class BPTreeFile implements TableFile {
 
     /**
      * 磁盘文件
@@ -46,7 +46,7 @@ public class BTreeFile implements TableFile {
     private int keyFieldIndex;
 
 
-    public BTreeFile(File file, TableDesc tableDesc, int keyFieldIndex) {
+    public BPTreeFile(File file, TableDesc tableDesc, int keyFieldIndex) {
         this.file = file;
         this.tableDesc = tableDesc;
         this.tableId = file.getAbsoluteFile().hashCode();
@@ -67,11 +67,11 @@ public class BTreeFile implements TableFile {
     @Override
     public void insertRow(Row row) throws IOException {
         // 查找B+树的根节点Page，如果为不存在，则新增一个leafPage，设置为树的根节点
-        BTreeRootPtrPage rootPtrPage = getRootPrtPage();
+        BPTreeRootPtrPage rootPtrPage = getRootPrtPage();
         // 首次插入数据，初始化rootPage维护第一个leafPage的指针，写入磁盘
         if (rootPtrPage.getRootNodePageID() == null) {
             // 该表尚未插入数据，获取文件中最后一个LeafPage，也是第一个LeafPage，因为上面代码中写入了的leafPage的空数据空间
-            BTreePageID firstLeafPageID = new BTreePageID(tableId, getExistPageCount(), BTreePageType.LEAF);
+            BPTreePageID firstLeafPageID = new BPTreePageID(tableId, getExistPageCount(), BPTreePageType.LEAF);
 
             rootPtrPage.setRootPageID(firstLeafPageID);
             // rootPtr更新后刷盘，TODO rootPtr header需要设置
@@ -79,7 +79,7 @@ public class BTreeFile implements TableFile {
         }
 
         // 从b+tree中查找按索引查找数据期望插入的leafPage。如果leafPage已满，触发页分裂
-        BTreeLeafPage leafPage = this.findLeafPage(rootPtrPage.getRootNodePageID(), row.getField(keyFieldIndex));
+        BPTreeLeafPage leafPage = this.findLeafPage(rootPtrPage.getRootNodePageID(), row.getField(keyFieldIndex));
         if (!leafPage.hasEmptySlot()) {
             leafPage = this.splitLeafPage(leafPage, row.getField(keyFieldIndex));
             System.out.println("页分裂" + leafPage.getPageID());
@@ -104,8 +104,8 @@ public class BTreeFile implements TableFile {
      */
     @Override
     public void deleteRow(Row row) throws IOException {
-        BTreePageID BTreePageID = new BTreePageID(tableId, row.getKeyItem().getPageID().getPageNo(), BTreePageType.LEAF);
-        BTreeLeafPage page = (BTreeLeafPage) DataBase.getBufferPool().getPage(BTreePageID);
+        BPTreePageID bpTreePageID = new BPTreePageID(tableId, row.getKeyItem().getPageID().getPageNo(), BPTreePageType.LEAF);
+        BPTreeLeafPage page = (BPTreeLeafPage) DataBase.getBufferPool().getPage(bpTreePageID);
         page.deleteRow(row);
         Connection.cacheDirtyPage(page);
 
@@ -123,19 +123,19 @@ public class BTreeFile implements TableFile {
      *
      * @param pageLessThanHalfFull 不及半满的页
      */
-    private void redistributePage(BTreePage pageLessThanHalfFull) throws IOException {
+    private void redistributePage(BPTreePage pageLessThanHalfFull) throws IOException {
         // 获取待分配页的父节点
-        BTreePageID parentPageID = pageLessThanHalfFull.getParentPageID();
-        BTreeInternalPage parentPage = null;
-        BTreeEntry leftParentEntry = null;
-        BTreeEntry rightParentEntry = null;
+        BPTreePageID parentPageID = pageLessThanHalfFull.getParentPageID();
+        BPTreeInternalPage parentPage = null;
+        BPTreeEntry leftParentEntry = null;
+        BPTreeEntry rightParentEntry = null;
 
         // 判断父节点的类型，如果是internal页，获取指向目标页的两个entry
-        if (parentPageID.getPageType() == BTreePageType.INTERNAL) {
-            parentPage = (BTreeInternalPage) DataBase.getBufferPool().getPage(parentPageID);
-            Iterator<BTreeEntry> iterator = parentPage.getIterator();
+        if (parentPageID.getPageType() == BPTreePageType.INTERNAL) {
+            parentPage = (BPTreeInternalPage) DataBase.getBufferPool().getPage(parentPageID);
+            Iterator<BPTreeEntry> iterator = parentPage.getIterator();
             while (iterator.hasNext()) {
-                BTreeEntry entry = iterator.next();
+                BPTreeEntry entry = iterator.next();
                 if (entry.getLeftChildPageID().equals(pageLessThanHalfFull.getPageID())) {
                     rightParentEntry = entry;
                     break;
@@ -148,10 +148,10 @@ public class BTreeFile implements TableFile {
             // ignore
         }
 
-        if (pageLessThanHalfFull.getPageID().getPageType() == BTreePageType.LEAF) {
-            redistributeLeafPage((BTreeLeafPage) pageLessThanHalfFull, parentPage, leftParentEntry, rightParentEntry);
+        if (pageLessThanHalfFull.getPageID().getPageType() == BPTreePageType.LEAF) {
+            redistributeLeafPage((BPTreeLeafPage) pageLessThanHalfFull, parentPage, leftParentEntry, rightParentEntry);
         } else {
-            redistributeInternalPage((BTreeInternalPage) pageLessThanHalfFull, parentPage, leftParentEntry, rightParentEntry);
+            redistributeInternalPage((BPTreeInternalPage) pageLessThanHalfFull, parentPage, leftParentEntry, rightParentEntry);
         }
     }
 
@@ -164,21 +164,21 @@ public class BTreeFile implements TableFile {
      * @param leftEntry            指向pageLessThanHalfFull的两个entry中左侧entry
      * @param rightEntry           指向pageLessThanHalfFull的两个entry中右侧entry
      */
-    private void redistributeInternalPage(BTreeInternalPage pageLessThanHalfFull,
-                                          BTreeInternalPage parentPage,
-                                          BTreeEntry leftEntry,
-                                          BTreeEntry rightEntry) throws IOException {
+    private void redistributeInternalPage(BPTreeInternalPage pageLessThanHalfFull,
+                                          BPTreeInternalPage parentPage,
+                                          BPTreeEntry leftEntry,
+                                          BPTreeEntry rightEntry) throws IOException {
         if (leftEntry != null && leftEntry.getLeftChildPageID() != null) {
-            BTreePageID leftSibPageID = leftEntry.getLeftChildPageID();
-            BTreeInternalPage leftSibPage = (BTreeInternalPage) DataBase.getBufferPool().getPage(leftSibPageID);
+            BPTreePageID leftSibPageID = leftEntry.getLeftChildPageID();
+            BPTreeInternalPage leftSibPage = (BPTreeInternalPage) DataBase.getBufferPool().getPage(leftSibPageID);
             if (leftSibPage.isMeetMergeCount()) {
                 mergeInternalPage(leftSibPage, pageLessThanHalfFull, parentPage, leftEntry);
             } else {
                 fetchFromLeftInternalPage(pageLessThanHalfFull, leftSibPage, parentPage, leftEntry);
             }
         } else if (rightEntry != null && rightEntry.getRightChildPageID() != null) {
-            BTreePageID rightSibPageID = rightEntry.getRightChildPageID();
-            BTreeInternalPage rightSibPage = (BTreeInternalPage) DataBase.getBufferPool().getPage(rightSibPageID);
+            BPTreePageID rightSibPageID = rightEntry.getRightChildPageID();
+            BPTreeInternalPage rightSibPage = (BPTreeInternalPage) DataBase.getBufferPool().getPage(rightSibPageID);
             if (rightSibPage.isMeetMergeCount()) {
                 mergeInternalPage(pageLessThanHalfFull, rightSibPage, parentPage, rightEntry);
             } else {
@@ -195,10 +195,10 @@ public class BTreeFile implements TableFile {
      * @param parentPage       targetPage和leftPage的父页
      * @param leftEntry        指向targetPage的两个entry中左侧的entry
      */
-    private void fetchFromLeftInternalPage(BTreeInternalPage pageLessHalfFull,
-                                           BTreeInternalPage leftPage,
-                                           BTreeInternalPage parentPage,
-                                           BTreeEntry leftEntry) throws IOException {
+    private void fetchFromLeftInternalPage(BPTreeInternalPage pageLessHalfFull,
+                                           BPTreeInternalPage leftPage,
+                                           BPTreeInternalPage parentPage,
+                                           BPTreeEntry leftEntry) throws IOException {
 
         // 计算需要移动的个数，使移动后，两个page里的entry数量均等
         int entryNumToMove = (leftPage.getExistCount() - pageLessHalfFull.getExistCount()) / 2;
@@ -210,24 +210,24 @@ public class BTreeFile implements TableFile {
             throw new DbException("internal page 容量过小,无法处理页合并或元素挪用，请调大page size");
         }
 
-        BTreeEntry[] bTreeEntries = new BTreeEntry[entryNumToMove];
+        BPTreeEntry[] bpTreeEntries = new BPTreeEntry[entryNumToMove];
         // 需要移动的元素装入entryToMove，当从左侧page取元素时，从最右端取entryNumToMove个元素
-        Iterator<BTreeEntry> it = leftPage.getReverseIterator();
-        int cntIndex = bTreeEntries.length - 1;
+        Iterator<BPTreeEntry> it = leftPage.getReverseIterator();
+        int cntIndex = bpTreeEntries.length - 1;
 
         while (cntIndex >= 0 && it.hasNext()) {
-            bTreeEntries[cntIndex--] = it.next();
+            bpTreeEntries[cntIndex--] = it.next();
         }
 
-        for (int i = bTreeEntries.length - 1; i >= 0; --i) {
-            BTreeEntry entryToMove = bTreeEntries[i];
+        for (int i = bpTreeEntries.length - 1; i >= 0; --i) {
+            BPTreeEntry entryToMove = bpTreeEntries[i];
             // 删除移动entry、设置其右孩子的新父页
             leftPage.deleteEntryFromTheRight(entryToMove);
             updateParent(pageLessHalfFull.getPageID(), entryToMove.getRightChildPageID());
 
             // 旋转(entryToMove围绕leftEntry右旋，entryToMove是leftEntry的右子节点，右旋后，entryToMove变为父节点，leftEntry变为其右子节点)
             // 较难推导，最好画图
-            BTreePageID pageID = entryToMove.getRightChildPageID();
+            BPTreePageID pageID = entryToMove.getRightChildPageID();
             // leftEntry 是发生转移的两个page的父entry，转移过程中，leftEntry需要下降到子级
             entryToMove.setLeftChildPageID(leftEntry.getLeftChildPageID());
             entryToMove.setRightChildPageID(leftEntry.getRightChildPageID());
@@ -254,10 +254,10 @@ public class BTreeFile implements TableFile {
      * @param parentPage       targetPage和rightPage的父页
      * @param rightEntry       指向targetPage的两个entry中右侧的entry
      */
-    private void fetchFromRightInternalPage(BTreeInternalPage pageLessHalfFull,
-                                            BTreeInternalPage rightPage,
-                                            BTreeInternalPage parentPage,
-                                            BTreeEntry rightEntry) throws IOException {
+    private void fetchFromRightInternalPage(BPTreeInternalPage pageLessHalfFull,
+                                            BPTreeInternalPage rightPage,
+                                            BPTreeInternalPage parentPage,
+                                            BPTreeEntry rightEntry) throws IOException {
         // 计算需要移动的个数，使移动后，
         // 两个page里的entry数量均等
         int entryNumToMove = (rightPage.getExistCount() - pageLessHalfFull.getExistCount()) / 2;
@@ -269,16 +269,16 @@ public class BTreeFile implements TableFile {
             throw new DbException("internal page 容量过小,无法处理页合并或元素挪用，请调大page size");
         }
 
-        BTreeEntry[] entriesToMove = new BTreeEntry[entryNumToMove];
-        Iterator<BTreeEntry> iterator = rightPage.getIterator();
+        BPTreeEntry[] entriesToMove = new BPTreeEntry[entryNumToMove];
+        Iterator<BPTreeEntry> iterator = rightPage.getIterator();
         int cntIndex = 0;
         while (cntIndex < entriesToMove.length && iterator.hasNext()) {
             entriesToMove[cntIndex++] = iterator.next();
         }
 
-        for (BTreeEntry entryToMove : entriesToMove) {
+        for (BPTreeEntry entryToMove : entriesToMove) {
             rightPage.deleteEntryFromTheLeft(entryToMove);
-            BTreePageID leftChildPageIDOfEntryToMove = entryToMove.getLeftChildPageID();
+            BPTreePageID leftChildPageIDOfEntryToMove = entryToMove.getLeftChildPageID();
 
             // 被移动的entry所指向的子页面需要设置新的父页
             updateParent(pageLessHalfFull.getPageID(), entryToMove.getLeftChildPageID());
@@ -317,10 +317,10 @@ public class BTreeFile implements TableFile {
      * @param parentPage 父页
      * @param entry      父页中指向左页和右页的entry
      */
-    private void mergeInternalPage(BTreeInternalPage leftPage,
-                                   BTreeInternalPage rightPage,
-                                   BTreeInternalPage parentPage,
-                                   BTreeEntry entry) throws IOException {
+    private void mergeInternalPage(BPTreeInternalPage leftPage,
+                                   BPTreeInternalPage rightPage,
+                                   BPTreeInternalPage parentPage,
+                                   BPTreeEntry entry) throws IOException {
         // 两页合并，父页中指向两个子页的的entry应删除
         deleteParentEntry(leftPage, parentPage, entry);
         Connection.cacheDirtyPage(parentPage);
@@ -331,9 +331,9 @@ public class BTreeFile implements TableFile {
         leftPage.insertEntry(entry);
 
         // 右侧页的数据挪到左侧页中
-        Iterator<BTreeEntry> iterator = rightPage.getIterator();
+        Iterator<BPTreeEntry> iterator = rightPage.getIterator();
         while (iterator.hasNext()) {
-            BTreeEntry entryInRightPage = iterator.next();
+            BPTreeEntry entryInRightPage = iterator.next();
             rightPage.deleteEntryFromTheLeft(entryInRightPage);
             // 右页删除后，原来右页的子页的父节点要更新为leftPage
             updateParent(leftPage.getPageID(), entryInRightPage.getLeftChildPageID());
@@ -355,16 +355,16 @@ public class BTreeFile implements TableFile {
      * @param leftParentEntry          指向 leafPageLessThanHalfFull 的两个entry中左侧entry
      * @param rightParentEntry         指向 leafPageLessThanHalfFull 的两个entry中左侧entry
      */
-    private void redistributeLeafPage(BTreeLeafPage leafPageLessThanHalfFull,
-                                      BTreeInternalPage parentPage,
-                                      BTreeEntry leftParentEntry,
-                                      BTreeEntry rightParentEntry) throws IOException {
+    private void redistributeLeafPage(BPTreeLeafPage leafPageLessThanHalfFull,
+                                      BPTreeInternalPage parentPage,
+                                      BPTreeEntry leftParentEntry,
+                                      BPTreeEntry rightParentEntry) throws IOException {
         // 找到同一个父节点的左侧page，判断他容量是否不足一半，则合并，否则stealFromLeafPage，右侧page同理
 
         if (leftParentEntry != null && leftParentEntry.getLeftChildPageID() != null) {
             // 与left兄弟页分配
-            BTreePageID leftChildPageID = leftParentEntry.getLeftChildPageID();
-            BTreeLeafPage leftLeafPage = (BTreeLeafPage) DataBase.getBufferPool().getPage(leftChildPageID);
+            BPTreePageID leftChildPageID = leftParentEntry.getLeftChildPageID();
+            BPTreeLeafPage leftLeafPage = (BPTreeLeafPage) DataBase.getBufferPool().getPage(leftChildPageID);
             if (leftLeafPage.isMeetMergeCount()) {
                 mergeLeafPage(leftLeafPage, leafPageLessThanHalfFull, parentPage, leftParentEntry);
             } else {
@@ -372,8 +372,8 @@ public class BTreeFile implements TableFile {
             }
         } else if (rightParentEntry != null && rightParentEntry.getRightChildPageID() != null) {
             // 与right兄弟页分配
-            BTreePageID rightChildPageID = rightParentEntry.getRightChildPageID();
-            BTreeLeafPage rightLeafPage = (BTreeLeafPage) DataBase.getBufferPool().getPage(rightChildPageID);
+            BPTreePageID rightChildPageID = rightParentEntry.getRightChildPageID();
+            BPTreeLeafPage rightLeafPage = (BPTreeLeafPage) DataBase.getBufferPool().getPage(rightChildPageID);
             if (rightLeafPage.isMeetMergeCount()) {
                 mergeLeafPage(leafPageLessThanHalfFull, rightLeafPage, parentPage, rightParentEntry);
             } else {
@@ -390,10 +390,10 @@ public class BTreeFile implements TableFile {
      * @param parentPage      父页
      * @param leftParentEntry 左页页面entry
      */
-    private void fetchFromLeftLeafPage(BTreeLeafPage targetPage,
-                                       BTreeLeafPage leftLeafPage,
-                                       BTreeInternalPage parentPage,
-                                       BTreeEntry leftParentEntry) {
+    private void fetchFromLeftLeafPage(BPTreeLeafPage targetPage,
+                                       BPTreeLeafPage leftLeafPage,
+                                       BPTreeInternalPage parentPage,
+                                       BPTreeEntry leftParentEntry) {
 
         int rowNumToMove = (leftLeafPage.getExistRowCount() - targetPage.getExistRowCount()) / 2;
         Row[] rowsToMove = new Row[rowNumToMove];
@@ -427,10 +427,10 @@ public class BTreeFile implements TableFile {
      * @param parentPage       父页
      * @param rightParentEntry 右侧页面entry
      */
-    private void fetchFromRightLeafPage(BTreeLeafPage targetPage,
-                                        BTreeLeafPage rightLeafPage,
-                                        BTreeInternalPage parentPage,
-                                        BTreeEntry rightParentEntry) {
+    private void fetchFromRightLeafPage(BPTreeLeafPage targetPage,
+                                        BPTreeLeafPage rightLeafPage,
+                                        BPTreeInternalPage parentPage,
+                                        BPTreeEntry rightParentEntry) {
 
         int rowNumToMove = (rightLeafPage.getExistRowCount() - targetPage.getExistRowCount()) / 2;
         Row[] rowsToMove = new Row[rowNumToMove];
@@ -468,10 +468,10 @@ public class BTreeFile implements TableFile {
      * @param parentPage  两个待合并页的父页
      * @param parentEntry 指向待合并页的entry
      */
-    private void mergeLeafPage(BTreeLeafPage leftPage,
-                               BTreeLeafPage rightPage,
-                               BTreeInternalPage parentPage,
-                               BTreeEntry parentEntry) throws IOException {
+    private void mergeLeafPage(BPTreeLeafPage leftPage,
+                               BPTreeLeafPage rightPage,
+                               BPTreeInternalPage parentPage,
+                               BPTreeEntry parentEntry) throws IOException {
 
         // right page 中所有行移入 left Page
         Row[] rowToDelete = new Row[rightPage.getExistRowCount()];
@@ -486,10 +486,10 @@ public class BTreeFile implements TableFile {
         }
 
         // 更新左右兄弟指针
-        BTreePageID rightSibPageID = rightPage.getRightSibPageID();
+        BPTreePageID rightSibPageID = rightPage.getRightSibPageID();
         leftPage.setRightSibPageID(rightSibPageID);
         if (rightSibPageID != null) {
-            BTreeLeafPage rightSibPage = (BTreeLeafPage) DataBase.getBufferPool().getPage(rightSibPageID);
+            BPTreeLeafPage rightSibPage = (BPTreeLeafPage) DataBase.getBufferPool().getPage(rightSibPageID);
             rightSibPage.setLeftSibPageID(leftPage.getPageID());
         }
         // 刷盘
@@ -510,21 +510,21 @@ public class BTreeFile implements TableFile {
      * @param parentPage    父页
      * @param entryToDelete 待删除entry
      */
-    private void deleteParentEntry(BTreePage leftPage,
-                                   BTreeInternalPage parentPage,
-                                   BTreeEntry entryToDelete) throws IOException {
+    private void deleteParentEntry(BPTreePage leftPage,
+                                   BPTreeInternalPage parentPage,
+                                   BPTreeEntry entryToDelete) throws IOException {
 
         // 由于合并后删除右页，entryToDelete需要删除指向右页的rightChildPageNo指针
         parentPage.deleteEntryAndRightChildPage(entryToDelete);
         Connection.cacheDirtyPage(parentPage);
-        // if (parentPage.getParentPageID().getPageType() == BTreePageType.ROOT_PTR && parentPage.isEmpty()) {
+        // if (parentPage.getParentPageID().getPageType() == BPTreePageType.ROOT_PTR && parentPage.isEmpty()) {
         if (parentPage.isEmpty()) {
             // 当父页变空，说明没有可以合并的页，即不再有其他internal page了，需要将leafPage挂在rootPtr下
-            BTreePageID rootPrtPageID = parentPage.getParentPageID();
-            if (rootPrtPageID.getPageType() != BTreePageType.ROOT_PTR) {
+            BPTreePageID rootPrtPageID = parentPage.getParentPageID();
+            if (rootPrtPageID.getPageType() != BPTreePageType.ROOT_PTR) {
                 throw new DbException("try delete none root ptr page");
             }
-            BTreeRootPtrPage rootPtrPage = (BTreeRootPtrPage) DataBase.getBufferPool().getPage(rootPrtPageID);
+            BPTreeRootPtrPage rootPtrPage = (BPTreeRootPtrPage) DataBase.getBufferPool().getPage(rootPrtPageID);
             leftPage.setParentPageID(rootPrtPageID);
             rootPtrPage.setRootNodePageID(leftPage.getPageID());
 
@@ -545,14 +545,14 @@ public class BTreeFile implements TableFile {
     private void markPageUnused(int pageNo) throws IOException {
         // TODO
         // // 查找B+tree文件中的的第一个headerPage
-        // BTreeRootPtrPage rootPrtPage = getRootPrtPage();
-        // BTreePageID headerPageID = rootPrtPage.getFirstHeaderPageID();
-        // BTreePageID prevHeaderPageID = null;
+        // BPTreeRootPtrPage rootPrtPage = getRootPrtPage();
+        // BPTreePageID headerPageID = rootPrtPage.getFirstHeaderPageID();
+        // BPTreePageID prevHeaderPageID = null;
         //
         // int headerPageCount = 0;
         // // 如果第一个headerPage尚未创建，则新建
         // if (headerPageID == null) {
-        //     BTreeHeaderPage emptyHeaderPage = (BTreeHeaderPage) getEmptyPage(BTreePageType.HEADER);
+        //     BPTreeHeaderPage emptyHeaderPage = (BPTreeHeaderPage) getEmptyPage(BPTreePageType.HEADER);
         //     headerPageID = emptyHeaderPage.getPageID();
         //     rootPrtPage.setFirstHeaderPageID(headerPageID);
         //     emptyHeaderPage.markAllUsed();
@@ -561,8 +561,8 @@ public class BTreeFile implements TableFile {
         //     writePageToDisk(emptyHeaderPage);
         // } else {
         //     // 尝试获取emptyPageNo槽位所在的headerPage
-        //     while (headerPageID != null && (headerPageCount + 1) * BTreeHeaderPage.maxSlotNum < pageNo) {
-        //         BTreeHeaderPage headerPage = (BTreeHeaderPage) readPageFromDisk(headerPageID);
+        //     while (headerPageID != null && (headerPageCount + 1) * BPTreeHeaderPage.maxSlotNum < pageNo) {
+        //         BPTreeHeaderPage headerPage = (BPTreeHeaderPage) readPageFromDisk(headerPageID);
         //         prevHeaderPageID = headerPageID;
         //         headerPageID = headerPage.getNextPageID();
         //         headerPageCount++;
@@ -570,9 +570,9 @@ public class BTreeFile implements TableFile {
         //
         //     // 如果上面尝试获取时未找到，说明emptyPageNo槽位所在的headerPage或headerPage链表前面的headerPage尚未创建，
         //     // 应创建相关headerPage，并设置链表的节点索引
-        //     while ((headerPageCount + 1) * BTreeHeaderPage.maxSlotNum < pageNo) {
-        //         BTreeHeaderPage prevPage = (BTreeHeaderPage) readPageFromDisk(prevHeaderPageID);
-        //         BTreeHeaderPage emptyPageHeaderPage = (BTreeHeaderPage) getEmptyPage(BTreePageType.HEADER);
+        //     while ((headerPageCount + 1) * BPTreeHeaderPage.maxSlotNum < pageNo) {
+        //         BPTreeHeaderPage prevPage = (BPTreeHeaderPage) readPageFromDisk(prevHeaderPageID);
+        //         BPTreeHeaderPage emptyPageHeaderPage = (BPTreeHeaderPage) getEmptyPage(BPTreePageType.HEADER);
         //         headerPageID = emptyPageHeaderPage.getPageID();
         //         emptyPageHeaderPage.setPrevHeaderPageID(prevHeaderPageID);
         //
@@ -589,9 +589,9 @@ public class BTreeFile implements TableFile {
         // }
         //
         // // 获取emptyPageNo槽位真正所在的headerPage
-        // BTreeHeaderPage headerPage = (BTreeHeaderPage) readPageFromDisk(headerPageID);
+        // BPTreeHeaderPage headerPage = (BPTreeHeaderPage) readPageFromDisk(headerPageID);
         // // 计算槽位在该页中的下标位置 ，设置状态为 unUsed
-        // int slotIndex = pageNo - headerPageCount * BTreeHeaderPage.maxSlotNum;
+        // int slotIndex = pageNo - headerPageCount * BPTreeHeaderPage.maxSlotNum;
         // headerPage.markSlotUsed(slotIndex, false);
         //
         // // 刷盘
@@ -604,49 +604,49 @@ public class BTreeFile implements TableFile {
     }
 
     @Override
-    public BTreePage readPageFromDisk(PageID pageID) {
-        BTreePageID BTreePageID = (BTreePageID) pageID;
+    public BPTreePage readPageFromDisk(PageID pageID) {
+        BPTreePageID bpTreePageID = (BPTreePageID) pageID;
         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
-            if (BTreePageID.getPageType() == BTreePageType.ROOT_PTR) {
-                byte[] bytes = new byte[BTreeRootPtrPage.rootPtrPageSizeInByte];
-                int bytesRead = bis.read(bytes, 0, BTreeRootPtrPage.rootPtrPageSizeInByte);
+            if (bpTreePageID.getPageType() == BPTreePageType.ROOT_PTR) {
+                byte[] bytes = new byte[BPTreeRootPtrPage.rootPtrPageSizeInByte];
+                int bytesRead = bis.read(bytes, 0, BPTreeRootPtrPage.rootPtrPageSizeInByte);
                 if (bytesRead == -1) {
-                    throw new IllegalArgumentException("btree file read from disk error：reach the end of the file");
+                    throw new IllegalArgumentException("BPTree file read from disk error：reach the end of the file");
                 }
-                if (bytesRead < BTreeRootPtrPage.rootPtrPageSizeInByte) {
-                    throw new IllegalArgumentException("未从btree file 中读取到" + BTreeRootPtrPage.rootPtrPageSizeInByte + "字节");
+                if (bytesRead < BPTreeRootPtrPage.rootPtrPageSizeInByte) {
+                    throw new IllegalArgumentException("未从 BPTree file 中读取到" + BPTreeRootPtrPage.rootPtrPageSizeInByte + "字节");
                 }
-                // System.out.println("btree file read  page ,pageNo=" + BTreePageID.getPageNo() + ",BTree type=" + BTreePageID.getPageType());
-                return new BTreeRootPtrPage(BTreePageID, bytes);
+                // System.out.println("BPTree file read  page ,pageNo=" + BPTreePageID.getPageNo() + ",BPTree type=" + BPTreePageID.getPageType());
+                return new BPTreeRootPtrPage(bpTreePageID, bytes);
             } else {
                 byte[] pageData = new byte[Page.defaultPageSizeInByte];
-                long size = BTreeRootPtrPage.rootPtrPageSizeInByte + (BTreePageID.getPageNo() - 1) * Page.defaultPageSizeInByte;
+                long size = BPTreeRootPtrPage.rootPtrPageSizeInByte + (bpTreePageID.getPageNo() - 1) * Page.defaultPageSizeInByte;
 
                 if (bis.skip(size) != size) {
-                    throw new IllegalArgumentException("btree file read from disk error:寻址错误");
+                    throw new IllegalArgumentException("BPTree file read from disk error:寻址错误");
                 }
                 int bytesRead = bis.read(pageData, 0, Page.defaultPageSizeInByte);
                 if (bytesRead == -1) {
-                    throw new IllegalArgumentException("btree file read from disk error：reach the end of the file");
+                    throw new IllegalArgumentException("BPTree file read from disk error：reach the end of the file");
                 }
                 if (bytesRead < Page.defaultPageSizeInByte) {
-                    throw new IllegalArgumentException("未从btree file 中读取到" + Page.defaultPageSizeInByte + "字节");
+                    throw new IllegalArgumentException("未从 BPTree file 中读取到" + Page.defaultPageSizeInByte + "字节");
                 }
 
-                // System.out.println("btree file read  page ,pageNo=" + BTreePageID.getPageNo() + ",BTree type=" + BTreePageID.getPageType());
+                // System.out.println("BPTree file read  page ,pageNo=" + BPTreePageID.getPageNo() + ",BPTree type=" + BPTreePageID.getPageType());
 
-                if (BTreePageID.getPageType() == BTreePageType.HEADER) {
-                    return new BTreeHeaderPage(BTreePageID, pageData);
-                } else if (BTreePageID.getPageType() == BTreePageType.INTERNAL) {
-                    return new BTreeInternalPage(BTreePageID, pageData, keyFieldIndex);
-                } else { //BTreePageID.getPageType() == BTreePageType.LEAF
-                    return new BTreeLeafPage(BTreePageID, pageData, keyFieldIndex);
+                if (bpTreePageID.getPageType() == BPTreePageType.HEADER) {
+                    return new BPTreeHeaderPage(bpTreePageID, pageData);
+                } else if (bpTreePageID.getPageType() == BPTreePageType.INTERNAL) {
+                    return new BPTreeInternalPage(bpTreePageID, pageData, keyFieldIndex);
+                } else { //BPTreePageID.getPageType() == BPTreePageType.LEAF
+                    return new BPTreeLeafPage(bpTreePageID, pageData, keyFieldIndex);
                 }
             }
         } catch (FileNotFoundException e) {
-            throw new DbException("btree file not found", e);
+            throw new DbException("BPTree file not found", e);
         } catch (IOException e) {
-            throw new DbException("btree file read page from disk error", e);
+            throw new DbException("BPTree file read page from disk error", e);
         }
     }
 
@@ -655,9 +655,9 @@ public class BTreeFile implements TableFile {
         try {
             byte[] pageData = page.serialize();
             RandomAccessFile rf = new RandomAccessFile(file, "rw");
-            BTreePageID pageID = (BTreePageID) page.getPageID();
-            if (pageID.getPageType() != BTreePageType.ROOT_PTR) {
-                rf.seek(BTreeRootPtrPage.rootPtrPageSizeInByte + (page.getPageID().getPageNo() - 1) * Page.defaultPageSizeInByte);
+            BPTreePageID pageID = (BPTreePageID) page.getPageID();
+            if (pageID.getPageType() != BPTreePageType.ROOT_PTR) {
+                rf.seek(BPTreeRootPtrPage.rootPtrPageSizeInByte + (page.getPageID().getPageNo() - 1) * Page.defaultPageSizeInByte);
             }
             rf.write(pageData);
             rf.close();
@@ -673,29 +673,29 @@ public class BTreeFile implements TableFile {
 
     @Override
     public int getExistPageCount() {
-        return (int) ((file.length() - BTreeRootPtrPage.rootPtrPageSizeInByte) / Page.defaultPageSizeInByte);
+        return (int) ((file.length() - BPTreeRootPtrPage.rootPtrPageSizeInByte) / Page.defaultPageSizeInByte);
     }
 
     /**
      * 获取rootPtr
      */
-    private BTreeRootPtrPage getRootPrtPage() throws IOException {
+    private BPTreeRootPtrPage getRootPrtPage() throws IOException {
         // 首次在该页插入数据时，写入空数据
         synchronized (this) {
             if (file.length() == 0) {
                 BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file, true));
-                byte[] emptyRootPtrData = BTreeRootPtrPage.createEmptyPageData();
-                byte[] emptyLeafData = BTreeLeafPage.createEmptyPageData();
+                byte[] emptyRootPtrData = BPTreeRootPtrPage.createEmptyPageData();
+                byte[] emptyLeafData = BPTreeLeafPage.createEmptyPageData();
                 bos.write(emptyRootPtrData);
                 bos.write(emptyLeafData);
                 bos.close();
             }
         }
         // 获取单例的rootPage,如果不存在则新增
-        BTreePageID rootPtrPageID = new BTreePageID(this.tableId, 0, BTreePageType.ROOT_PTR);
+        BPTreePageID rootPtrPageID = new BPTreePageID(this.tableId, 0, BPTreePageType.ROOT_PTR);
 
         // 从磁盘中读取rootPage
-        return (BTreeRootPtrPage) DataBase.getBufferPool().getPage(rootPtrPageID);
+        return (BPTreeRootPtrPage) DataBase.getBufferPool().getPage(rootPtrPageID);
     }
 
     /**
@@ -712,10 +712,10 @@ public class BTreeFile implements TableFile {
      * @param fieldToInsert     字段值
      * @return 返回一个field可以放置的页
      */
-    private BTreeLeafPage splitLeafPage(BTreeLeafPage leafPageNeedSplit, Field fieldToInsert) throws IOException {
+    private BPTreeLeafPage splitLeafPage(BPTreeLeafPage leafPageNeedSplit, Field fieldToInsert) throws IOException {
 
         // 获取一个空页作为新的右兄弟
-        BTreeLeafPage newRightSibPage = (BTreeLeafPage) getEmptyPage(BTreePageType.LEAF);
+        BPTreeLeafPage newRightSibPage = (BPTreeLeafPage) getEmptyPage(BPTreePageType.LEAF);
 
         Iterator<Row> it = leafPageNeedSplit.getReverseIterator();
         // 原page中的一半数据移动到新页中
@@ -733,8 +733,8 @@ public class BTreeFile implements TableFile {
         Field midKey = rowToMove[0].getField(keyFieldIndex);
 
         System.out.println("分列前的父页ID=" + leafPageNeedSplit.getParentPageID().getPageNo());
-        BTreeInternalPage parentInternalPage = findParentPageToPlaceEntry(leafPageNeedSplit.getParentPageID(), midKey);
-        BTreePageID oldRightSibPageID = leafPageNeedSplit.getRightSibPageID();
+        BPTreeInternalPage parentInternalPage = findParentPageToPlaceEntry(leafPageNeedSplit.getParentPageID(), midKey);
+        BPTreePageID oldRightSibPageID = leafPageNeedSplit.getRightSibPageID();
 
         // 更新新页的右兄弟、做兄弟，更新原页的右兄弟
         newRightSibPage.setRightSibPageID(oldRightSibPageID);
@@ -750,7 +750,7 @@ public class BTreeFile implements TableFile {
 
 
         // 父节点Page，插入midKey元素
-        BTreeEntry newParentEntry = new BTreeEntry(midKey, leafPageNeedSplit.getPageID(), newRightSibPage.getPageID());
+        BPTreeEntry newParentEntry = new BPTreeEntry(midKey, leafPageNeedSplit.getPageID(), newRightSibPage.getPageID());
         parentInternalPage.insertEntry(newParentEntry);
 
         // 刷盘
@@ -769,17 +769,17 @@ public class BTreeFile implements TableFile {
     /**
      * 找到一个放置keyToInsert的页,可能触发页分裂
      */
-    private BTreeInternalPage findParentPageToPlaceEntry(BTreePageID parentPageID, Field keyToInsert) throws IOException {
-        BTreeInternalPage parentPage;
+    private BPTreeInternalPage findParentPageToPlaceEntry(BPTreePageID parentPageID, Field keyToInsert) throws IOException {
+        BPTreeInternalPage parentPage;
         // 如果原父节点是rootPtr，则新增一个internal page，并设置为新的rootNode
-        if (parentPageID.getPageType() == BTreePageType.ROOT_PTR) {
+        if (parentPageID.getPageType() == BPTreePageType.ROOT_PTR) {
             // 设置新的rootNode
-            parentPage = (BTreeInternalPage) getEmptyPage(BTreePageType.INTERNAL);
-            BTreeRootPtrPage rootPrtPage = getRootPrtPage();
+            parentPage = (BPTreeInternalPage) getEmptyPage(BPTreePageType.INTERNAL);
+            BPTreeRootPtrPage rootPrtPage = getRootPrtPage();
             rootPrtPage.setRootNodePageID(parentPage.getPageID());
             Connection.cacheDirtyPage(rootPrtPage);
         } else {
-            parentPage = (BTreeInternalPage) DataBase.getBufferPool().getPage(parentPageID);
+            parentPage = (BPTreeInternalPage) DataBase.getBufferPool().getPage(parentPageID);
         }
 
         System.out.println("internal page getExistCount==" + parentPage.getExistCount() + ",pageNo=" + parentPage.getPageID().getPageNo());
@@ -787,7 +787,7 @@ public class BTreeFile implements TableFile {
         if (!parentPage.hasEmptySlot()) {
             parentPage = splitInternalPage(parentPage, keyToInsert);
 
-            // BTreeRootPtrPage rootPrtPage = getRootPrtPage();
+            // BPTreeRootPtrPage rootPrtPage = getRootPrtPage();
             // rootPrtPage.setRootNodePageID(parentPage.getPageID());
             // writePageToDisk(rootPrtPage);
         }
@@ -803,10 +803,10 @@ public class BTreeFile implements TableFile {
      * @return 返回可用的页
      */
     @VisibleForTest
-    public BTreeInternalPage splitInternalPage(BTreeInternalPage internalPageNeedSplit, Field keyToInsert) throws IOException {
+    public BPTreeInternalPage splitInternalPage(BPTreeInternalPage internalPageNeedSplit, Field keyToInsert) throws IOException {
 
         // 获取一个可用的页
-        BTreeInternalPage newInternalPage = (BTreeInternalPage) getEmptyPage(BTreePageType.INTERNAL);
+        BPTreeInternalPage newInternalPage = (BPTreeInternalPage) getEmptyPage(BPTreePageType.INTERNAL);
 
         // 2:1 +1
         // 3：1+2
@@ -819,10 +819,10 @@ public class BTreeFile implements TableFile {
             throw new DbException("splitInternalPage 失败，元素没有均分");
         }
 
-        Iterator<BTreeEntry> it = internalPageNeedSplit.getReverseIterator();
-        BTreeEntry[] entryToMove = new BTreeEntry[numToMove];
+        Iterator<BPTreeEntry> it = internalPageNeedSplit.getReverseIterator();
+        BPTreeEntry[] entryToMove = new BPTreeEntry[numToMove];
         int moveCnt = entryToMove.length - 1;
-        BTreeEntry midEntry = null;
+        BPTreeEntry midEntry = null;
         while (moveCnt >= 0 && it.hasNext()) {
             entryToMove[moveCnt--] = it.next();
         }
@@ -852,7 +852,7 @@ public class BTreeFile implements TableFile {
 
         // 从上一级找到一个page，容纳升级的节点midEntry，递归触发上级page的递归分裂,调用findParentPageToPlaceEntry
         // 原页和新页都更新父节点为新获取的父节点
-        BTreeInternalPage newParentInternalPage = findParentPageToPlaceEntry(internalPageNeedSplit.getParentPageID(), midEntry.getKey());
+        BPTreeInternalPage newParentInternalPage = findParentPageToPlaceEntry(internalPageNeedSplit.getParentPageID(), midEntry.getKey());
         newParentInternalPage.insertEntry(midEntry);
         internalPageNeedSplit.setParentPageID(newParentInternalPage.getPageID());
         newInternalPage.setParentPageID(newParentInternalPage.getPageID());
@@ -873,10 +873,10 @@ public class BTreeFile implements TableFile {
     /**
      * 更新父指针
      */
-    private void updateParent(BTreePageID newParentPageID, BTreePageID childPageID) throws IOException {
-        BTreePage childPage = (BTreePage) DataBase.getBufferPool().getPage(childPageID);
+    private void updateParent(BPTreePageID newParentPageID, BPTreePageID childPageID) throws IOException {
+        BPTreePage childPage = (BPTreePage) DataBase.getBufferPool().getPage(childPageID);
         if (!childPage.getParentPageID().equals(newParentPageID)) {
-            childPage = (BTreePage) DataBase.getBufferPool().getPage(childPageID);
+            childPage = (BPTreePage) DataBase.getBufferPool().getPage(childPageID);
             childPage.setParentPageID(newParentPageID);
 
             // TODO 缓存+集中刷盘
@@ -891,8 +891,8 @@ public class BTreeFile implements TableFile {
         int getExistPageCountExceptRootPtr = getEmptyPageNo();
         int newPageNo = getExistPageCountExceptRootPtr;// pageNo 从0开始计数
         this.writeEmptyPageToDisk(newPageNo, pageType);
-        BTreePageID BTreePageID = new BTreePageID(tableId, newPageNo, pageType);
-        return DataBase.getBufferPool().getPage(BTreePageID);
+        BPTreePageID bpTreePageID = new BPTreePageID(tableId, newPageNo, pageType);
+        return DataBase.getBufferPool().getPage(bpTreePageID);
     }
 
     /**
@@ -904,12 +904,12 @@ public class BTreeFile implements TableFile {
     private void writeEmptyPageToDisk(int pageNo, int pageType) throws IOException {
         // TODO opt
         RandomAccessFile rf = new RandomAccessFile(file, "rw");
-        if (pageType == BTreePageType.ROOT_PTR) {
+        if (pageType == BPTreePageType.ROOT_PTR) {
             rf.seek(0);
-            rf.write(new byte[BTreeRootPtrPage.rootPtrPageSizeInByte]);
+            rf.write(new byte[BPTreeRootPtrPage.rootPtrPageSizeInByte]);
         } else {
             int pageSizeInByte = Page.defaultPageSizeInByte; // 除 ROOT_PTR之外的页大小
-            rf.seek(BTreeRootPtrPage.rootPtrPageSizeInByte + (pageNo - 1) * pageSizeInByte);
+            rf.seek(BPTreeRootPtrPage.rootPtrPageSizeInByte + (pageNo - 1) * pageSizeInByte);
             rf.write(new byte[pageSizeInByte]);
         }
         rf.close();
@@ -920,21 +920,21 @@ public class BTreeFile implements TableFile {
      * 获取本文件的根page，找到第一个header page id
      */
     private int getEmptyPageNo() throws IOException {
-        BTreeRootPtrPage rootPrtPage = getRootPrtPage();
-        BTreePageID headerPageID = rootPrtPage.getFirstHeaderPageID();
+        BPTreeRootPtrPage rootPrtPage = getRootPrtPage();
+        BPTreePageID headerPageID = rootPrtPage.getFirstHeaderPageID();
 
         int emptyPageNo = 0;
 
         // TODO 暂不实现
         // if (headerPageID != null) {
         //     // 读取第一个headerPage
-        //     BTreeHeaderPage headerPage = (BTreeHeaderPage) this.readPageFromDisk(headerPageID);
+        //     BPTreeHeaderPage headerPage = (BPTreeHeaderPage) this.readPageFromDisk(headerPageID);
         //     int headerPageCount = 0;
         //     // 遍历headerPage，找到一个含有空槽位的page
         //     while (headerPage != null && !headerPage.hasEmptySlot()) { // header页存在，但没有空槽位
         //         headerPageID = headerPage.getNextPageID();
         //         if (headerPageID != null) {
-        //             headerPage = (BTreeHeaderPage) this.readPageFromDisk(headerPageID);
+        //             headerPage = (BPTreeHeaderPage) this.readPageFromDisk(headerPageID);
         //             headerPageCount++;
         //         } else {
         //             break; //遍历完现有的headerPage，全都没有空槽位。
@@ -943,10 +943,10 @@ public class BTreeFile implements TableFile {
         //
         //     // 如果headerPage != null，一定存在空的slot
         //     if (headerPage != null) {
-        //         headerPage = (BTreeHeaderPage) this.readPageFromDisk(headerPageID);
+        //         headerPage = (BPTreeHeaderPage) this.readPageFromDisk(headerPageID);
         //         int emptySlot = headerPage.getFirstEmptySlot();
         //         headerPage.markSlotUsed(emptySlot, true);
-        //         emptyPageNo = headerPageCount * BTreeHeaderPage.maxSlotNum + emptySlot;
+        //         emptyPageNo = headerPageCount * BPTreeHeaderPage.maxSlotNum + emptySlot;
         //     }
         // }
 
@@ -964,8 +964,8 @@ public class BTreeFile implements TableFile {
         return emptyPageNo;
     }
 
-    private BTreeLeafPage findLeafPageWithIndex(BTreePageID rootNodePageID,
-                                                IndexPredicate indexPredicate) {
+    private BPTreeLeafPage findLeafPageWithIndex(BPTreePageID rootNodePageID,
+                                                 IndexPredicate indexPredicate) {
         return null;
     }
 
@@ -977,21 +977,21 @@ public class BTreeFile implements TableFile {
      * @param indexField 索引字段值，在内部节点的查找过程中使用,null 时返回最左page
      * @return 查找field应该放置的页面
      */
-    private BTreeLeafPage findLeafPage(BTreePageID pageID, Field indexField) {
+    private BPTreeLeafPage findLeafPage(BPTreePageID pageID, Field indexField) {
 
         // 查找到树的最后一层--leafPage
-        if (pageID.getPageType() == BTreePageType.LEAF) {
-            return (BTreeLeafPage) DataBase.getBufferPool().getPage(pageID);
+        if (pageID.getPageType() == BPTreePageType.LEAF) {
+            return (BPTreeLeafPage) DataBase.getBufferPool().getPage(pageID);
         }
 
         // 查找到树的内部节点，在这里递归直至查找到leafPage
-        BTreeInternalPage aInternalPage = (BTreeInternalPage) DataBase.getBufferPool().getPage(pageID);
-        BTreeEntry entry;
+        BPTreeInternalPage aInternalPage = (BPTreeInternalPage) DataBase.getBufferPool().getPage(pageID);
+        BPTreeEntry entry;
 
-        Iterator<BTreeEntry> iterator = aInternalPage.getIterator();
+        Iterator<BPTreeEntry> iterator = aInternalPage.getIterator();
         entry = iterator.next();
 
-        BTreePageID nextSearchPageId;
+        BPTreePageID nextSearchPageId;
         if (indexField == null) { // 特殊情况，对于null值，一律从左树中查找
             nextSearchPageId = entry.getLeftChildPageID();
         } else {
@@ -1015,20 +1015,20 @@ public class BTreeFile implements TableFile {
 
     @Override
     public ITableFileIterator getIterator() {
-        return new BtreeTableFileIterator(this);
+        return new BPTreeTableFileIterator(this);
     }
 
     public ITableFileIterator getIndexIterator(IndexPredicate indexPredicate) {
-        return new BtreeIndexIterator(this, indexPredicate);
+        return new BPTreeIndexIterator(this, indexPredicate);
     }
 
     //====================================迭代器======================================
-    private static class BtreeTableFileIterator implements ITableFileIterator {
+    private static class BPTreeTableFileIterator implements ITableFileIterator {
 
         /**
          * 当前页
          */
-        private BTreeLeafPage curPage;
+        private BPTreeLeafPage curPage;
         /**
          * 行迭代器
          */
@@ -1037,20 +1037,20 @@ public class BTreeFile implements TableFile {
         /**
          * 文件
          */
-        private BTreeFile bTreeFile;
+        private BPTreeFile bpTreeFile;
 
         private Row next = null;
 
-        public BtreeTableFileIterator(BTreeFile bTreeFile) {
-            this.bTreeFile = bTreeFile;
+        public BPTreeTableFileIterator(BPTreeFile bpTreeFile) {
+            this.bpTreeFile = bpTreeFile;
         }
 
         @Override
         public void open() throws DbException {
             // 找到文件的根指针页，拿到根节点页ID，从根节点找到第一个叶子页面
-            BTreeRootPtrPage page = (BTreeRootPtrPage) DataBase.getBufferPool()
-                    .getPage(BTreeRootPtrPage.getRootPtrPageID(bTreeFile.getTableId()));
-            this.curPage = bTreeFile.findLeafPage(page.getRootNodePageID(), null);
+            BPTreeRootPtrPage page = (BPTreeRootPtrPage) DataBase.getBufferPool()
+                    .getPage(BPTreeRootPtrPage.getRootPtrPageID(bpTreeFile.getTableId()));
+            this.curPage = bpTreeFile.findLeafPage(page.getRootNodePageID(), null);
             this.rowIterator = curPage.getRowIterator();
         }
 
@@ -1089,11 +1089,11 @@ public class BTreeFile implements TableFile {
 
             // 本页读取完后，读取下一页,在叶子节点层读取，读取右兄弟获取下一页pageID
             while (rowIterator == null && curPage != null) {
-                BTreePageID nextPageID = curPage.getRightSibPageID();
+                BPTreePageID nextPageID = curPage.getRightSibPageID();
                 if (nextPageID == null) {
                     curPage = null;
                 } else {
-                    curPage = (BTreeLeafPage) DataBase.getBufferPool().getPage(nextPageID);
+                    curPage = (BPTreeLeafPage) DataBase.getBufferPool().getPage(nextPageID);
                     rowIterator = curPage.getRowIterator();
                     if (!rowIterator.hasNext()) {
                         rowIterator = null;
@@ -1109,17 +1109,17 @@ public class BTreeFile implements TableFile {
         }
     }
 
-    private static class BtreeIndexIterator implements ITableFileIterator {
-        private BTreeFile bTreeFile;
+    private static class BPTreeIndexIterator implements ITableFileIterator {
+        private BPTreeFile bpTreeFile;
         private IndexPredicate indexPredicate;
-        private BTreeLeafPage curPage;
+        private BPTreeLeafPage curPage;
         private Iterator<Row> rowIterator;
         private Row next = null;
 
-        public BtreeIndexIterator(BTreeFile bTreeFile, IndexPredicate indexPredicate) {
-            this.bTreeFile = bTreeFile;
+        public BPTreeIndexIterator(BPTreeFile bpTreeFile, IndexPredicate indexPredicate) {
+            this.bpTreeFile = bpTreeFile;
 
-            if (!PredicateEnum.BTREE_INDEX_PREDICATES.contains(indexPredicate.getPredicate())) {
+            if (!PredicateEnum.BPTREE_INDEX_PREDICATES.contains(indexPredicate.getPredicate())) {
                 throw new DbException("B+Tree索引搜索暂不支持" + indexPredicate.getPredicate());
             }
             this.indexPredicate = indexPredicate;
@@ -1127,13 +1127,13 @@ public class BTreeFile implements TableFile {
 
         @Override
         public void open() throws DbException {
-            BTreeRootPtrPage page =
-                    (BTreeRootPtrPage) DataBase.getBufferPool().getPage(BTreeRootPtrPage.getRootPtrPageID(bTreeFile.getTableId()));
-            BTreePageID rootNodePageID = page.getRootNodePageID();
-            if (PredicateEnum.BTREE_INDEX_PREDICATES.contains(indexPredicate.getPredicate())) {
-                curPage = bTreeFile.findLeafPage(rootNodePageID, indexPredicate.getParamOperand());
+            BPTreeRootPtrPage page =
+                    (BPTreeRootPtrPage) DataBase.getBufferPool().getPage(BPTreeRootPtrPage.getRootPtrPageID(bpTreeFile.getTableId()));
+            BPTreePageID rootNodePageID = page.getRootNodePageID();
+            if (PredicateEnum.BPTREE_INDEX_PREDICATES.contains(indexPredicate.getPredicate())) {
+                curPage = bpTreeFile.findLeafPage(rootNodePageID, indexPredicate.getParamOperand());
             } else {
-                curPage = bTreeFile.findLeafPage(rootNodePageID, null);
+                curPage = bpTreeFile.findLeafPage(rootNodePageID, null);
             }
             rowIterator = curPage.getRowIterator();
         }
@@ -1150,12 +1150,12 @@ public class BTreeFile implements TableFile {
                     Row row = rowIterator.next();
 
                     // 判断是否满足条件
-                    if (row.getField(bTreeFile.getKeyFieldIndex()).compare(indexPredicate.getPredicate(),
+                    if (row.getField(bpTreeFile.getKeyFieldIndex()).compare(indexPredicate.getPredicate(),
                             indexPredicate.getParamOperand())) {
                         return row;
                     } else if (indexPredicate.getPredicate() == PredicateEnum.EQUALS
                             // 所有元素均大于给定的参数
-                            && row.getField(bTreeFile.getKeyFieldIndex()).compare(PredicateEnum.GREATER_THAN,
+                            && row.getField(bpTreeFile.getKeyFieldIndex()).compare(PredicateEnum.GREATER_THAN,
                             indexPredicate.getParamOperand())) {
                         return null;
                     } else if (indexPredicate.getPredicate() == PredicateEnum.LESS_THAN
@@ -1165,11 +1165,11 @@ public class BTreeFile implements TableFile {
                     }
                 }
 
-                BTreePageID nextPage = curPage.getRightSibPageID();
+                BPTreePageID nextPage = curPage.getRightSibPageID();
                 if (nextPage == null) {
                     return null;
                 } else {
-                    curPage = (BTreeLeafPage) DataBase.getBufferPool().getPage(nextPage);
+                    curPage = (BPTreeLeafPage) DataBase.getBufferPool().getPage(nextPage);
                     rowIterator = curPage.getRowIterator();
                 }
             }

@@ -1,4 +1,4 @@
-package com.microdb.model.page.btree;
+package com.microdb.model.page.bptree;
 
 import com.microdb.model.field.Field;
 
@@ -8,7 +8,7 @@ import com.microdb.model.field.Field;
  * @author zhangjw
  * @version 1.0
  */
-public class BTreeEntry {
+public class BPTreeEntry {
     /**
      * 作为索引的键值
      */
@@ -17,12 +17,12 @@ public class BTreeEntry {
     /**
      * 左孩子PageID
      */
-    private BTreePageID leftChildPageID;
+    private BPTreePageID leftChildPageID;
 
     /**
      * 右孩子PageID
      */
-    private BTreePageID rightChildPageID;
+    private BPTreePageID rightChildPageID;
 
 
     /**
@@ -31,7 +31,7 @@ public class BTreeEntry {
     private KeyItem keyItem;
 
 
-    public BTreeEntry(Field key, BTreePageID leftChildPageID, BTreePageID rightChildPageID) {
+    public BPTreeEntry(Field key, BPTreePageID leftChildPageID, BPTreePageID rightChildPageID) {
         this.key = key;
         this.leftChildPageID = leftChildPageID;
         this.rightChildPageID = rightChildPageID;
@@ -41,11 +41,11 @@ public class BTreeEntry {
         return key;
     }
 
-    public BTreePageID getLeftChildPageID() {
+    public BPTreePageID getLeftChildPageID() {
         return leftChildPageID;
     }
 
-    public BTreePageID getRightChildPageID() {
+    public BPTreePageID getRightChildPageID() {
         return rightChildPageID;
     }
 
@@ -53,11 +53,11 @@ public class BTreeEntry {
         this.key = key;
     }
 
-    public void setLeftChildPageID(BTreePageID leftChildPageID) {
+    public void setLeftChildPageID(BPTreePageID leftChildPageID) {
         this.leftChildPageID = leftChildPageID;
     }
 
-    public void setRightChildPageID(BTreePageID rightChildPageID) {
+    public void setRightChildPageID(BPTreePageID rightChildPageID) {
         this.rightChildPageID = rightChildPageID;
     }
 
@@ -79,7 +79,7 @@ public class BTreeEntry {
 
     @Override
     public String toString() {
-        return "BTreeEntry{" +
+        return "BPTreeEntry{" +
                 "key=" + key +
                 ", leftChildPage=" + leftChildPageID.getPageNo() +
                 ", rightChildPage=" + rightChildPageID.getPageNo() +

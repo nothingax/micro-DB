@@ -1,4 +1,4 @@
-package com.microdb.model.page.btree;
+package com.microdb.model.page.bptree;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.Row;
@@ -15,7 +15,7 @@ import java.util.Iterator;
  * @author zhangjw
  * @version 1.0
  */
-public class BTreeHeaderPage extends BTreePage implements Serializable{
+public class BPTreeHeaderPage extends BPTreePage implements Serializable{
     private static final long serialVersionUID = 6252559806123400153L;
 
     /**
@@ -26,7 +26,7 @@ public class BTreeHeaderPage extends BTreePage implements Serializable{
     /**
      * slot使用状态标识位图
      * 每个槽位记录文件中的一个PageNo的使用状态，占用空间为1Byte，
-     * slotUsageStatusBitMap[i] 表示的是File中 prePageCount * BTreeHeaderPage.maxSlotNum + i 个pageNo的使用状态
+     * slotUsageStatusBitMap[i] 表示的是File中 prePageCount * BPTreeHeaderPage.maxSlotNum + i 个pageNo的使用状态
      */
     private boolean[] slotUsageStatusBitMap;
 
@@ -43,10 +43,10 @@ public class BTreeHeaderPage extends BTreePage implements Serializable{
     /**
      * 槽位数量
      */
-    public static final int maxSlotNum = Page.defaultPageSizeInByte - 2 * BTreeHeaderPage.POINTER_SIZE_IN_BYTE;
+    public static final int maxSlotNum = Page.defaultPageSizeInByte - 2 * BPTreeHeaderPage.POINTER_SIZE_IN_BYTE;
 
-    public BTreeHeaderPage(BTreePageID bTreePageID, byte[] pageData) throws IOException {
-        this.pageID = bTreePageID;
+    public BPTreeHeaderPage(BPTreePageID bpTreePageID, byte[] pageData) throws IOException {
+        this.pageID = bpTreePageID;
         deserialize(pageData);
     }
 
@@ -103,36 +103,36 @@ public class BTreeHeaderPage extends BTreePage implements Serializable{
         return null;
     }
 
-    public BTreePageID getNextPageID() {
+    public BPTreePageID getNextPageID() {
         if (nextHeaderPageNo == 0) {
             return null;
         }
-        return new BTreePageID(pageID.getTableId(), nextHeaderPageNo, BTreePageType.HEADER);
+        return new BPTreePageID(pageID.getTableId(), nextHeaderPageNo, BPTreePageType.HEADER);
     }
 
-    public void setNextHeaderPageNoID(BTreePageID nextHeaderPageNoID) {
+    public void setNextHeaderPageNoID(BPTreePageID nextHeaderPageNoID) {
         if (nextHeaderPageNoID == null) {
             nextHeaderPageNo = 0;
         } else {
             if (nextHeaderPageNoID.getTableId() != pageID.getTableId()) {
                 throw new DbException("table id not match");
             }
-            if (nextHeaderPageNoID.getPageType() != BTreePageType.HEADER) {
-                throw new DbException("page tye must be BTreePageType.HEADER");
+            if (nextHeaderPageNoID.getPageType() != BPTreePageType.HEADER) {
+                throw new DbException("page tye must be BPTreePageType.HEADER");
             }
             nextHeaderPageNo = nextHeaderPageNoID.getPageNo();
         }
     }
 
-    public void setPrevHeaderPageID(BTreePageID prevHeaderPageID) {
+    public void setPrevHeaderPageID(BPTreePageID prevHeaderPageID) {
         if (prevHeaderPageID == null) {
             prevHeaderPageNo = 0;
         } else {
             if (prevHeaderPageID.getTableId() != pageID.getTableId()) {
                 throw new DbException("table id not match");
             }
-            if (prevHeaderPageID.getPageType() != BTreePageType.HEADER) {
-                throw new DbException("page tye must be BTreePageType.HEADER");
+            if (prevHeaderPageID.getPageType() != BPTreePageType.HEADER) {
+                throw new DbException("page tye must be BPTreePageType.HEADER");
             }
 
             prevHeaderPageNo = prevHeaderPageID.getPageNo();

@@ -1,4 +1,4 @@
-package com.microdb.model.page.btree;
+package com.microdb.model.page.bptree;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * @author zhangjw
  * @version 1.0
  */
-public class BTreeLeafPage extends BTreePage implements Serializable {
+public class BPTreeLeafPage extends BPTreePage implements Serializable {
     private static final long serialVersionUID = -7469925154877861517L;
 
     /**
@@ -62,7 +62,7 @@ public class BTreeLeafPage extends BTreePage implements Serializable {
      */
     private TableDesc tableDesc;
 
-    public BTreeLeafPage(BTreePageID pageID, byte[] pageData, int keyFieldIndex) throws IOException {
+    public BPTreeLeafPage(BPTreePageID pageID, byte[] pageData, int keyFieldIndex) throws IOException {
         this.pageID = pageID;
         this.tableDesc = DataBase.getInstance().getDbTableById(pageID.getTableId()).getTableDesc();
         this.keyFieldIndex = keyFieldIndex;
@@ -76,7 +76,7 @@ public class BTreeLeafPage extends BTreePage implements Serializable {
         check(this);
     }
 
-    private void check(BTreeLeafPage leafPage) {
+    private void check(BPTreeLeafPage leafPage) {
         // bitmap中数量
         int existRowCount = leafPage.getExistRowCount();
 
@@ -115,7 +115,7 @@ public class BTreeLeafPage extends BTreePage implements Serializable {
     }
 
     @Override
-    public BTreePageID getPageID() {
+    public BPTreePageID getPageID() {
         return pageID;
     }
 
@@ -163,7 +163,7 @@ public class BTreeLeafPage extends BTreePage implements Serializable {
         return baos.toByteArray();
     }
 
-    private void print(BTreeLeafPage leafPage) {
+    private void print(BPTreeLeafPage leafPage) {
         int pageNo = leafPage.getPageID().getPageNo();
         int parentPageNo = leafPage.getParentPageID().getPageNo();
         int existRowCount = leafPage.getExistRowCount();
@@ -307,11 +307,11 @@ public class BTreeLeafPage extends BTreePage implements Serializable {
 
     @Override
     public Iterator<Row> getRowIterator() {
-        return new BTreeLeafPageIterator(this);
+        return new BPTreeLeafPageIterator(this);
     }
 
     public Iterator<Row> getReverseIterator() {
-        return new BTreeLeafPageReverseIterator(this);
+        return new BPTreeLeafPageReverseIterator(this);
     }
 
     /**
@@ -360,43 +360,43 @@ public class BTreeLeafPage extends BTreePage implements Serializable {
         }
     }
 
-    private BTreePageID pageNoToPageID(int pageNo) {
+    private BPTreePageID pageNoToPageID(int pageNo) {
         if (pageNo == 0) {
             return null;
         }
-        return new BTreePageID(pageID.getTableId(), pageNo, BTreePageType.LEAF);
+        return new BPTreePageID(pageID.getTableId(), pageNo, BPTreePageType.LEAF);
     }
 
-    public BTreePageID getRightSibPageID() {
+    public BPTreePageID getRightSibPageID() {
         return this.pageNoToPageID(rightSiblingPageNo);
     }
 
-    public BTreePageID getLeftSibPageID() {
+    public BPTreePageID getLeftSibPageID() {
         return this.pageNoToPageID(leftSiblingPageNo);
     }
 
-    public void setRightSibPageID(BTreePageID rightSibPageID) {
+    public void setRightSibPageID(BPTreePageID rightSibPageID) {
         if (rightSibPageID == null) {
             rightSiblingPageNo = 0;
         } else {
             if (rightSibPageID.getTableId() != pageID.getTableId()) {
                 throw new DbException("tableID mismatch");
             }
-            if (rightSibPageID.getPageType() != BTreePageType.LEAF) {
+            if (rightSibPageID.getPageType() != BPTreePageType.LEAF) {
                 throw new DbException("rightSibPage must be leaf");
             }
             rightSiblingPageNo = rightSibPageID.getPageNo();
         }
     }
 
-    public void setLeftSibPageID(BTreePageID leftSibPageID) {
+    public void setLeftSibPageID(BPTreePageID leftSibPageID) {
         if (leftSibPageID == null) {
             leftSiblingPageNo = 0;
         } else {
             if (leftSibPageID.getTableId() != pageID.getTableId()) {
                 throw new DbException("tableID mismatch");
             }
-            if (leftSibPageID.getPageType() != BTreePageType.LEAF) {
+            if (leftSibPageID.getPageType() != BPTreePageType.LEAF) {
                 throw new DbException("leftSibPage must be leaf");
             }
             leftSiblingPageNo = leftSibPageID.getPageNo();
@@ -467,13 +467,13 @@ public class BTreeLeafPage extends BTreePage implements Serializable {
     /**
      * 正向迭代器
      */
-    public class BTreeLeafPageIterator implements Iterator<Row> {
+    public class BPTreeLeafPageIterator implements Iterator<Row> {
         int curIndex;
         Row nextRowToReturn = null;
-        BTreeLeafPage leafPage;
+        BPTreeLeafPage leafPage;
 
 
-        public BTreeLeafPageIterator(BTreeLeafPage leafPage) {
+        public BPTreeLeafPageIterator(BPTreeLeafPage leafPage) {
             this.leafPage = leafPage;
             this.curIndex = 0;
             curIndex = findNextUsedSlotInclusive(curIndex);
@@ -496,12 +496,12 @@ public class BTreeLeafPage extends BTreePage implements Serializable {
     /**
      * 反向迭代器
      */
-    public class BTreeLeafPageReverseIterator implements Iterator<Row> {
+    public class BPTreeLeafPageReverseIterator implements Iterator<Row> {
         int curIndex;
         Row nextRowToReturn = null;
-        BTreeLeafPage leafPage;
+        BPTreeLeafPage leafPage;
 
-        public BTreeLeafPageReverseIterator(BTreeLeafPage leafPage) {
+        public BPTreeLeafPageReverseIterator(BPTreeLeafPage leafPage) {
             this.leafPage = leafPage;
             this.curIndex = findPrevUsedSlotInclusive(leafPage.getMaxSlotNum() - 1);
         }

@@ -1,4 +1,4 @@
-package com.microdb.model.page.btree;
+package com.microdb.model.page.bptree;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.Row;
@@ -17,13 +17,13 @@ import java.util.Iterator;
  * @author zhangjw
  * @version 1.0
  */
-public abstract class BTreePage extends DirtyPage implements Page, Serializable {
+public abstract class BPTreePage extends DirtyPage implements Page, Serializable {
 
     private static final long serialVersionUID = -6147293644376452185L;
     /**
      * 页ID
      */
-    protected BTreePageID pageID;
+    protected BPTreePageID pageID;
 
     /**
      * 父节点pageNo,可能是internal节点或者是rootPtr节点
@@ -41,7 +41,7 @@ public abstract class BTreePage extends DirtyPage implements Page, Serializable 
     protected TableDesc tableDesc;
 
     @Override
-    public BTreePageID getPageID() {
+    public BPTreePageID getPageID() {
         return pageID;
     }
 
@@ -83,7 +83,7 @@ public abstract class BTreePage extends DirtyPage implements Page, Serializable 
         dos.write(emptyBytes, 0, bytesNum);
     }
 
-    public void setParentPageID(BTreePageID parentPageID) {
+    public void setParentPageID(BPTreePageID parentPageID) {
         if (parentPageID == null) {
             throw new DbException("parent id must not be null");
         }
@@ -91,20 +91,20 @@ public abstract class BTreePage extends DirtyPage implements Page, Serializable 
             throw new DbException("table id mismatch");
         }
 
-        if (parentPageID.getPageType() == BTreePageType.ROOT_PTR) {
+        if (parentPageID.getPageType() == BPTreePageType.ROOT_PTR) {
             parentPageNo = 0;
-        } else if (parentPageID.getPageType() == BTreePageType.INTERNAL) {
+        } else if (parentPageID.getPageType() == BPTreePageType.INTERNAL) {
             parentPageNo = parentPageID.getPageNo();
         } else {
             throw new DbException("parent must be internal or root node");
         }
     }
 
-    public BTreePageID getParentPageID() {
+    public BPTreePageID getParentPageID() {
         if (parentPageNo == 0) { // 没有内部节点时，父节点是RootPtr
-            return new BTreePageID(this.pageID.getTableId(), 0, BTreePageType.ROOT_PTR);
+            return new BPTreePageID(this.pageID.getTableId(), 0, BPTreePageType.ROOT_PTR);
         }
-        return new BTreePageID(this.pageID.getTableId(), parentPageNo, BTreePageType.INTERNAL);
+        return new BPTreePageID(this.pageID.getTableId(), parentPageNo, BPTreePageType.INTERNAL);
     }
 
 }

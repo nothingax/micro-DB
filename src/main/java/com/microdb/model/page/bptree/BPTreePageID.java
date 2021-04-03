@@ -1,4 +1,4 @@
-package com.microdb.model.page.btree;
+package com.microdb.model.page.bptree;
 
 import com.microdb.model.page.PageID;
 
@@ -11,7 +11,7 @@ import java.util.Objects;
  * @author zhangjw
  * @version 1.0
  */
-public class BTreePageID implements PageID, Serializable {
+public class BPTreePageID implements PageID, Serializable {
 
     private static final long serialVersionUID = -4673705142358467380L;
     /**
@@ -27,11 +27,11 @@ public class BTreePageID implements PageID, Serializable {
     /**
      * 页类型
      *
-     * @see BTreePageType
+     * @see BPTreePageType
      */
     private int pageType;
 
-    public BTreePageID(int tableId, int pageNo, int pageType) {
+    public BPTreePageID(int tableId, int pageNo, int pageType) {
         this.tableId = tableId;
         this.pageNo = pageNo;
         this.pageType = pageType;
@@ -59,7 +59,7 @@ public class BTreePageID implements PageID, Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        BTreePageID that = (BTreePageID) o;
+        BPTreePageID that = (BPTreePageID) o;
         return tableId == that.tableId &&
                 pageNo == that.pageNo &&
                 pageType == that.pageType;
@@ -72,7 +72,7 @@ public class BTreePageID implements PageID, Serializable {
 
     @Override
     public String toString() {
-        return "BTreePageID{" +
+        return "BPTreePageID{" +
                 "tableId=" + tableId +
                 ", pageNo=" + pageNo +
                 ", pageType=" + pageType +

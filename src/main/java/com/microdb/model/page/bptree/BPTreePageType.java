@@ -1,4 +1,4 @@
-package com.microdb.model.page.btree;
+package com.microdb.model.page.bptree;
 
 /**
  * b+ tree page类型常量
@@ -6,7 +6,7 @@ package com.microdb.model.page.btree;
  * @author zhangjw
  * @version 1.0
  */
-public interface BTreePageType {
+public interface BPTreePageType {
     /**
      * 存储B+树根节点指针的页
      */

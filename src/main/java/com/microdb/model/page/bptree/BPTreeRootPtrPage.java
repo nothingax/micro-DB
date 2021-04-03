@@ -1,4 +1,4 @@
-package com.microdb.model.page.btree;
+package com.microdb.model.page.bptree;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.Row;
@@ -13,7 +13,7 @@ import java.util.Iterator;
  * @author zhangjw
  * @version 1.0
  */
-public class BTreeRootPtrPage extends BTreePage implements Serializable{
+public class BPTreeRootPtrPage extends BPTreePage implements Serializable{
     private static final long serialVersionUID = 8954163249356806976L;
     /**
      * 9字节 4+1+4
@@ -39,7 +39,7 @@ public class BTreeRootPtrPage extends BTreePage implements Serializable{
     private int firstHeaderPageNo;
 
 
-    public BTreeRootPtrPage(BTreePageID pageID, byte[] pageData) throws IOException {
+    public BPTreeRootPtrPage(BPTreePageID pageID, byte[] pageData) throws IOException {
         this.pageID = pageID;
         deserialize(pageData);
     }
@@ -52,25 +52,25 @@ public class BTreeRootPtrPage extends BTreePage implements Serializable{
     }
 
     /**
-     * 获取ptr，Btree文件的第0页
+     * 获取ptr，BPTree文件的第0页
      */
-    public static BTreePageID getRootPtrPageID(int tableId) {
-        return new BTreePageID(tableId, 0, BTreePageType.ROOT_PTR);
+    public static BPTreePageID getRootPtrPageID(int tableId) {
+        return new BPTreePageID(tableId, 0, BPTreePageType.ROOT_PTR);
     }
 
     @Override
-    public BTreePageID getPageID() {
+    public BPTreePageID getPageID() {
         return pageID;
     }
 
     /**
      * 获取B+Tree的根节点页
      */
-    public BTreePageID getRootNodePageID() {
+    public BPTreePageID getRootNodePageID() {
         if (rootNodePageNo == 0) {
             return null;
         }
-        return new BTreePageID(pageID.getTableId(), rootNodePageNo, rootNodePageType);
+        return new BPTreePageID(pageID.getTableId(), rootNodePageNo, rootNodePageType);
     }
 
 
@@ -123,20 +123,20 @@ public class BTreeRootPtrPage extends BTreePage implements Serializable{
         return null;
     }
 
-    public void setRootPageID(BTreePageID bTreePageID) {
-        if (bTreePageID == null) {
+    public void setRootPageID(BPTreePageID bpTreePageID) {
+        if (bpTreePageID == null) {
             return;
         }
-        this.rootNodePageType = bTreePageID.getPageType();
-        this.rootNodePageNo = bTreePageID.getPageNo();
+        this.rootNodePageType = bpTreePageID.getPageType();
+        this.rootNodePageNo = bpTreePageID.getPageNo();
     }
 
-    public void setFirstHeaderPageID(BTreePageID firstHeaderPageID) {
+    public void setFirstHeaderPageID(BPTreePageID firstHeaderPageID) {
         if (firstHeaderPageID == null) {
             firstHeaderPageNo = 0;
         } else {
-            if (firstHeaderPageID.getPageType() != BTreePageType.HEADER) {
-                throw new DbException("first header page iD type must be BTreePageType.HEADER");
+            if (firstHeaderPageID.getPageType() != BPTreePageType.HEADER) {
+                throw new DbException("first header page iD type must be BPTreePageType.HEADER");
             }
             if (firstHeaderPageID.getTableId() != this.pageID.getTableId()) {
                 throw new DbException("page id is not match");
@@ -145,21 +145,21 @@ public class BTreeRootPtrPage extends BTreePage implements Serializable{
         }
     }
 
-    public BTreePageID getFirstHeaderPageID() {
+    public BPTreePageID getFirstHeaderPageID() {
         if ((firstHeaderPageNo == 0)) {
             return null;
         }
-        return new BTreePageID(pageID.getTableId(), firstHeaderPageNo, BTreePageType.HEADER);
+        return new BPTreePageID(pageID.getTableId(), firstHeaderPageNo, BPTreePageType.HEADER);
     }
 
-    public void setRootNodePageID(BTreePageID rootNodePageID) {
+    public void setRootNodePageID(BPTreePageID rootNodePageID) {
 
         if (rootNodePageID == null) {
             rootNodePageNo = 0;
         } else {
-            if (rootNodePageID.getPageType() != BTreePageType.INTERNAL
-                    && rootNodePageID.getPageType() != BTreePageType.LEAF) {
-                throw new DbException("root node page iD type must be BTreePageType.INTERNAL or BTreePageType.LEAF");
+            if (rootNodePageID.getPageType() != BPTreePageType.INTERNAL
+                    && rootNodePageID.getPageType() != BPTreePageType.LEAF) {
+                throw new DbException("root node page iD type must be BPTreePageType.INTERNAL or BPTreePageType.LEAF");
             }
             if (rootNodePageID.getTableId() != this.pageID.getTableId()) {
                 throw new DbException("page id is not match");

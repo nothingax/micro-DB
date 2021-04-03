@@ -1,4 +1,4 @@
-package com.microdb.model.page.btree;
+package com.microdb.model.page.bptree;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
@@ -15,7 +15,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * BTreeInternalPage 存储索引Key
+ * BPTreeInternalPage 存储索引Key
  * 格式：槽位状态标记（每一个slot占用1Byte）、父指针(4Byte)、子页类型（1Byte）、
  * 索引键值（m+1个位置，位置0不存储）、子节点指针(m+1 Byte)
  * m个key
@@ -25,7 +25,7 @@ import java.util.NoSuchElementException;
  * @author zhangjw
  * @version 1.0
  */
-public class BTreeInternalPage extends BTreePage implements Serializable{
+public class BPTreeInternalPage extends BPTreePage implements Serializable{
 
     private static final long serialVersionUID = -375689079604630693L;
 
@@ -41,13 +41,13 @@ public class BTreeInternalPage extends BTreePage implements Serializable{
         //     this.rightPageNo = rightPageNo;
         // }
 
-        public ChildPages(BTreeEntry entry) {
+        public ChildPages(BPTreeEntry entry) {
             this.leftPageNo = entry.getLeftChildPageID().getPageNo();
             this.rightPageNo = entry.getRightChildPageID().getPageNo();
         }
 
-        BTreePageID toPageID(int pageNo) {
-            return new BTreePageID(pageID.getTableId(), pageNo, childrenPageType);
+        BPTreePageID toPageID(int pageNo) {
+            return new BPTreePageID(pageID.getTableId(), pageNo, childrenPageType);
         }
     }
 
@@ -96,9 +96,9 @@ public class BTreeInternalPage extends BTreePage implements Serializable{
         return new byte[Page.defaultPageSizeInByte];
     }
 
-    public BTreeInternalPage(BTreePageID bTreePageID, byte[] pageData, int keyFieldIndex) throws IOException {
-        this.pageID = bTreePageID;
-        this.tableDesc = DataBase.getInstance().getDbTableById(bTreePageID.getTableId()).getTableDesc();
+    public BPTreeInternalPage(BPTreePageID bpTreePageID, byte[] pageData, int keyFieldIndex) throws IOException {
+        this.pageID = bpTreePageID;
+        this.tableDesc = DataBase.getInstance().getDbTableById(bpTreePageID.getTableId()).getTableDesc();
         this.maxSlotNum = calculateMaxSlotNum(tableDesc);
         this.keyFieldIndex = keyFieldIndex;
         deserialize(pageData);
@@ -268,15 +268,15 @@ public class BTreeInternalPage extends BTreePage implements Serializable{
     /**
      * 返回该页的迭代器
      */
-    public Iterator<BTreeEntry> getIterator() {
-        return new BTreeInternalPageIterator(this);
+    public Iterator<BPTreeEntry> getIterator() {
+        return new BPTreeInternalPageIterator(this);
     }
 
     /**
      * 找位置，移动数据空出位置，插入节点
      */
-    public void insertEntry(BTreeEntry entry) {
-        if (childrenPageType == BTreePageType.ROOT_PTR) {
+    public void insertEntry(BPTreeEntry entry) {
+        if (childrenPageType == BPTreePageType.ROOT_PTR) {
             childrenPageType = entry.getLeftChildPageType();
         }
 
@@ -346,7 +346,7 @@ public class BTreeInternalPage extends BTreePage implements Serializable{
         }
     }
 
-    private void updateChild(BTreeEntry entry, int slotIndex) {
+    private void updateChild(BPTreeEntry entry, int slotIndex) {
         // 更新子页
         int before = findPrevUsedSlotExclusive(slotIndex);
         if (before == -1) {
@@ -367,7 +367,7 @@ public class BTreeInternalPage extends BTreePage implements Serializable{
         }
     }
 
-    private void setEntry(BTreeEntry entry, int insertIndex) {
+    private void setEntry(BPTreeEntry entry, int insertIndex) {
         markSlotUsed(insertIndex, true);
         keys[insertIndex] = entry.getKey();
         childPages[insertIndex] = new ChildPages(entry);
@@ -463,15 +463,15 @@ public class BTreeInternalPage extends BTreePage implements Serializable{
         return emptySlot;
     }
 
-    public Iterator<BTreeEntry> getReverseIterator() {
-        return new BTreeInternalPageReverseIterator(this);
+    public Iterator<BPTreeEntry> getReverseIterator() {
+        return new BPTreeInternalPageReverseIterator(this);
     }
 
     /**
      * 从左端开始删除entry
      * 用于左侧页发起重分布，将右页数据挪到左页/与右页合并时使用
      */
-    public void deleteEntryFromTheLeft(BTreeEntry entry) {
+    public void deleteEntryFromTheLeft(BPTreeEntry entry) {
 
         // 第一个或最后一个直接删除
         // if (slotIndexDeleted != findFirstUsedSlot() && slotIndexDeleted != findLastUsedSlot()) {
@@ -501,7 +501,7 @@ public class BTreeInternalPage extends BTreePage implements Serializable{
      * left 和  right 两页合并，right页删除
      * entry.right 和(entry+1).left 删除，entry.left应赋值给（entry+1).left
      */
-    public void deleteEntryAndRightChildPage(BTreeEntry entry) {
+    public void deleteEntryAndRightChildPage(BPTreeEntry entry) {
         int slotIndexDeleted = entry.getKeyItem().getSlotIndex();
         int nextUsedSlotExclusive = findNextUsedSlotExclusive(slotIndexDeleted);
 
@@ -519,7 +519,7 @@ public class BTreeInternalPage extends BTreePage implements Serializable{
      * 从由右端开始删除entry
      * internal page 分裂时使用，leftPage 分裂时，从右端开始迁走数据
      */
-    public void deleteEntryFromTheRight(BTreeEntry entry) {
+    public void deleteEntryFromTheRight(BPTreeEntry entry) {
         deleteEntryAndRightChildPage(entry);
 
         // int slotIndexDeleted = entry.getKeyItem().getSlotIndex();
@@ -601,7 +601,7 @@ public class BTreeInternalPage extends BTreePage implements Serializable{
     /**
      * 更新entry
      */
-    public void updateEntry(BTreeEntry entry) {
+    public void updateEntry(BPTreeEntry entry) {
         KeyItem keyItem = entry.getKeyItem();
 
         // 校验
@@ -626,14 +626,14 @@ public class BTreeInternalPage extends BTreePage implements Serializable{
         keys[slotIndex] = entry.getKey();
     }
 
-    private BTreeEntry getEntry(int index) {
+    private BPTreeEntry getEntry(int index) {
         if (index < 0 || !isSlotUsed(index)) {
             // throw new DbException(String.format("不存在索引为%s的Entry", index));
             return null;
         }
-        BTreePageID leftPageID = new BTreePageID(this.pageID.getTableId(), childPages[index].leftPageNo, childrenPageType);
-        BTreePageID rightPageID = new BTreePageID(this.pageID.getTableId(), childPages[index].rightPageNo, childrenPageType);
-        BTreeEntry entry = new BTreeEntry(keys[index], leftPageID, rightPageID);
+        BPTreePageID leftPageID = new BPTreePageID(this.pageID.getTableId(), childPages[index].leftPageNo, childrenPageType);
+        BPTreePageID rightPageID = new BPTreePageID(this.pageID.getTableId(), childPages[index].rightPageNo, childrenPageType);
+        BPTreeEntry entry = new BPTreeEntry(keys[index], leftPageID, rightPageID);
         entry.setKeyItem(new KeyItem(this.pageID, index));
         return entry;
     }
@@ -642,15 +642,15 @@ public class BTreeInternalPage extends BTreePage implements Serializable{
     /**
      * 查找B+树内部节点的迭代器
      */
-    public class BTreeInternalPageIterator implements Iterator<BTreeEntry> {
+    public class BPTreeInternalPageIterator implements Iterator<BPTreeEntry> {
         /**
          * 当前遍历的下标
          */
         int curIndex = 0;
 
-        BTreeInternalPage internalPage;
+        BPTreeInternalPage internalPage;
 
-        public BTreeInternalPageIterator(BTreeInternalPage internalPage) {
+        public BPTreeInternalPageIterator(BPTreeInternalPage internalPage) {
             this.internalPage = internalPage;
             curIndex = findNextUsedSlotInclusive(curIndex);
         }
@@ -659,12 +659,12 @@ public class BTreeInternalPage extends BTreePage implements Serializable{
             return curIndex != -1;
         }
 
-        public BTreeEntry next() {
+        public BPTreeEntry next() {
             if (curIndex == -1) {
                 throw new NoSuchElementException();
             }
 
-            BTreeEntry entry = getEntry(curIndex);
+            BPTreeEntry entry = getEntry(curIndex);
             curIndex = findNextUsedSlotExclusive(curIndex);
             return entry;
         }
@@ -673,15 +673,15 @@ public class BTreeInternalPage extends BTreePage implements Serializable{
     /**
      * 反向迭代器
      */
-    public class BTreeInternalPageReverseIterator implements Iterator<BTreeEntry> {
+    public class BPTreeInternalPageReverseIterator implements Iterator<BPTreeEntry> {
         /**
          * 当前遍历的下标
          */
         int curIndex;
 
-        BTreeInternalPage internalPage;
+        BPTreeInternalPage internalPage;
 
-        public BTreeInternalPageReverseIterator(BTreeInternalPage internalPage) {
+        public BPTreeInternalPageReverseIterator(BPTreeInternalPage internalPage) {
             this.internalPage = internalPage;
             // 从右往左，找到第一个使用的槽位
             curIndex = findPrevUsedSlotInclusive(getMaxSlotNum() - 1);
@@ -691,11 +691,11 @@ public class BTreeInternalPage extends BTreePage implements Serializable{
             return curIndex != -1;
         }
 
-        public BTreeEntry next() {
+        public BPTreeEntry next() {
             if (curIndex == -1) {
                 throw new NoSuchElementException();
             }
-            BTreeEntry entry = getEntry(curIndex);
+            BPTreeEntry entry = getEntry(curIndex);
             curIndex = findPrevUsedSlotExclusive(curIndex);
             return entry;
         }

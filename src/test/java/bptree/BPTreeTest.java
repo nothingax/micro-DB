@@ -1,17 +1,17 @@
-package btree;
+package bptree;
 
 import com.microdb.model.DataBase;
 import com.microdb.model.DbTable;
 import com.microdb.model.Row;
 import com.microdb.model.TableDesc;
-import com.microdb.model.dbfile.BTreeFile;
+import com.microdb.model.dbfile.BPTreeFile;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
 import com.microdb.operator.Delete;
 import com.microdb.operator.PredicateEnum;
 import com.microdb.operator.SeqScan;
-import com.microdb.operator.btree.BtreeScan;
-import com.microdb.operator.btree.IndexPredicate;
+import com.microdb.operator.bptree.BPTreeScan;
+import com.microdb.operator.bptree.IndexPredicate;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,7 +29,7 @@ import static org.junit.Assert.assertFalse;
  * @author zhangjw
  * @version 1.0
  */
-public class BtreeTest {
+public class BPTreeTest {
     public DataBase dataBase;
 
     private TableDesc personTableDesc;
@@ -47,8 +47,8 @@ public class BtreeTest {
         File file = new File(fileName);
         file.deleteOnExit();
         TableDesc tableDesc = new TableDesc(attributes);
-        BTreeFile bTreeFile = new BTreeFile(file, tableDesc, 0);
-        dataBase.addTable(bTreeFile, "t_person");
+        BPTreeFile bpTreeFile = new BPTreeFile(file, tableDesc, 0);
+        dataBase.addTable(bpTreeFile, "t_person");
         this.dataBase = dataBase;
 
         personTableDesc = tableDesc;
@@ -135,11 +135,11 @@ public class BtreeTest {
     }
 
     /**
-     * BtreeScan
+     * BPTreeScan
      * 带索引条件的扫描
      */
     @Test
-    public void BtreeScan() throws IOException {
+    public void BPTreeScan() throws IOException {
         DbTable person = dataBase.getDbTableByName("t_person");
         long l1 = System.currentTimeMillis();
         int num = 12;
@@ -154,7 +154,7 @@ public class BtreeTest {
         // 带索引的扫描
         IndexPredicate predicate =
                 new IndexPredicate(PredicateEnum.GREATER_THAN_OR_EQ, new IntField(5));
-        BtreeScan scan = new BtreeScan(person.getTableId(), predicate);
+        BPTreeScan scan = new BPTreeScan(person.getTableId(), predicate);
         scan.open();
         while (scan.hasNext()) {
             Row next = scan.next();
@@ -162,7 +162,7 @@ public class BtreeTest {
         }
 
         // 不带索引的扫描
-        BtreeScan scanNoIndex = new BtreeScan(person.getTableId(),null);
+        BPTreeScan scanNoIndex = new BPTreeScan(person.getTableId(),null);
         scanNoIndex.open();
         while (scanNoIndex.hasNext()) {
             Row next = scanNoIndex.next();
@@ -171,11 +171,11 @@ public class BtreeTest {
     }
 
     /**
-     * BtreeScan
+     * BPTreeScan
      * 带索引条件的扫描
      */
     @Test
-    public void BtreeDelete() throws IOException {
+    public void BPTreeDelete() throws IOException {
         DbTable person = dataBase.getDbTableByName("t_person");
         long l1 = System.currentTimeMillis();
         int num = 12;
@@ -188,7 +188,7 @@ public class BtreeTest {
             person.insertRow(row);
         }
 
-        BtreeScan scan = new BtreeScan(person.getTableId(), null);
+        BPTreeScan scan = new BPTreeScan(person.getTableId(), null);
         scan.open();
         Row next = scan.next();
 
