@@ -8,7 +8,7 @@ import com.microdb.model.field.Field;
 import com.microdb.model.page.DirtyPage;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
-import com.microdb.model.page.bptree.RowID;
+import com.microdb.model.row.RowID;
 
 import java.io.*;
 import java.util.ArrayList;

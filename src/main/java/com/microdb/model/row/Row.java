@@ -2,7 +2,6 @@ package com.microdb.model.row;
 
 import com.microdb.model.table.TableDesc;
 import com.microdb.model.field.Field;
-import com.microdb.model.page.bptree.RowID;
 
 import java.io.Serializable;
 import java.util.ArrayList;

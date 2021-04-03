@@ -1,6 +1,7 @@
 package com.microdb.model.page.bptree;
 
 import com.microdb.model.field.Field;
+import com.microdb.model.row.RowID;
 
 /**
  * B+树内部节点
@@ -61,7 +62,7 @@ public class BPTreeEntry {
         this.rightChildPageID = rightChildPageID;
     }
 
-    public RowID getRoeID() {
+    public RowID getRowID() {
         return rowID;
     }
 

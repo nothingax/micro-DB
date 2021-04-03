@@ -3,6 +3,7 @@ package com.microdb.model.page.bptree;
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
 import com.microdb.model.row.Row;
+import com.microdb.model.row.RowID;
 import com.microdb.model.table.TableDesc;
 import com.microdb.model.field.Field;
 import com.microdb.model.field.FieldType;
@@ -484,7 +485,7 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable{
         //     }
         // }
 
-        int slotIndexDeleted = entry.getRoeID().getSlotIndex();
+        int slotIndexDeleted = entry.getRowID().getSlotIndex();
         int prevUsedSlotExclusive = findPrevUsedSlotExclusive(slotIndexDeleted);
         if (prevUsedSlotExclusive != -1) {
             childPages[prevUsedSlotExclusive].rightPageNo = entry.getRightChildPageID().getPageNo();
@@ -502,7 +503,7 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable{
      * entry.right 和(entry+1).left 删除，entry.left应赋值给（entry+1).left
      */
     public void deleteEntryAndRightChildPage(BPTreeEntry entry) {
-        int slotIndexDeleted = entry.getRoeID().getSlotIndex();
+        int slotIndexDeleted = entry.getRowID().getSlotIndex();
         int nextUsedSlotExclusive = findNextUsedSlotExclusive(slotIndexDeleted);
 
         if (nextUsedSlotExclusive != -1) {
@@ -602,7 +603,7 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable{
      * 更新entry
      */
     public void updateEntry(BPTreeEntry entry) {
-        RowID rowID = entry.getRoeID();
+        RowID rowID = entry.getRowID();
 
         // 校验
         if (rowID == null) {

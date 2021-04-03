@@ -231,7 +231,7 @@ public class BPTreeTableFile implements TableFile {
             // leftEntry 是发生转移的两个page的父entry，转移过程中，leftEntry需要下降到子级
             entryToMove.setLeftChildPageID(leftEntry.getLeftChildPageID());
             entryToMove.setRightChildPageID(leftEntry.getRightChildPageID());
-            entryToMove.setRowID(leftEntry.getRoeID());
+            entryToMove.setRowID(leftEntry.getRowID());
             parentPage.updateEntry(entryToMove); //更新后，新的父entry生成，key是当前遍历的entry的key
 
             leftEntry.setLeftChildPageID(pageID);
@@ -288,7 +288,7 @@ public class BPTreeTableFile implements TableFile {
             // from页中entry被推向父页
             entryToMove.setLeftChildPageID(rightEntry.getLeftChildPageID());
             entryToMove.setRightChildPageID(rightEntry.getRightChildPageID());
-            entryToMove.setRowID(rightEntry.getRoeID());
+            entryToMove.setRowID(rightEntry.getRowID());
             parentPage.updateEntry(entryToMove);
             // 父页中的插入左页
             rightEntry.setRightChildPageID(leftChildPageIDOfEntryToMove);
