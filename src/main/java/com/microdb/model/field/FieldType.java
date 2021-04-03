@@ -26,5 +26,21 @@ public enum FieldType implements IFieldType {
                 throw new ParseException("parse field failed", e);
             }
         }
+    },
+
+    LONG() {
+        @Override
+        public int getSizeInByte() {
+            return 8;
+        }
+
+        @Override
+        public Field parse(DataInputStream dis) {
+            try {
+                return new LongField(dis.readLong());
+            } catch (IOException e) {
+                throw new ParseException("parse field failed", e);
+            }
+        }
     }
 }
