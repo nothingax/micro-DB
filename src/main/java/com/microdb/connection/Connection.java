@@ -17,7 +17,7 @@ import java.util.Objects;
  */
 public class Connection {
     private static final String DIRTY_PAGE_KEY = "dp";
-    private static final String TRANSACTION_KEY = "trans";
+    private static final String TRANSACTION_KEY = "tx";
     private static final ThreadLocal<HashMap<String, Object>> connection = new ThreadLocal<>();
 
     /**

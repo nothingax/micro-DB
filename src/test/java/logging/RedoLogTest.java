@@ -12,6 +12,7 @@ import com.microdb.model.field.IntField;
 import com.microdb.operator.SeqScan;
 import com.microdb.transaction.Lock;
 import com.microdb.transaction.Transaction;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -58,11 +59,10 @@ public class RedoLogTest {
         this.tableFile = tableFile;
     }
 
-    // @After
-    // public void after() throws IOException {
-    //     File redoFile = new File("redo");
-    //     redoFile.delete();
-    // }
+    @After
+    public void after() {
+        (new File("redo")).delete();
+    }
 
     /**
      * 提交后 崩溃恢复
