@@ -2,11 +2,11 @@ package com.microdb.operator.bptree;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
-import com.microdb.model.Row;
-import com.microdb.model.TableDesc;
-import com.microdb.model.dbfile.BPTreeFile;
-import com.microdb.model.dbfile.ITableFileIterator;
-import com.microdb.model.dbfile.TableFile;
+import com.microdb.model.row.Row;
+import com.microdb.model.table.TableDesc;
+import com.microdb.model.table.tablefile.BPTreeTableFile;
+import com.microdb.model.table.tablefile.ITableFileIterator;
+import com.microdb.model.table.tablefile.TableFile;
 import com.microdb.operator.Operator;
 
 /**
@@ -31,7 +31,7 @@ public class BPTreeScan extends Operator {
         if (this.indexPredicate == null) {
             this.tableFileIterator = tableFile.getIterator();
         } else {
-            this.tableFileIterator = ((BPTreeFile) tableFile).getIndexIterator(indexPredicate);
+            this.tableFileIterator = ((BPTreeTableFile) tableFile).getIndexIterator(indexPredicate);
         }
     }
 

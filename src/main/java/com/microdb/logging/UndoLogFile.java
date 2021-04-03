@@ -2,7 +2,7 @@ package com.microdb.logging;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
-import com.microdb.model.DbTable;
+import com.microdb.model.table.DbTable;
 import com.microdb.model.page.Page;
 import com.microdb.transaction.TransactionID;
 

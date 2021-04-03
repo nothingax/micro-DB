@@ -1,8 +1,8 @@
 package com.microdb.operator;
 
 import com.microdb.exception.DbException;
-import com.microdb.model.Row;
-import com.microdb.model.TableDesc;
+import com.microdb.model.row.Row;
+import com.microdb.model.table.TableDesc;
 
 import java.util.NoSuchElementException;
 
@@ -47,7 +47,7 @@ public abstract class Operator implements IOperatorIterator {
         Row result = nextRow;
         nextRow = null;
 
-        // if (result.getKeyItem() == null) {
+        // if (result.getRowID() == null) {
         //     throw new DbException(" slot index must not be null ");
         // }
         return result;

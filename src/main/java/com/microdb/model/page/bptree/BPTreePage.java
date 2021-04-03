@@ -1,8 +1,8 @@
 package com.microdb.model.page.bptree;
 
 import com.microdb.exception.DbException;
-import com.microdb.model.Row;
-import com.microdb.model.TableDesc;
+import com.microdb.model.row.Row;
+import com.microdb.model.table.TableDesc;
 import com.microdb.model.page.DirtyPage;
 import com.microdb.model.page.Page;
 

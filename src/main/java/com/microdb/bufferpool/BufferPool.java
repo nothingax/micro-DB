@@ -5,8 +5,8 @@ import com.microdb.connection.Connection;
 import com.microdb.exception.DbException;
 import com.microdb.exception.TransactionException;
 import com.microdb.model.DataBase;
-import com.microdb.model.DbTable;
-import com.microdb.model.Row;
+import com.microdb.model.table.DbTable;
+import com.microdb.model.row.Row;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 import com.microdb.transaction.Lock;
@@ -99,7 +99,7 @@ public class BufferPool {
         if (!Objects.equals(transaction.getLockType(), Lock.LockType.XLock)) {
             throw new TransactionException("x lock must be granted in updating");
         }
-        DbTable dbTable = DataBase.getInstance().getDbTableById(row.getKeyItem().getPageID().getTableId());
+        DbTable dbTable = DataBase.getInstance().getDbTableById(row.getRowID().getPageID().getTableId());
         dbTable.deleteRow(row);
 
         HashMap<PageID, Page> dirtyPages = Connection.getDirtyPages();

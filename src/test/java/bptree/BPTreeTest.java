@@ -1,10 +1,10 @@
 package bptree;
 
 import com.microdb.model.DataBase;
-import com.microdb.model.DbTable;
-import com.microdb.model.Row;
-import com.microdb.model.TableDesc;
-import com.microdb.model.dbfile.BPTreeFile;
+import com.microdb.model.table.DbTable;
+import com.microdb.model.row.Row;
+import com.microdb.model.table.TableDesc;
+import com.microdb.model.table.tablefile.BPTreeTableFile;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
 import com.microdb.operator.Delete;
@@ -47,8 +47,8 @@ public class BPTreeTest {
         File file = new File(fileName);
         file.deleteOnExit();
         TableDesc tableDesc = new TableDesc(attributes);
-        BPTreeFile bpTreeFile = new BPTreeFile(file, tableDesc, 0);
-        dataBase.addTable(bpTreeFile, "t_person");
+        BPTreeTableFile bpTreeTableFile = new BPTreeTableFile(file, tableDesc, 0);
+        dataBase.addTable(bpTreeTableFile, "t_person");
         this.dataBase = dataBase;
 
         personTableDesc = tableDesc;

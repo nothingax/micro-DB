@@ -11,20 +11,20 @@ import java.io.Serializable;
  * @author zhangjw
  * @version 1.0
  */
-public class KeyItem implements Serializable {
+public class RowID implements Serializable {
     private static final long serialVersionUID = -6571929580121756569L;
 
     /**
      * pageID
      */
-    private PageID pageID;
+    private final PageID pageID;
 
     /**
      * 元素在页中的槽位下标
      */
-    private int slotIndex;
+    private final int slotIndex;
 
-    public KeyItem(PageID pageID, int slotIndex) {
+    public RowID(PageID pageID, int slotIndex) {
         this.pageID = pageID;
         this.slotIndex = slotIndex;
     }

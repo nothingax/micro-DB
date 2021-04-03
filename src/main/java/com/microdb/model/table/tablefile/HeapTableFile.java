@@ -1,10 +1,10 @@
-package com.microdb.model.dbfile;
+package com.microdb.model.table.tablefile;
 
 import com.microdb.connection.Connection;
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
-import com.microdb.model.Row;
-import com.microdb.model.TableDesc;
+import com.microdb.model.row.Row;
+import com.microdb.model.table.TableDesc;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 import com.microdb.model.page.heap.HeapPage;
@@ -27,12 +27,12 @@ public class HeapTableFile implements TableFile {
     /**
      * 存储表数据的物理文件
      */
-    private File file;
+    private final File file;
 
     /**
      * 表结构
      */
-    private TableDesc tableDesc;
+    private final TableDesc tableDesc;
 
     public HeapTableFile(File file, TableDesc tableDesc) {
         if (tableDesc == null) {
@@ -122,7 +122,7 @@ public class HeapTableFile implements TableFile {
 
     @Override
     public void deleteRow(Row row) {
-        PageID pageID = row.getKeyItem().getPageID();
+        PageID pageID = row.getRowID().getPageID();
         HeapPage page = (HeapPage) DataBase.getBufferPool().getPage(pageID);
         page.deleteRow(row);
         Connection.cacheDirtyPage(page);

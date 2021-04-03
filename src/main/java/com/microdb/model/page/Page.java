@@ -1,6 +1,6 @@
 package com.microdb.model.page;
 
-import com.microdb.model.Row;
+import com.microdb.model.row.Row;
 import com.microdb.transaction.TransactionID;
 
 import java.io.IOException;

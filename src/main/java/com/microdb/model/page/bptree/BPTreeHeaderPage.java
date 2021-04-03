@@ -1,7 +1,7 @@
 package com.microdb.model.page.bptree;
 
 import com.microdb.exception.DbException;
-import com.microdb.model.Row;
+import com.microdb.model.row.Row;
 import com.microdb.model.page.Page;
 
 import java.io.*;

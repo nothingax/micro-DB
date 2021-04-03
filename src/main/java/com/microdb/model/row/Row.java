@@ -1,7 +1,8 @@
-package com.microdb.model;
+package com.microdb.model.row;
 
+import com.microdb.model.table.TableDesc;
 import com.microdb.model.field.Field;
-import com.microdb.model.page.bptree.KeyItem;
+import com.microdb.model.page.bptree.RowID;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -29,11 +30,11 @@ public class Row implements Serializable {
     /**
      * 引用pageID
      */
-    private KeyItem keyItem;
+    private RowID rowID;
 
-    public Row(TableDesc tableDesc, KeyItem keyItem) {
+    public Row(TableDesc tableDesc, RowID rowID) {
         this.tableDesc = tableDesc;
-        this.keyItem = keyItem;
+        this.rowID = rowID;
     }
 
     public Row(TableDesc tableDesc) {
@@ -65,12 +66,12 @@ public class Row implements Serializable {
         this.fields = fields.toArray(new Field[0]);
     }
 
-    public KeyItem getKeyItem() {
-        return keyItem;
+    public RowID getRowID() {
+        return rowID;
     }
 
-    public void setKeyItem(KeyItem keyItem) {
-        this.keyItem = keyItem;
+    public void setRowID(RowID rowID) {
+        this.rowID = rowID;
     }
 
     public static Row merge(Row left, Row right) {

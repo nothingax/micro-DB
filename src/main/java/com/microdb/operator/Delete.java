@@ -2,8 +2,8 @@ package com.microdb.operator;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
-import com.microdb.model.Row;
-import com.microdb.model.TableDesc;
+import com.microdb.model.row.Row;
+import com.microdb.model.table.TableDesc;
 
 /**
  * 删除
@@ -63,7 +63,7 @@ public class Delete extends Operator {
         int count = 0;
         while (tableIterator.hasNext()) {
             Row row = tableIterator.next();
-            // DbTable table = DataBase.getInstance().getDbTableById(row.getKeyItem().getPageID().getTableId());
+            // DbTable table = DataBase.getInstance().getDbTableById(row.getRowID().getPageID().getTableId());
             try {
                 DataBase.getBufferPool().deleteRow(row);
             } catch (Exception e) {

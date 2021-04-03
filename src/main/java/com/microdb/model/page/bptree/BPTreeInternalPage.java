@@ -2,8 +2,8 @@ package com.microdb.model.page.bptree;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
-import com.microdb.model.Row;
-import com.microdb.model.TableDesc;
+import com.microdb.model.row.Row;
+import com.microdb.model.table.TableDesc;
 import com.microdb.model.field.Field;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
@@ -371,7 +371,7 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable{
         markSlotUsed(insertIndex, true);
         keys[insertIndex] = entry.getKey();
         childPages[insertIndex] = new ChildPages(entry);
-        entry.setKeyItem(new KeyItem(pageID, insertIndex));
+        entry.setRowID(new RowID(pageID, insertIndex));
     }
 
     private int findFirstLessOrEqIndex(Field key) {
@@ -484,7 +484,7 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable{
         //     }
         // }
 
-        int slotIndexDeleted = entry.getKeyItem().getSlotIndex();
+        int slotIndexDeleted = entry.getRoeID().getSlotIndex();
         int prevUsedSlotExclusive = findPrevUsedSlotExclusive(slotIndexDeleted);
         if (prevUsedSlotExclusive != -1) {
             childPages[prevUsedSlotExclusive].rightPageNo = entry.getRightChildPageID().getPageNo();
@@ -502,7 +502,7 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable{
      * entry.right 和(entry+1).left 删除，entry.left应赋值给（entry+1).left
      */
     public void deleteEntryAndRightChildPage(BPTreeEntry entry) {
-        int slotIndexDeleted = entry.getKeyItem().getSlotIndex();
+        int slotIndexDeleted = entry.getRoeID().getSlotIndex();
         int nextUsedSlotExclusive = findNextUsedSlotExclusive(slotIndexDeleted);
 
         if (nextUsedSlotExclusive != -1) {
@@ -522,7 +522,7 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable{
     public void deleteEntryFromTheRight(BPTreeEntry entry) {
         deleteEntryAndRightChildPage(entry);
 
-        // int slotIndexDeleted = entry.getKeyItem().getSlotIndex();
+        // int slotIndexDeleted = entry.getRowID().getSlotIndex();
         // // 第一个或最后一个直接删除
         // if (slotIndexDeleted != findFirstUsedSlot() && slotIndexDeleted != findLastUsedSlot()) {
         //     // 删除entry，并连接子页
@@ -539,7 +539,7 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable{
         // }
 
 
-        // int slotIndexDeleted = entry.getKeyItem().getSlotIndex();
+        // int slotIndexDeleted = entry.getRowID().getSlotIndex();
         // int nextUsedSlotExclusive = findNextUsedSlotExclusive(slotIndexDeleted);
         // if (nextUsedSlotExclusive != -1) {
         //     childPages[nextUsedSlotExclusive].leftPageNo = entry.getLeftChildPageID().getPageNo();
@@ -590,8 +590,8 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable{
         return this.getExistCount() <= (this.getMaxSlotNum()) / 2;
     }
 
-    private void markSlotUsed(int keyItemNo, boolean isUsed) {
-        slotUsageStatusBitMap[keyItemNo] = isUsed;
+    private void markSlotUsed(int index, boolean isUsed) {
+        slotUsageStatusBitMap[index] = isUsed;
     }
 
     public boolean isEmpty() {
@@ -602,26 +602,26 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable{
      * 更新entry
      */
     public void updateEntry(BPTreeEntry entry) {
-        KeyItem keyItem = entry.getKeyItem();
+        RowID rowID = entry.getRoeID();
 
         // 校验
-        if (keyItem == null) {
-            throw new DbException("tried to update entry with null keyItem");
+        if (rowID == null) {
+            throw new DbException("tried to update entry with null rowID");
         }
-        if (keyItem.getPageID().getTableId() != pageID.getTableId()) {
+        if (rowID.getPageID().getTableId() != pageID.getTableId()) {
             throw new DbException("table id not match");
         }
 
-        if (keyItem.getPageID().getPageNo() != pageID.getPageNo()) {
+        if (rowID.getPageID().getPageNo() != pageID.getPageNo()) {
             throw new DbException("page no not match");
         }
-        if (!isSlotUsed(keyItem.getSlotIndex())) {
+        if (!isSlotUsed(rowID.getSlotIndex())) {
             throw new DbException("update entry error:slot is not used");
         }
 
         // todo 检验元素顺序
 
-        int slotIndex = keyItem.getSlotIndex();
+        int slotIndex = rowID.getSlotIndex();
         childPages[slotIndex] = new ChildPages(entry);
         keys[slotIndex] = entry.getKey();
     }
@@ -634,7 +634,7 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable{
         BPTreePageID leftPageID = new BPTreePageID(this.pageID.getTableId(), childPages[index].leftPageNo, childrenPageType);
         BPTreePageID rightPageID = new BPTreePageID(this.pageID.getTableId(), childPages[index].rightPageNo, childrenPageType);
         BPTreeEntry entry = new BPTreeEntry(keys[index], leftPageID, rightPageID);
-        entry.setKeyItem(new KeyItem(this.pageID, index));
+        entry.setRowID(new RowID(this.pageID, index));
         return entry;
     }
     // =====================================迭代器==========================================

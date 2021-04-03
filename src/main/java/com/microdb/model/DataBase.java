@@ -5,7 +5,9 @@ import com.microdb.bufferpool.BufferPool;
 import com.microdb.exception.DbException;
 import com.microdb.logging.RedoLogFile;
 import com.microdb.logging.UndoLogFile;
-import com.microdb.model.dbfile.TableFile;
+import com.microdb.model.table.tablefile.TableFile;
+import com.microdb.model.table.DbTable;
+import com.microdb.model.table.TableDesc;
 import com.microdb.transaction.LockManager;
 
 import java.io.File;

@@ -2,10 +2,10 @@ package com.microdb.operator;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
-import com.microdb.model.Row;
-import com.microdb.model.TableDesc;
-import com.microdb.model.dbfile.ITableFileIterator;
-import com.microdb.model.dbfile.TableFile;
+import com.microdb.model.row.Row;
+import com.microdb.model.table.TableDesc;
+import com.microdb.model.table.tablefile.ITableFileIterator;
+import com.microdb.model.table.tablefile.TableFile;
 
 /**
  * 表顺序扫描 sequence scan，基于迭代器

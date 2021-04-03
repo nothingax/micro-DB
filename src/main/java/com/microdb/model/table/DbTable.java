@@ -1,7 +1,8 @@
-package com.microdb.model;
+package com.microdb.model.table;
 
 import com.microdb.exception.DbException;
-import com.microdb.model.dbfile.TableFile;
+import com.microdb.model.table.tablefile.TableFile;
+import com.microdb.model.row.Row;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -17,22 +18,22 @@ public class DbTable {
     /**
      * table name
      */
-    private String tableName;
+    private final String tableName;
 
     /**
      * table id
      */
-    private int tableId;
+    private final int tableId;
 
     /**
      * table file
      */
-    private TableFile tableFile;
+    private final TableFile tableFile;
 
     /**
      * 表结构
      */
-    private TableDesc tableDesc;
+    private final TableDesc tableDesc;
 
     public DbTable(String tableName, TableFile tableFile, TableDesc tableDesc) {
         this.tableName = tableName;

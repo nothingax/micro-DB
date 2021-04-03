@@ -1,7 +1,7 @@
-package com.microdb.model.dbfile;
+package com.microdb.model.table.tablefile;
 
 import com.microdb.exception.DbException;
-import com.microdb.model.Row;
+import com.microdb.model.row.Row;
 
 import java.util.NoSuchElementException;
 

@@ -1,4 +1,4 @@
-package com.microdb.model;
+package com.microdb.model.table;
 
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IFieldType;
@@ -23,7 +23,7 @@ public class TableDesc implements Serializable {
     /**
      * 表中的属性
      */
-    private List<Attribute> attributes;
+    private final List<Attribute> attributes;
 
     public TableDesc(List<Attribute> attributes) {
         this.attributes = attributes;

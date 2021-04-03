@@ -2,8 +2,8 @@ package com.microdb.model.page.bptree;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
-import com.microdb.model.Row;
-import com.microdb.model.TableDesc;
+import com.microdb.model.row.Row;
+import com.microdb.model.table.TableDesc;
 import com.microdb.model.field.Field;
 import com.microdb.model.page.Page;
 import com.microdb.operator.PredicateEnum;
@@ -89,11 +89,11 @@ public class BPTreeLeafPage extends BPTreePage implements Serializable {
         for (int i = 0; i < slotUsageStatusBitMap.length; i++) {
             Row b = rows[i];
             if (b != null) {
-                if (b.getKeyItem() == null) {
-                    throw new DbException("keyItem不能为空");
+                if (b.getRowID() == null) {
+                    throw new DbException("rowID 不能为空");
                 }
-                if (b.getKeyItem().getSlotIndex() != i) {
-                    throw new DbException("keyItem 与下标不匹配");
+                if (b.getRowID().getSlotIndex() != i) {
+                    throw new DbException("rowID与下标不匹配");
                 }
             }
         }
@@ -207,7 +207,7 @@ public class BPTreeLeafPage extends BPTreePage implements Serializable {
                         .map(x -> x.parse(dis))
                         .collect(Collectors.toList());
                 row.setFields(fieldList);
-                row.setKeyItem(new KeyItem(pageID, i));
+                row.setRowID(new RowID(pageID, i));
                 rows[i] = row;
             } else {
                 rows[i] = null;
@@ -301,7 +301,7 @@ public class BPTreeLeafPage extends BPTreePage implements Serializable {
         // 将新数据插入到正确位置上
         slotUsageStatusBitMap[matchedSlot] = true;
 
-        row.setKeyItem(new KeyItem(pageID, matchedSlot));
+        row.setRowID(new RowID(pageID, matchedSlot));
         rows[matchedSlot] = row;
     }
 
@@ -352,7 +352,7 @@ public class BPTreeLeafPage extends BPTreePage implements Serializable {
         if (!isSlotUsed(to) && isSlotUsed(from)) {
             slotUsageStatusBitMap[to] = true;
             rows[to] = rows[from];
-            rows[to].setKeyItem(new KeyItem(pageID, to));
+            rows[to].setRowID(new RowID(pageID, to));
 
             // 清空from
             slotUsageStatusBitMap[from] = false;
@@ -417,10 +417,10 @@ public class BPTreeLeafPage extends BPTreePage implements Serializable {
      * 删除行
      */
     public void deleteRow(Row row) {
-        int slotIndex = row.getKeyItem().getSlotIndex();
+        int slotIndex = row.getRowID().getSlotIndex();
         slotUsageStatusBitMap[slotIndex] = false;
         rows[slotIndex] = null;
-        row.setKeyItem(null);
+        row.setRowID(null);
     }
 
     /**

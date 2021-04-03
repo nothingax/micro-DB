@@ -28,7 +28,7 @@ public class BPTreeEntry {
     /**
      * 记录键元素，主要记录key的序号
      */
-    private KeyItem keyItem;
+    private RowID rowID;
 
 
     public BPTreeEntry(Field key, BPTreePageID leftChildPageID, BPTreePageID rightChildPageID) {
@@ -61,12 +61,12 @@ public class BPTreeEntry {
         this.rightChildPageID = rightChildPageID;
     }
 
-    public KeyItem getKeyItem() {
-        return keyItem;
+    public RowID getRoeID() {
+        return rowID;
     }
 
-    public void setKeyItem(KeyItem keyItem) {
-        this.keyItem = keyItem;
+    public void setRowID(RowID rowID) {
+        this.rowID = rowID;
     }
 
     public int getLeftChildPageType() {
@@ -83,7 +83,7 @@ public class BPTreeEntry {
                 "key=" + key +
                 ", leftChildPage=" + leftChildPageID.getPageNo() +
                 ", rightChildPage=" + rightChildPageID.getPageNo() +
-                ", keyItemSlotIndex=" + keyItem.getSlotIndex() +
+                ", rowIDSlotIndex=" + rowID.getSlotIndex() +
                 '}';
     }
 }

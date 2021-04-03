@@ -1,6 +1,6 @@
 package com.microdb.operator;
 
-import com.microdb.model.Row;
+import com.microdb.model.row.Row;
 
 /**
  * join predicate, 两表的join条件

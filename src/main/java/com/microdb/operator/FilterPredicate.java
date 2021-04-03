@@ -1,6 +1,6 @@
 package com.microdb.operator;
 
-import com.microdb.model.Row;
+import com.microdb.model.row.Row;
 import com.microdb.model.field.Field;
 
 /**

@@ -1,11 +1,11 @@
-package com.microdb.model.dbfile;
+package com.microdb.model.table.tablefile;
 
 import com.microdb.annotation.VisibleForTest;
 import com.microdb.connection.Connection;
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
-import com.microdb.model.Row;
-import com.microdb.model.TableDesc;
+import com.microdb.model.row.Row;
+import com.microdb.model.table.TableDesc;
 import com.microdb.model.field.Field;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
@@ -23,30 +23,30 @@ import java.util.NoSuchElementException;
  * @author zhangjw
  * @version 1.0
  */
-public class BPTreeFile implements TableFile {
+public class BPTreeTableFile implements TableFile {
 
     /**
      * 磁盘文件
      */
-    private File file;
+    private final File file;
 
     /**
      * 表结构
      */
-    private TableDesc tableDesc;
+    private final TableDesc tableDesc;
 
     /**
      * 表ID,由file的绝对路径生成的唯一ID
      */
-    private int tableId;
+    private final int tableId;
 
     /**
      * 索引字段下标，在{@link TableDesc#attributes}的index
      */
-    private int keyFieldIndex;
+    private final int keyFieldIndex;
 
 
-    public BPTreeFile(File file, TableDesc tableDesc, int keyFieldIndex) {
+    public BPTreeTableFile(File file, TableDesc tableDesc, int keyFieldIndex) {
         this.file = file;
         this.tableDesc = tableDesc;
         this.tableId = file.getAbsoluteFile().hashCode();
@@ -104,7 +104,7 @@ public class BPTreeFile implements TableFile {
      */
     @Override
     public void deleteRow(Row row) throws IOException {
-        BPTreePageID bpTreePageID = new BPTreePageID(tableId, row.getKeyItem().getPageID().getPageNo(), BPTreePageType.LEAF);
+        BPTreePageID bpTreePageID = new BPTreePageID(tableId, row.getRowID().getPageID().getPageNo(), BPTreePageType.LEAF);
         BPTreeLeafPage page = (BPTreeLeafPage) DataBase.getBufferPool().getPage(bpTreePageID);
         page.deleteRow(row);
         Connection.cacheDirtyPage(page);
@@ -231,7 +231,7 @@ public class BPTreeFile implements TableFile {
             // leftEntry 是发生转移的两个page的父entry，转移过程中，leftEntry需要下降到子级
             entryToMove.setLeftChildPageID(leftEntry.getLeftChildPageID());
             entryToMove.setRightChildPageID(leftEntry.getRightChildPageID());
-            entryToMove.setKeyItem(leftEntry.getKeyItem());
+            entryToMove.setRowID(leftEntry.getRoeID());
             parentPage.updateEntry(entryToMove); //更新后，新的父entry生成，key是当前遍历的entry的key
 
             leftEntry.setLeftChildPageID(pageID);
@@ -288,7 +288,7 @@ public class BPTreeFile implements TableFile {
             // from页中entry被推向父页
             entryToMove.setLeftChildPageID(rightEntry.getLeftChildPageID());
             entryToMove.setRightChildPageID(rightEntry.getRightChildPageID());
-            entryToMove.setKeyItem(rightEntry.getKeyItem());
+            entryToMove.setRowID(rightEntry.getRoeID());
             parentPage.updateEntry(entryToMove);
             // 父页中的插入左页
             rightEntry.setRightChildPageID(leftChildPageIDOfEntryToMove);
@@ -1037,20 +1037,20 @@ public class BPTreeFile implements TableFile {
         /**
          * 文件
          */
-        private BPTreeFile bpTreeFile;
+        private BPTreeTableFile bpTreeTableFile;
 
         private Row next = null;
 
-        public BPTreeTableFileIterator(BPTreeFile bpTreeFile) {
-            this.bpTreeFile = bpTreeFile;
+        public BPTreeTableFileIterator(BPTreeTableFile bpTreeTableFile) {
+            this.bpTreeTableFile = bpTreeTableFile;
         }
 
         @Override
         public void open() throws DbException {
             // 找到文件的根指针页，拿到根节点页ID，从根节点找到第一个叶子页面
             BPTreeRootPtrPage page = (BPTreeRootPtrPage) DataBase.getBufferPool()
-                    .getPage(BPTreeRootPtrPage.getRootPtrPageID(bpTreeFile.getTableId()));
-            this.curPage = bpTreeFile.findLeafPage(page.getRootNodePageID(), null);
+                    .getPage(BPTreeRootPtrPage.getRootPtrPageID(bpTreeTableFile.getTableId()));
+            this.curPage = bpTreeTableFile.findLeafPage(page.getRootNodePageID(), null);
             this.rowIterator = curPage.getRowIterator();
         }
 
@@ -1110,14 +1110,14 @@ public class BPTreeFile implements TableFile {
     }
 
     private static class BPTreeIndexIterator implements ITableFileIterator {
-        private BPTreeFile bpTreeFile;
+        private BPTreeTableFile bpTreeTableFile;
         private IndexPredicate indexPredicate;
         private BPTreeLeafPage curPage;
         private Iterator<Row> rowIterator;
         private Row next = null;
 
-        public BPTreeIndexIterator(BPTreeFile bpTreeFile, IndexPredicate indexPredicate) {
-            this.bpTreeFile = bpTreeFile;
+        public BPTreeIndexIterator(BPTreeTableFile bpTreeTableFile, IndexPredicate indexPredicate) {
+            this.bpTreeTableFile = bpTreeTableFile;
 
             if (!PredicateEnum.BPTREE_INDEX_PREDICATES.contains(indexPredicate.getPredicate())) {
                 throw new DbException("B+Tree索引搜索暂不支持" + indexPredicate.getPredicate());
@@ -1128,12 +1128,12 @@ public class BPTreeFile implements TableFile {
         @Override
         public void open() throws DbException {
             BPTreeRootPtrPage page =
-                    (BPTreeRootPtrPage) DataBase.getBufferPool().getPage(BPTreeRootPtrPage.getRootPtrPageID(bpTreeFile.getTableId()));
+                    (BPTreeRootPtrPage) DataBase.getBufferPool().getPage(BPTreeRootPtrPage.getRootPtrPageID(bpTreeTableFile.getTableId()));
             BPTreePageID rootNodePageID = page.getRootNodePageID();
             if (PredicateEnum.BPTREE_INDEX_PREDICATES.contains(indexPredicate.getPredicate())) {
-                curPage = bpTreeFile.findLeafPage(rootNodePageID, indexPredicate.getParamOperand());
+                curPage = bpTreeTableFile.findLeafPage(rootNodePageID, indexPredicate.getParamOperand());
             } else {
-                curPage = bpTreeFile.findLeafPage(rootNodePageID, null);
+                curPage = bpTreeTableFile.findLeafPage(rootNodePageID, null);
             }
             rowIterator = curPage.getRowIterator();
         }
@@ -1150,12 +1150,12 @@ public class BPTreeFile implements TableFile {
                     Row row = rowIterator.next();
 
                     // 判断是否满足条件
-                    if (row.getField(bpTreeFile.getKeyFieldIndex()).compare(indexPredicate.getPredicate(),
+                    if (row.getField(bpTreeTableFile.getKeyFieldIndex()).compare(indexPredicate.getPredicate(),
                             indexPredicate.getParamOperand())) {
                         return row;
                     } else if (indexPredicate.getPredicate() == PredicateEnum.EQUALS
                             // 所有元素均大于给定的参数
-                            && row.getField(bpTreeFile.getKeyFieldIndex()).compare(PredicateEnum.GREATER_THAN,
+                            && row.getField(bpTreeTableFile.getKeyFieldIndex()).compare(PredicateEnum.GREATER_THAN,
                             indexPredicate.getParamOperand())) {
                         return null;
                     } else if (indexPredicate.getPredicate() == PredicateEnum.LESS_THAN

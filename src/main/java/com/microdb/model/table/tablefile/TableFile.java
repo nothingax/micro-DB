@@ -1,7 +1,7 @@
-package com.microdb.model.dbfile;
+package com.microdb.model.table.tablefile;
 
-import com.microdb.model.Row;
-import com.microdb.model.TableDesc;
+import com.microdb.model.row.Row;
+import com.microdb.model.table.TableDesc;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 

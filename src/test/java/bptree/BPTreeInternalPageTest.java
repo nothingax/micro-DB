@@ -1,9 +1,9 @@
 package bptree;
 
 import com.microdb.model.DataBase;
-import com.microdb.model.Row;
-import com.microdb.model.TableDesc;
-import com.microdb.model.dbfile.BPTreeFile;
+import com.microdb.model.row.Row;
+import com.microdb.model.table.TableDesc;
+import com.microdb.model.table.tablefile.BPTreeTableFile;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
 import com.microdb.model.page.bptree.*;
@@ -42,8 +42,8 @@ public class BPTreeInternalPageTest {
         File file = new File(fileName);
         file.deleteOnExit();
         TableDesc tableDesc = new TableDesc(attributes);
-        BPTreeFile bpTreeFile = new BPTreeFile(file, tableDesc, 0);
-        dataBase.addTable(bpTreeFile, "t_person");
+        BPTreeTableFile bpTreeTableFile = new BPTreeTableFile(file, tableDesc, 0);
+        dataBase.addTable(bpTreeTableFile, "t_person");
         this.dataBase = dataBase;
 
         personTableDesc = tableDesc;
@@ -231,7 +231,7 @@ public class BPTreeInternalPageTest {
         ArrayList<BPTreeEntry> entries = new ArrayList<>();
 
         System.out.println(page.getPageID());
-        BPTreeFile tableFile = (BPTreeFile) dataBase.getDbTableByName("t_person").getTableFile();
+        BPTreeTableFile tableFile = (BPTreeTableFile) dataBase.getDbTableByName("t_person").getTableFile();
 
         for (int i = 1; i < 11; i++) {
             Row row = new Row(personTableDesc);
@@ -281,7 +281,7 @@ public class BPTreeInternalPageTest {
      */
     @Test
     public void deleteRowAndEntryOneInternalPage() throws IOException {
-        BPTreeFile tableFile = (BPTreeFile) dataBase.getDbTableByName("t_person").getTableFile();
+        BPTreeTableFile tableFile = (BPTreeTableFile) dataBase.getDbTableByName("t_person").getTableFile();
         int tableId = tableFile.getTableId();
         for (int i = 1; i <= 10; i++) {
             Row row = new Row(personTableDesc);
@@ -310,7 +310,7 @@ public class BPTreeInternalPageTest {
      */
     @Test
     public void deleteRowAndEntryForSeveralInternalPage() throws IOException {
-        BPTreeFile tableFile = (BPTreeFile) dataBase.getDbTableByName("t_person").getTableFile();
+        BPTreeTableFile tableFile = (BPTreeTableFile) dataBase.getDbTableByName("t_person").getTableFile();
         int tableId = tableFile.getTableId();
         int num = 200;
         for (int i = 1; i <= num; i++) {
@@ -343,7 +343,7 @@ public class BPTreeInternalPageTest {
      */
     @Test
     public void deleteRowAndEntryMassData() throws IOException {
-        BPTreeFile tableFile = (BPTreeFile) dataBase.getDbTableByName("t_person").getTableFile();
+        BPTreeTableFile tableFile = (BPTreeTableFile) dataBase.getDbTableByName("t_person").getTableFile();
         int tableId = tableFile.getTableId();
         int num = 30000;
         long l1 = System.currentTimeMillis();
@@ -384,7 +384,7 @@ public class BPTreeInternalPageTest {
     }
 
 
-    private void deleteOne(BPTreeFile tableFile, BPTreeScan scan) throws IOException {
+    private void deleteOne(BPTreeTableFile tableFile, BPTreeScan scan) throws IOException {
         scan.open();
         Row next = scan.next();
         // tableFile.deleteRow(scan.next());
@@ -392,7 +392,7 @@ public class BPTreeInternalPageTest {
         scan.close();
     }
 
-    private void printTree(BPTreeFile tableFile, int tableId) {
+    private void printTree(BPTreeTableFile tableFile, int tableId) {
         BPTreePageID rootPtrPageID = BPTreeRootPtrPage.getRootPtrPageID(tableId);
         BPTreeRootPtrPage rootPtrPage = (BPTreeRootPtrPage) DataBase.getBufferPool().getPage(rootPtrPageID);
         BPTreePage rootNodePage = (BPTreePage) DataBase.getBufferPool().getPage(rootPtrPage.getRootNodePageID());
@@ -426,7 +426,7 @@ public class BPTreeInternalPageTest {
         }
     }
 
-    private void printLeafByInternalPage(BPTreeFile tableFile, BPTreeInternalPage bpTreePage) {
+    private void printLeafByInternalPage(BPTreeTableFile tableFile, BPTreeInternalPage bpTreePage) {
         Iterator<BPTreeEntry> iterator1 = bpTreePage.getIterator();
         while (iterator1.hasNext()) {
             BPTreeEntry next1 = iterator1.next();

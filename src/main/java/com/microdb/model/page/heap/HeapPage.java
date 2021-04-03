@@ -2,13 +2,13 @@ package com.microdb.model.page.heap;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
-import com.microdb.model.Row;
-import com.microdb.model.TableDesc;
+import com.microdb.model.row.Row;
+import com.microdb.model.table.TableDesc;
 import com.microdb.model.field.Field;
 import com.microdb.model.page.DirtyPage;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
-import com.microdb.model.page.bptree.KeyItem;
+import com.microdb.model.page.bptree.RowID;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -134,7 +134,7 @@ public class HeapPage extends DirtyPage implements Page,Serializable {
                         .map(x -> x.parse(dis))
                         .toArray(Field[]::new);
                 row.setFields(fields);
-                row.setKeyItem(new KeyItem(pageID, i));
+                row.setRowID(new RowID(pageID, i));
                 rows[i] = row;
             } else {
                 rows[i] = null;
@@ -190,7 +190,7 @@ public class HeapPage extends DirtyPage implements Page,Serializable {
         for (int i = 0; i < this.maxSlotNum; i++) {
             if (!slotUsageStatusBitMap[i]) {
                 slotUsageStatusBitMap[i] = true;
-                row.setKeyItem(new KeyItem(pageID, i));
+                row.setRowID(new RowID(pageID, i));
                 rows[i] = row;
                 return;
             }
@@ -203,7 +203,7 @@ public class HeapPage extends DirtyPage implements Page,Serializable {
             throw new DbException("delete row error: row can not be null");
         }
 
-        int slotIndex = row.getKeyItem().getSlotIndex();
+        int slotIndex = row.getRowID().getSlotIndex();
         slotUsageStatusBitMap[slotIndex] = false;
         rows[slotIndex] = null;
     }
