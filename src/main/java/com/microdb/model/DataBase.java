@@ -33,28 +33,28 @@ public class DataBase {
     /**
      * dbTableFile id to DbTable
      */
-    private HashMap<Integer, DbTable> tableId2Table;
-    private HashMap<String, DbTable> tableName2Table;
+    private final HashMap<Integer, DbTable> tableId2Table;
+    private final HashMap<String, DbTable> tableName2Table;
 
     /**
      * 缓冲池
      */
-    private BufferPool bufferPool;
+    private final BufferPool bufferPool;
 
     /**
      * 锁管理器
      */
-    private LockManager lockManager;
+    private final LockManager lockManager;
 
     /**
      * undo 日志
      */
-    private UndoLogFile undoLogFile;
+    private final UndoLogFile undoLogFile;
 
     /**
      * redo 日志
      */
-    private RedoLogFile redoLogFile;
+    private final RedoLogFile redoLogFile;
 
     private DataBase() {
         this.tableId2Table = new HashMap<>();
