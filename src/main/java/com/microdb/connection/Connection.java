@@ -16,9 +16,9 @@ import java.util.Objects;
  * @version 1.0
  */
 public class Connection {
-    private static String DIRTY_PAGE_KEY = "dp";
-    private static String TRANSACTION_KEY = "trans";
-    private static ThreadLocal<HashMap<String, Object>> connection = new ThreadLocal<>();
+    private static final String DIRTY_PAGE_KEY = "dp";
+    private static final String TRANSACTION_KEY = "trans";
+    private static final ThreadLocal<HashMap<String, Object>> connection = new ThreadLocal<>();
 
     /**
      * connection-passing的方式传递事务：事务对象存储在当前线程/连接中，在调用链的任何位置可以获取
