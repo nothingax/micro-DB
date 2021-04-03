@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * test
@@ -37,7 +36,7 @@ public class DataBaseTest {
     public void initDataBase() {
         DataBase dataBase = DataBase.getInstance();
         // 创建数据库文件
-        String fileName = UUID.randomUUID().toString();
+        String fileName = "person";
         List<TableDesc.Attribute> attributes = Arrays.asList(new TableDesc.Attribute("f1", FieldType.INT));
         TableDesc tableDesc = new TableDesc(attributes);
         File file = new File(fileName);

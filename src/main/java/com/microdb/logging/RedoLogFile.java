@@ -221,10 +221,10 @@ public class RedoLogFile {
         long offsetToRead = raf.readLong();
 
         while (txStartOffset <= offsetToRead) {
-            raf.seek(offsetToRead);// 跳过log类型
+            raf.seek(offsetToRead);
             int recordType = raf.readInt();
             if (recordType == LogRecordType.PAGE_FLUSH) {
-                raf.seek(offsetToRead + 4);// 跳过log类型
+                raf.seek(offsetToRead + 4);
                 long txId = raf.readLong();
                 if (txIdCommit == txId) {
                     Page beforePage = this.readPage();
