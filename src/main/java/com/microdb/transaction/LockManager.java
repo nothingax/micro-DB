@@ -30,12 +30,12 @@ public class LockManager {
     /**
      * 管理中的锁
      */
-    private ConcurrentHashMap<PageID, Lock> lockTable;
+    private final ConcurrentHashMap<PageID, Lock> lockTable;
 
     /**
      * 管理中的事务
      */
-    private ConcurrentHashMap<TransactionID, List<PageID>> transactionTable;
+    private final ConcurrentHashMap<TransactionID, List<PageID>> transactionTable;
 
 
     public LockManager() {

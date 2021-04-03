@@ -28,9 +28,6 @@ public class Transaction {
      */
     private Lock.LockType lockType;
 
-    private Transaction() {
-    }
-
     /**
      * 构造事务,事务ID自增
      */
