@@ -15,12 +15,12 @@ import com.microdb.model.table.tablefile.TableFile;
  */
 public class SeqScan extends Operator {
 
-    private TableFile tableFile;
+    private final TableFile tableFile;
 
     /**
      * 表中行数据的迭代
      */
-    private ITableFileIterator tableFileIterator;
+    private final ITableFileIterator tableFileIterator;
 
     public SeqScan(int tableId) {
         this.tableFile = DataBase.getInstance().getDbTableById(tableId).getTableFile();

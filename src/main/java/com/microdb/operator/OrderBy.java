@@ -18,22 +18,22 @@ public class OrderBy extends Operator {
     /**
      * 原始行数据的迭代器
      */
-    private IOperatorIterator tableIterator;
+    private final IOperatorIterator tableIterator;
 
     /**
      * 排序的字段
      */
-    private int orderByFieldIndex;
+    private final int orderByFieldIndex;
 
     /**
      * 排序方式
      */
-    private boolean asc;
+    private final boolean asc;
 
     /**
      * 排序后的行数据
      */
-    private List<Row> sortedRows = new ArrayList<>();
+    private final List<Row> sortedRows = new ArrayList<>();
 
     /**
      * 排序后的行数据迭代器

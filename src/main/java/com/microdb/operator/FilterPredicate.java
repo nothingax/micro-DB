@@ -14,16 +14,16 @@ public class FilterPredicate {
     /**
      * row中字段{@link Row#fields}的下标
      */
-    private int fieldIndex;
+    private final int fieldIndex;
     /**
      * 操作符
      */
-    private PredicateEnum predicateEnum;
+    private final PredicateEnum predicateEnum;
 
     /**
      * 参数操作数
      */
-    private Field paramOperand;
+    private final Field paramOperand;
 
 
     public FilterPredicate(int fieldIndex, PredicateEnum predicateEnum, Field paramOperand) {

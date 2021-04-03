@@ -11,7 +11,7 @@ public enum AggregateType {
     MAX,
     SUM,
     AVG,
-    COUNT,
+    COUNT
     ;
 
     static final int NO_GROUPING = -1;

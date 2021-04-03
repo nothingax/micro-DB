@@ -9,9 +9,9 @@ import com.microdb.model.row.Row;
  * @version 1.0
  */
 public class JoinPredicate {
-    private int fieldIndex1;
-    private int fieldIndex2;
-    private  PredicateEnum predicateEnum;
+    private final int fieldIndex1;
+    private final int fieldIndex2;
+    private final PredicateEnum predicateEnum;
 
     public JoinPredicate(int fieldIndex1, int fieldIndex2, PredicateEnum predicateEnum) {
         this.fieldIndex1 = fieldIndex1;

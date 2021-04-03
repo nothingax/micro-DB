@@ -20,22 +20,22 @@ public class Aggregate extends Operator {
     /**
      * 待聚合行数据的迭代器
      */
-    private IOperatorIterator tableIterator;
+    private final IOperatorIterator tableIterator;
 
     /**
      * 聚合的字段
      */
-    private int aggregateFieldIndex;
+    private final int aggregateFieldIndex;
 
     /**
      * 分组的字段 group by
      */
-    private int groupFieldIndex;
+    private final int groupFieldIndex;
 
     /**
      * 聚合方式
      */
-    private AggregateType aggregateType;
+    private final AggregateType aggregateType;
 
     /**
      * 聚合后的结果行数据迭代器

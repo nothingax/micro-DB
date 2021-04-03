@@ -17,7 +17,7 @@ public class Filter extends Operator {
     /**
      * 条件谓词
      */
-    private FilterPredicate filterPredicate;
+    private final FilterPredicate filterPredicate;
 
     /**
      * 需要过滤的表中，行数据的迭代

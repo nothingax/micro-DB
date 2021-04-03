@@ -12,12 +12,12 @@ import com.microdb.model.table.TableDesc;
  */
 public class Join extends Operator{
 
-    private IOperatorIterator leftTableIterator;
-    private IOperatorIterator rightTableIterator;
+    private final IOperatorIterator leftTableIterator;
+    private final IOperatorIterator rightTableIterator;
     /**
      * join 条件
      */
-    private JoinPredicate joinPredicate;
+    private final JoinPredicate joinPredicate;
 
     private Row left;
     private Row right;

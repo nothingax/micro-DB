@@ -16,7 +16,7 @@ public class Delete extends Operator {
     /**
      * 构造函数传入，需要删除的数据的迭代器
      */
-    private IOperatorIterator tableIterator;
+    private final IOperatorIterator tableIterator;
 
 
     public Delete(IOperatorIterator tableIterator) {

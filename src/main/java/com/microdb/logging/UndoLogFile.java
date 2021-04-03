@@ -25,7 +25,7 @@ public class UndoLogFile {
     /**
      * 随机存储文件
      */
-    private RandomAccessFile raf;
+    private final RandomAccessFile raf;
 
     /**
      * 当前写到的位置

@@ -16,13 +16,13 @@ import com.microdb.operator.Operator;
  * @version 1.0
  */
 public class BPTreeScan extends Operator {
-    private TableFile tableFile;
-    private IndexPredicate indexPredicate;
-    private TableDesc tableDesc;
+    private final TableFile tableFile;
+    private final IndexPredicate indexPredicate;
+    private final TableDesc tableDesc;
     /**
      * 表中行数据的迭代
      */
-    private ITableFileIterator tableFileIterator;
+    private final ITableFileIterator tableFileIterator;
 
     public BPTreeScan(int tableId, IndexPredicate indexPredicate) {
         this.tableFile = DataBase.getInstance().getDbTableById(tableId).getTableFile();
