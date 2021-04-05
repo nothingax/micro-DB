@@ -7,13 +7,12 @@ import com.microdb.config.PropertiesConfigParser;
 import com.microdb.exception.DbException;
 import com.microdb.logging.RedoLogFile;
 import com.microdb.logging.UndoLogFile;
-import com.microdb.model.table.tablefile.TableFile;
 import com.microdb.model.table.DbTable;
 import com.microdb.model.table.TableDesc;
+import com.microdb.model.table.tablefile.TableFile;
 import com.microdb.transaction.LockManager;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -24,15 +23,12 @@ import java.util.concurrent.atomic.AtomicReference;
  * @version 1.0
  */
 public class DataBase {
-    private static AtomicReference<DataBase> singleton = new AtomicReference<>(new DataBase());
+    private static final AtomicReference<DataBase> singleton = new AtomicReference<>(new DataBase());
 
     /**
      * 配置
      */
     private final DBConfig dbConfig;
-
-    private static final String undoLogName = "undo";
-    private static final String redoLogName = "redo";
 
     /**
      * dbTableFile id to DbTable
@@ -61,17 +57,13 @@ public class DataBase {
     private final RedoLogFile redoLogFile;
 
     private DataBase() {
-        dbConfig = new PropertiesConfigParser().parse("config.properties");
+        this.dbConfig = new PropertiesConfigParser().parse("config.properties");
         this.tableId2Table = new HashMap<>();
         this.tableName2Table = new HashMap<>();
         this.lockManager = new LockManager();
         this.bufferPool = new BufferPool(dbConfig);
-        try {
-            this.undoLogFile = new UndoLogFile(new File(undoLogName));
-            this.redoLogFile = new RedoLogFile(new File(redoLogName));
-        } catch (FileNotFoundException e) {
-            throw new DbException("init data base error", e);
-        }
+        this.undoLogFile = new UndoLogFile(new File("undo"));
+        this.redoLogFile = new RedoLogFile(new File("redo"));
     }
 
     public static DataBase getInstance() {
@@ -157,5 +149,4 @@ public class DataBase {
         DataBase dataBase = new DataBase();
         singleton.set(dataBase);
     }
-
 }

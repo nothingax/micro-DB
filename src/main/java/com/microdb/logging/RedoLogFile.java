@@ -44,9 +44,13 @@ public class RedoLogFile {
      */
     HashMap<Long, Long> txId2StartOffset = new HashMap<>();
 
-    public RedoLogFile(File file) throws FileNotFoundException {
+    public RedoLogFile(File file) {
         this.file = file;
-        raf = new RandomAccessFile(file, "rw");
+        try {
+            raf = new RandomAccessFile(file, "rw");
+        } catch (FileNotFoundException e) {
+            throw new DbException("load redo log file error ", e);
+        }
     }
 
     /**

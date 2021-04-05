@@ -42,9 +42,13 @@ public class UndoLogFile {
      */
     HashMap<Long, Long> txId2StartOffset = new HashMap<>();
     
-    public UndoLogFile(File file) throws FileNotFoundException {
+    public UndoLogFile(File file){
         this.file = file;
-        raf = new RandomAccessFile(file, "rw");
+        try {
+            raf = new RandomAccessFile(file, "rw");
+        } catch (FileNotFoundException e) {
+            throw new DbException("load undo log file error ", e);
+        }
     }
 
     /**
