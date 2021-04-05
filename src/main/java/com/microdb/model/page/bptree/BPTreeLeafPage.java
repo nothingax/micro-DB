@@ -2,11 +2,10 @@ package com.microdb.model.page.bptree;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
+import com.microdb.model.field.Field;
 import com.microdb.model.row.Row;
 import com.microdb.model.row.RowID;
 import com.microdb.model.table.TableDesc;
-import com.microdb.model.field.Field;
-import com.microdb.model.page.Page;
 import com.microdb.operator.PredicateEnum;
 
 import java.io.*;
@@ -112,7 +111,7 @@ public class BPTreeLeafPage extends BPTreePage implements Serializable {
      * 初始化一块leafPae页面默认大小的空间
      */
     public static byte[] createEmptyPageData() {
-        return new byte[Page.defaultPageSizeInByte];
+        return new byte[DataBase.getDBConfig().getPageSizeInByte()];
     }
 
     @Override
@@ -131,7 +130,7 @@ public class BPTreeLeafPage extends BPTreePage implements Serializable {
         //     }
         // }
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(Page.defaultPageSizeInByte);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(DataBase.getDBConfig().getPageSizeInByte());
         DataOutputStream dos = new DataOutputStream(baos);
 
         // 1. slotUsageStatusBitMap
@@ -158,7 +157,7 @@ public class BPTreeLeafPage extends BPTreePage implements Serializable {
         int slotSize = slotUsageStatusBitMap.length;
         int indexSize = 3 * 4;
         int rowSize = tableDesc.getRowMaxSizeInBytes() * rows.length;
-        fillBytes(dos, Page.defaultPageSizeInByte - slotSize - indexSize - rowSize);
+        fillBytes(dos, DataBase.getDBConfig().getPageSizeInByte() - slotSize - indexSize - rowSize);
 
         dos.flush();
         return baos.toByteArray();
@@ -246,7 +245,7 @@ public class BPTreeLeafPage extends BPTreePage implements Serializable {
         int sizePerRowInBytes = tableDesc.getRowMaxSizeInBytes() + slotStatusSizeInByte;
 
         int pointerSizeInBytes = 3 * POINTER_SIZE_IN_BYTE;
-        return (Page.defaultPageSizeInByte - pointerSizeInBytes) / sizePerRowInBytes;
+        return (DataBase.getDBConfig().getPageSizeInByte() - pointerSizeInBytes) / sizePerRowInBytes;
     }
 
     @Override

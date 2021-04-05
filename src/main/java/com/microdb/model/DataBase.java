@@ -2,6 +2,8 @@ package com.microdb.model;
 
 import com.microdb.annotation.VisibleForTest;
 import com.microdb.bufferpool.BufferPool;
+import com.microdb.config.DBConfig;
+import com.microdb.config.PropertiesConfigParser;
 import com.microdb.exception.DbException;
 import com.microdb.logging.RedoLogFile;
 import com.microdb.logging.UndoLogFile;
@@ -25,9 +27,9 @@ public class DataBase {
     private static AtomicReference<DataBase> singleton = new AtomicReference<>(new DataBase());
 
     /**
-     * 缓存池容量，单位：页
+     * 配置
      */
-    private int bufferPoolCapacity = 100;
+    private final DBConfig dbConfig;
 
     private static final String undoLogName = "undo";
     private static final String redoLogName = "redo";
@@ -59,10 +61,11 @@ public class DataBase {
     private final RedoLogFile redoLogFile;
 
     private DataBase() {
+        dbConfig = new PropertiesConfigParser().parse("config.properties");
         this.tableId2Table = new HashMap<>();
         this.tableName2Table = new HashMap<>();
         this.lockManager = new LockManager();
-        this.bufferPool = new BufferPool(bufferPoolCapacity);
+        this.bufferPool = new BufferPool(dbConfig);
         try {
             this.undoLogFile = new UndoLogFile(new File(undoLogName));
             this.redoLogFile = new RedoLogFile(new File(redoLogName));
@@ -73,6 +76,10 @@ public class DataBase {
 
     public static DataBase getInstance() {
         return singleton.get();
+    }
+
+    public static DBConfig getDBConfig() {
+        return singleton.get().dbConfig;
     }
 
     public static BufferPool getBufferPool() {

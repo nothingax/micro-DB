@@ -1,6 +1,7 @@
 package com.microdb.bufferpool;
 
 import com.microdb.annotation.VisibleForTest;
+import com.microdb.config.DBConfig;
 import com.microdb.connection.Connection;
 import com.microdb.exception.DbException;
 import com.microdb.exception.TransactionException;
@@ -28,17 +29,18 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class BufferPool {
 
-    private ConcurrentHashMap<PageID, Page> pool;
+    private final ConcurrentHashMap<PageID, Page> pool;
 
     /**
      * 容量：最多缓存的页数
      */
-    private int capacity;
+    private final int capacity;
 
-    public BufferPool(int capacity) {
-        this.capacity = capacity;
+    public BufferPool(DBConfig dbConfig) {
+        this.capacity = dbConfig.getBufferPoolCapacity();
         pool = new ConcurrentHashMap<>();
     }
+
 
     /**
      * 读取页
@@ -149,11 +151,11 @@ public class BufferPool {
 
         if (page.isDirty()) {
             // 刷盘前，将页的原始数据写入undo日志保存
-            DataBase.getUndoLogFile().recordBeforePageWhenFlushDisk(page.getDirtyTid(), page.getBeforePage());
+            DataBase.getUndoLogFile().recordBeforePageWhenFlushDisk(page.getDirtyTxId(), page.getBeforePage());
 
             // 记录 redo log
             try {
-                DataBase.getRedoLogFile().recordPageChange(page.getDirtyTid(), page.getBeforePage(), page);
+                DataBase.getRedoLogFile().recordPageChange(page.getDirtyTxId(), page.getBeforePage(), page);
             } catch (IOException e) {
                 throw new DbException("redo log recordBeforePageWhenFlushDisk error ", e);
             }

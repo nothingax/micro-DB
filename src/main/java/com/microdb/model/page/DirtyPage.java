@@ -12,20 +12,20 @@ public abstract class DirtyPage implements Page {
     /**
      * 是否是脏页，如果页面被修改过，设置事务ID，通过事务id判断是否是脏页
      */
-    protected TransactionID dirtyTid = null;
+    protected TransactionID dirtyTxId = null;
 
     @Override
     public void markDirty(TransactionID transactionID) {
-        dirtyTid = transactionID;
+        dirtyTxId = transactionID;
     }
 
     @Override
     public boolean isDirty() {
-        return dirtyTid != null;
+        return dirtyTxId != null;
     }
 
     @Override
-    public TransactionID getDirtyTid() {
-        return dirtyTid;
+    public TransactionID getDirtyTxId() {
+        return dirtyTxId;
     }
 }

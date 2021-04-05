@@ -84,12 +84,12 @@ public class TableDesc implements Serializable {
         /**
          * 字段名称
          */
-        private String filedName;
+        private final String filedName;
 
         /**
          * 字段类型
          */
-        private FieldType fieldType;
+        private final FieldType fieldType;
 
         public String getFiledName() {
             return filedName;

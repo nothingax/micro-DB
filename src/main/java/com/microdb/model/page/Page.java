@@ -14,14 +14,6 @@ import java.util.Iterator;
  * @version 1.0
  */
 public interface Page {
-    int SIZE_64B = 64;
-    int SIZE_4KB = 4096;
-    int SIZE_16KB = SIZE_4KB * 4;
-
-    /**
-     * 默认每页4KB
-     */
-    int defaultPageSizeInByte = SIZE_4KB;
 
     PageID getPageID();
 
@@ -58,7 +50,7 @@ public interface Page {
 
     boolean isDirty();
 
-    TransactionID getDirtyTid();
+    TransactionID getDirtyTxId();
 
     /**
      * 保留页原始数据

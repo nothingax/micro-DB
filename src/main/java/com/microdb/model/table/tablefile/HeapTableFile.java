@@ -61,7 +61,7 @@ public class HeapTableFile implements TableFile {
         byte[] pageData = HeapPage.createEmptyPageData();
         try {
             FileInputStream in = new FileInputStream(file);
-            in.skip(pageID.getPageNo() * HeapPage.defaultPageSizeInByte);
+            in.skip(pageID.getPageNo() * DataBase.getDBConfig().getPageSizeInByte());
             in.read(pageData);
             return new HeapPage(pageID, pageData);
         } catch (IOException e) {
@@ -79,7 +79,7 @@ public class HeapTableFile implements TableFile {
         try {
             byte[] pgData = page.serialize();
             RandomAccessFile dbFile = new RandomAccessFile(file, "rws");
-            dbFile.skipBytes(page.getPageID().getPageNo() * HeapPage.defaultPageSizeInByte);
+            dbFile.skipBytes(page.getPageID().getPageNo() * DataBase.getDBConfig().getPageSizeInByte());
             dbFile.write(pgData);
         } catch (IOException e) {
             throw new DbException("write page To disk error", e);
@@ -100,7 +100,7 @@ public class HeapTableFile implements TableFile {
      */
     @Override
     public int getExistPageCount() {
-        return (int) file.length() / HeapPage.defaultPageSizeInByte;
+        return (int) file.length() / DataBase.getDBConfig().getPageSizeInByte();
     }
 
     @Override

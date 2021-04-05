@@ -63,7 +63,7 @@ public class Transaction {
      * 提交事务
      * 根据2PL协议，提交事务时需要释放锁
      * NO-STEAL/force策略，所以事务提交时需要将脏页刷盘，事务提交前要确保脏页不被刷盘。
-     *
+     * <p>
      * STEAL/No-force策略，事务提交，脏页也可不刷盘
      */
     public void commit() {
@@ -77,7 +77,9 @@ public class Transaction {
             redoLogFile.recordTxCommit(transactionId);
             List<Page> pages = DataBase.getLockManager().getPages(transactionId);
             for (Page page : pages) {
-                redoLogFile.recordPageChange(transactionId, page.getBeforePage(), page);
+                if (page.isDirty()) {
+                    redoLogFile.recordPageChange(transactionId, page.getBeforePage(), page);
+                }
             }
             redoLogFile.flush();
         } catch (IOException e) {

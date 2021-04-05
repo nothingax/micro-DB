@@ -2,13 +2,12 @@ package com.microdb.model.page.bptree;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
-import com.microdb.model.row.Row;
-import com.microdb.model.row.RowID;
-import com.microdb.model.table.TableDesc;
 import com.microdb.model.field.Field;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
-import com.microdb.model.page.Page;
+import com.microdb.model.row.Row;
+import com.microdb.model.row.RowID;
+import com.microdb.model.table.TableDesc;
 import com.microdb.operator.PredicateEnum;
 
 import java.io.*;
@@ -26,7 +25,7 @@ import java.util.NoSuchElementException;
  * @author zhangjw
  * @version 1.0
  */
-public class BPTreeInternalPage extends BPTreePage implements Serializable{
+public class BPTreeInternalPage extends BPTreePage implements Serializable {
 
     private static final long serialVersionUID = -375689079604630693L;
 
@@ -94,7 +93,7 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable{
      * 初始化一块leafPae页面默认大小的空间
      */
     public static byte[] createEmptyPageData() {
-        return new byte[Page.defaultPageSizeInByte];
+        return new byte[DataBase.getDBConfig().getPageSizeInByte()];
     }
 
     public BPTreeInternalPage(BPTreePageID bpTreePageID, byte[] pageData, int keyFieldIndex) throws IOException {
@@ -107,7 +106,7 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable{
 
     @Override
     public byte[] serialize() throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(Page.defaultPageSizeInByte);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(DataBase.getDBConfig().getPageSizeInByte());
         DataOutputStream dos = new DataOutputStream(baos);
         // 1. slotUsageStatusBitMap
         for (boolean b : slotUsageStatusBitMap) {
@@ -148,7 +147,7 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable{
         int childrenPageTypeSize = 1;
         int keysSize = sizePerKeyInByte * (keys.length);
         int childrenNosSize = childPages.length * INDEX_SIZE_IN_BYTE * 2;// childPages 左右两个页面
-        int paddingLength = Page.defaultPageSizeInByte
+        int paddingLength = DataBase.getDBConfig().getPageSizeInByte()
                 - slotSize - parentPageNoSize - childrenPageTypeSize - keysSize - childrenNosSize;
         fillBytes(dos, paddingLength);
 
@@ -241,7 +240,7 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable{
         // 每页一个父pageNo指针 一个字节表示子page类型
         int extra = FieldType.INT.getSizeInByte() + 1;
 
-        return (Page.defaultPageSizeInByte - extra) / perEntrySizeInByte;
+        return (DataBase.getDBConfig().getPageSizeInByte() - extra) / perEntrySizeInByte;
     }
 
     @Override

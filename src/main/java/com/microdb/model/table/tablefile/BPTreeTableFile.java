@@ -619,18 +619,18 @@ public class BPTreeTableFile implements TableFile {
                 // System.out.println("BPTree file read  page ,pageNo=" + BPTreePageID.getPageNo() + ",BPTree type=" + BPTreePageID.getPageType());
                 return new BPTreeRootPtrPage(bpTreePageID, bytes);
             } else {
-                byte[] pageData = new byte[Page.defaultPageSizeInByte];
-                long size = BPTreeRootPtrPage.rootPtrPageSizeInByte + (bpTreePageID.getPageNo() - 1) * Page.defaultPageSizeInByte;
+                byte[] pageData = new byte[DataBase.getDBConfig().getPageSizeInByte()];
+                long size = BPTreeRootPtrPage.rootPtrPageSizeInByte + (bpTreePageID.getPageNo() - 1) * DataBase.getDBConfig().getPageSizeInByte();
 
                 if (bis.skip(size) != size) {
                     throw new IllegalArgumentException("BPTree file read from disk error:寻址错误");
                 }
-                int bytesRead = bis.read(pageData, 0, Page.defaultPageSizeInByte);
+                int bytesRead = bis.read(pageData, 0, DataBase.getDBConfig().getPageSizeInByte());
                 if (bytesRead == -1) {
                     throw new IllegalArgumentException("BPTree file read from disk error：reach the end of the file");
                 }
-                if (bytesRead < Page.defaultPageSizeInByte) {
-                    throw new IllegalArgumentException("未从 BPTree file 中读取到" + Page.defaultPageSizeInByte + "字节");
+                if (bytesRead < DataBase.getDBConfig().getPageSizeInByte()) {
+                    throw new IllegalArgumentException("未从 BPTree file 中读取到" + DataBase.getDBConfig().getPageSizeInByte() + "字节");
                 }
 
                 // System.out.println("BPTree file read  page ,pageNo=" + BPTreePageID.getPageNo() + ",BPTree type=" + BPTreePageID.getPageType());
@@ -657,7 +657,7 @@ public class BPTreeTableFile implements TableFile {
             RandomAccessFile rf = new RandomAccessFile(file, "rw");
             BPTreePageID pageID = (BPTreePageID) page.getPageID();
             if (pageID.getPageType() != BPTreePageType.ROOT_PTR) {
-                rf.seek(BPTreeRootPtrPage.rootPtrPageSizeInByte + (page.getPageID().getPageNo() - 1) * Page.defaultPageSizeInByte);
+                rf.seek(BPTreeRootPtrPage.rootPtrPageSizeInByte + (page.getPageID().getPageNo() - 1) * DataBase.getDBConfig().getPageSizeInByte());
             }
             rf.write(pageData);
             rf.close();
@@ -673,7 +673,7 @@ public class BPTreeTableFile implements TableFile {
 
     @Override
     public int getExistPageCount() {
-        return (int) ((file.length() - BPTreeRootPtrPage.rootPtrPageSizeInByte) / Page.defaultPageSizeInByte);
+        return (int) ((file.length() - BPTreeRootPtrPage.rootPtrPageSizeInByte) / DataBase.getDBConfig().getPageSizeInByte());
     }
 
     /**
@@ -908,7 +908,7 @@ public class BPTreeTableFile implements TableFile {
             rf.seek(0);
             rf.write(new byte[BPTreeRootPtrPage.rootPtrPageSizeInByte]);
         } else {
-            int pageSizeInByte = Page.defaultPageSizeInByte; // 除 ROOT_PTR之外的页大小
+            int pageSizeInByte = DataBase.getDBConfig().getPageSizeInByte(); // 除 ROOT_PTR之外的页大小
             rf.seek(BPTreeRootPtrPage.rootPtrPageSizeInByte + (pageNo - 1) * pageSizeInByte);
             rf.write(new byte[pageSizeInByte]);
         }
@@ -954,7 +954,7 @@ public class BPTreeTableFile implements TableFile {
         if (headerPageID == null) {
             synchronized (this) {
                 BufferedOutputStream bw = new BufferedOutputStream(new FileOutputStream(file, true));
-                byte[] emptyData = new byte[Page.defaultPageSizeInByte];
+                byte[] emptyData = new byte[DataBase.getDBConfig().getPageSizeInByte()];
                 bw.write(emptyData);
                 bw.close();
                 emptyPageNo = getExistPageCount();

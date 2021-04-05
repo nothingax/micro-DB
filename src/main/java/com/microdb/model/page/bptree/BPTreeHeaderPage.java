@@ -1,8 +1,8 @@
 package com.microdb.model.page.bptree;
 
 import com.microdb.exception.DbException;
+import com.microdb.model.DataBase;
 import com.microdb.model.row.Row;
-import com.microdb.model.page.Page;
 
 import java.io.*;
 import java.util.Arrays;
@@ -15,7 +15,7 @@ import java.util.Iterator;
  * @author zhangjw
  * @version 1.0
  */
-public class BPTreeHeaderPage extends BPTreePage implements Serializable{
+public class BPTreeHeaderPage extends BPTreePage implements Serializable {
     private static final long serialVersionUID = 6252559806123400153L;
 
     /**
@@ -43,7 +43,7 @@ public class BPTreeHeaderPage extends BPTreePage implements Serializable{
     /**
      * 槽位数量
      */
-    public static final int maxSlotNum = Page.defaultPageSizeInByte - 2 * BPTreeHeaderPage.POINTER_SIZE_IN_BYTE;
+    public static final int maxSlotNum = DataBase.getDBConfig().getPageSizeInByte() - 2 * BPTreeHeaderPage.POINTER_SIZE_IN_BYTE;
 
     public BPTreeHeaderPage(BPTreePageID bpTreePageID, byte[] pageData) throws IOException {
         this.pageID = bpTreePageID;
@@ -52,7 +52,7 @@ public class BPTreeHeaderPage extends BPTreePage implements Serializable{
 
     @Override
     public byte[] serialize() throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(Page.defaultPageSizeInByte);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(DataBase.getDBConfig().getPageSizeInByte());
         DataOutputStream dos = new DataOutputStream(baos);
         // 1. slotUsageStatusBitMap
         for (boolean b : slotUsageStatusBitMap) {
