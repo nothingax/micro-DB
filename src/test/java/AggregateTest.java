@@ -40,7 +40,9 @@ public class AggregateTest {
                 Arrays.asList(new TableDesc.Attribute("f1", FieldType.INT),
                         new TableDesc.Attribute("f2", FieldType.INT));
         TableDesc tableDesc = new TableDesc(attributes);
-        TableFile tableFile = new HeapTableFile(new File(fileName), tableDesc);
+        File file = new File(fileName);
+        file.deleteOnExit();
+        TableFile tableFile = new HeapTableFile(file, tableDesc);
 
         // tableDesc
         dataBase.addTable(tableFile, "t_person", tableDesc);
