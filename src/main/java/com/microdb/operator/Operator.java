@@ -1,6 +1,7 @@
 package com.microdb.operator;
 
 import com.microdb.exception.DbException;
+import com.microdb.model.DataBase;
 import com.microdb.model.row.Row;
 import com.microdb.model.table.TableDesc;
 

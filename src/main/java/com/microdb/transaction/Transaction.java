@@ -28,12 +28,18 @@ public class Transaction {
      */
     private Lock.LockType lockType;
 
+    private DataBase dataBase;
+
     /**
      * 构造事务,事务ID自增
      */
     public Transaction(Lock.LockType lockType) {
         this.transactionId = new TransactionID();
         this.lockType = lockType;
+    }
+
+    public void setDataBase(DataBase dataBase) {
+        this.dataBase = DataBase.getInstance();
     }
 
     public TransactionID getTransactionId() {
@@ -50,10 +56,10 @@ public class Transaction {
     }
 
     public void start() {
-        DataBase.getUndoLogFile().recordTxStart(transactionId);
+        dataBase.getUndoLogFile().recordTxStart(transactionId);
 
         try {
-            DataBase.getRedoLogFile().recordTxStart(transactionId);
+            dataBase.getRedoLogFile().recordTxStart(transactionId);
         } catch (IOException e) {
             throw new DbException(" redo log recordTxStart error ", e);
         }
@@ -73,9 +79,9 @@ public class Transaction {
 
         // STEAL/No-force策略，事务提交，脏页也可不刷盘,需记录日志到redolog
         try {
-            RedoLogFile redoLogFile = DataBase.getRedoLogFile();
+            RedoLogFile redoLogFile = dataBase.getRedoLogFile();
             redoLogFile.recordTxCommit(transactionId);
-            List<Page> pages = DataBase.getLockManager().getPages(transactionId);
+            List<Page> pages = dataBase.getLockManager().getPages(transactionId);
             for (Page page : pages) {
                 if (page.isDirty()) {
                     redoLogFile.recordPageChange(transactionId, page.getBeforePage(), page);
@@ -85,15 +91,15 @@ public class Transaction {
         } catch (IOException e) {
             throw new DbException("redo log recordTxCommit error", e);
         }
-        List<PageID> pageIDs = DataBase.getLockManager().getPageIDs(transactionId);
+        List<PageID> pageIDs = dataBase.getLockManager().getPageIDs(transactionId);
         // 事务提交后更新页快照
         for (PageID pageID : pageIDs) {
-            Page page = DataBase.getBufferPool().getPage(pageID);
+            Page page = dataBase.getBufferPool().getPage(pageID);
             page.saveBeforePage();
         }
 
         // 释放锁
-        DataBase.getLockManager().releaseLock(transactionId);
+        dataBase.getLockManager().releaseLock(transactionId);
 
         // 清除ThreadLocal中的事务
         Connection.clearTransaction();
@@ -111,10 +117,10 @@ public class Transaction {
 
         // Steal/No-force策略
         // 将事务修改过的页面，在磁盘刷回原始版本，缓存中丢弃
-        DataBase.getUndoLogFile().rollback(transactionId);
+        dataBase.getUndoLogFile().rollback(transactionId);
 
         // 释放锁
-        DataBase.getLockManager().releaseLock(transactionId);
+        dataBase.getLockManager().releaseLock(transactionId);
 
         // 清除ThreadLocal中的事务
         Connection.clearTransaction();

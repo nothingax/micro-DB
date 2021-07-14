@@ -47,7 +47,7 @@ public class BPTreeTest {
         File file = new File(fileName);
         file.deleteOnExit();
         TableDesc tableDesc = new TableDesc(attributes);
-        BPTreeTableFile bpTreeTableFile = new BPTreeTableFile(file, tableDesc, 0);
+        BPTreeTableFile bpTreeTableFile = new BPTreeTableFile(dataBase,file, tableDesc, 0);
         dataBase.addTable(bpTreeTableFile, "t_person");
         this.dataBase = dataBase;
 

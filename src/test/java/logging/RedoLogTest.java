@@ -41,7 +41,7 @@ public class RedoLogTest {
 
         DataBase.reset();
         DataBase dataBase = DataBase.getInstance();
-        bufferPool = DataBase.getBufferPool();
+        bufferPool = dataBase.getBufferPool();
         // 创建数据库文件
         String fileName = "person";
 
@@ -51,7 +51,7 @@ public class RedoLogTest {
         File file = new File(fileName);
         file.deleteOnExit();
         TableDesc tableDesc = new TableDesc(attributes);
-        TableFile tableFile = new HeapTableFile(file, tableDesc);
+        TableFile tableFile = new HeapTableFile(dataBase,file, tableDesc);
         dataBase.addTable(tableFile, "t_person");
         this.tableId = tableFile.getTableId();
         personTableDesc = tableDesc;
@@ -80,14 +80,14 @@ public class RedoLogTest {
         // 插入一行
         Row row = new Row(personTableDesc);
         row.setField(0, new IntField(10));
-        DataBase.getBufferPool().insertRow(row, "t_person");
+        dataBase.getBufferPool().insertRow(row, "t_person");
         transaction.commit();
 
         // 模拟数据库崩溃后重启
         DataBase.resetWithFile(tableFile, "t_person");
 
         // 从redo 日志中恢复数据
-        DataBase.getRedoLogFile().recover();
+        dataBase.getRedoLogFile().recover();
 
         // 验证数据已写入磁盘
         Transaction t2 = new Transaction(Lock.LockType.SLock);
@@ -113,7 +113,7 @@ public class RedoLogTest {
         // 插入一行
         Row row = new Row(personTableDesc);
         row.setField(0, new IntField(10));
-        DataBase.getBufferPool().insertRow(row, "t_person");
+        dataBase.getBufferPool().insertRow(row, "t_person");
 
         // transaction.commit();
         // 模拟事务提交前，数据被刷盘,刷盘前记录redo日志
@@ -121,7 +121,7 @@ public class RedoLogTest {
         // 模拟数据库崩溃后重启
         DataBase.resetWithFile(tableFile, "t_person");
         // 从redo 日志中恢复数据
-        DataBase.getRedoLogFile().recover();
+        dataBase.getRedoLogFile().recover();
 
         // 验证数据已写入磁盘
         Transaction t2 = new Transaction(Lock.LockType.SLock);

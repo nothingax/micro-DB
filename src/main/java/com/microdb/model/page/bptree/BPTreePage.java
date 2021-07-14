@@ -1,9 +1,9 @@
 package com.microdb.model.page.bptree;
 
 import com.microdb.exception.DbException;
+import com.microdb.model.page.PageCommon;
 import com.microdb.model.row.Row;
 import com.microdb.model.table.TableDesc;
-import com.microdb.model.page.DirtyPage;
 import com.microdb.model.page.Page;
 
 import java.io.DataOutputStream;
@@ -17,7 +17,7 @@ import java.util.Iterator;
  * @author zhangjw
  * @version 1.0
  */
-public abstract class BPTreePage extends DirtyPage implements Page, Serializable {
+public abstract class BPTreePage extends PageCommon implements Page, Serializable {
 
     private static final long serialVersionUID = -6147293644376452185L;
     /**

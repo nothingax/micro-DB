@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
  */
 public class LockManager {
 
-
     /**
      * 锁的默认超时时间
      */
@@ -37,10 +36,15 @@ public class LockManager {
      */
     private final ConcurrentHashMap<TransactionID, List<PageID>> transactionTable;
 
+    private DataBase dataBase;
 
     public LockManager() {
         lockTable = new ConcurrentHashMap<>();
         transactionTable = new ConcurrentHashMap<>();
+    }
+
+    public void setDataBase(DataBase dataBase) {
+        this.dataBase = DataBase.getInstance();
     }
 
     public int getDefaultTimeOutInMillis() {
@@ -170,7 +174,7 @@ public class LockManager {
 
     public List<Page> getPages(TransactionID transactionId) {
         List<PageID> pageIDS = transactionTable.get(transactionId);
-        BufferPool bufferPool = DataBase.getBufferPool();
+        BufferPool bufferPool = dataBase.getBufferPool();
 
         if (pageIDS != null ) {
             return pageIDS.stream()

@@ -11,6 +11,7 @@ import com.microdb.model.row.Row;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 import com.microdb.transaction.Lock;
+import com.microdb.transaction.LockManager;
 import com.microdb.transaction.Transaction;
 import com.microdb.transaction.TransactionID;
 
@@ -36,9 +37,12 @@ public class BufferPool {
      */
     private final int capacity;
 
-    public BufferPool(DBConfig dbConfig) {
+    private final DataBase dataBase;
+
+    public BufferPool(DataBase dataBase, DBConfig dbConfig) {
         this.capacity = dbConfig.getBufferPoolCapacity();
         pool = new ConcurrentHashMap<>();
+        this.dataBase = dataBase;
     }
 
 
@@ -54,7 +58,7 @@ public class BufferPool {
     public Page getPage(PageID pageID) {
         Transaction currentTransaction = Connection.currentTransaction();
         try {
-            DataBase.getLockManager().acquireLock(currentTransaction, pageID);
+            dataBase.getLockManager().acquireLock(currentTransaction, pageID);
         } catch (TransactionException e) {
             System.out.println(String.format("acquire lock 失败,transaction=%s,pageID=%s", currentTransaction, pageID));
             throw e;
@@ -151,11 +155,11 @@ public class BufferPool {
 
         if (page.isDirty()) {
             // 刷盘前，将页的原始数据写入undo日志保存
-            DataBase.getUndoLogFile().recordBeforePageWhenFlushDisk(page.getDirtyTxId(), page.getBeforePage());
+            dataBase.getUndoLogFile().recordBeforePageWhenFlushDisk(page.getDirtyTxId(), page.getBeforePage());
 
             // 记录 redo log
             try {
-                DataBase.getRedoLogFile().recordPageChange(page.getDirtyTxId(), page.getBeforePage(), page);
+                dataBase.getRedoLogFile().recordPageChange(page.getDirtyTxId(), page.getBeforePage(), page);
             } catch (IOException e) {
                 throw new DbException("redo log recordBeforePageWhenFlushDisk error ", e);
             }

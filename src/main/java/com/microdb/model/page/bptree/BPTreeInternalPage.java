@@ -92,11 +92,12 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable {
     /**
      * 初始化一块leafPae页面默认大小的空间
      */
-    public static byte[] createEmptyPageData() {
-        return new byte[DataBase.getDBConfig().getPageSizeInByte()];
+    public static byte[] createEmptyPageData(int pageSize) {
+        return new byte[pageSize];
     }
 
-    public BPTreeInternalPage(BPTreePageID bpTreePageID, byte[] pageData, int keyFieldIndex) throws IOException {
+    public BPTreeInternalPage(DataBase dataBase, BPTreePageID bpTreePageID, byte[] pageData, int keyFieldIndex) throws IOException {
+        this.dataBase = dataBase;
         this.pageID = bpTreePageID;
         this.tableDesc = DataBase.getInstance().getDbTableById(bpTreePageID.getTableId()).getTableDesc();
         this.maxSlotNum = calculateMaxSlotNum(tableDesc);
@@ -240,7 +241,7 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable {
         // 每页一个父pageNo指针 一个字节表示子page类型
         int extra = FieldType.INT.getSizeInByte() + 1;
 
-        return (DataBase.getDBConfig().getPageSizeInByte() - extra) / perEntrySizeInByte;
+        return (dataBase.getDBConfig().getPageSizeInByte() - extra) / perEntrySizeInByte;
     }
 
     @Override

@@ -37,7 +37,7 @@ public class TransactionTest {
     @Before
     public void initDataBase() throws IOException {
         DataBase dataBase = DataBase.getInstance();
-        bufferPool = DataBase.getBufferPool();
+        bufferPool = dataBase.getBufferPool();
         // 创建数据库文件
         String fileName = UUID.randomUUID().toString();
 
@@ -48,7 +48,7 @@ public class TransactionTest {
         File file = new File(fileName);
         file.deleteOnExit();
         TableDesc tableDesc = new TableDesc(attributes);
-        TableFile tableFile = new HeapTableFile(file, tableDesc);
+        TableFile tableFile = new HeapTableFile(dataBase,file, tableDesc);
         dataBase.addTable(tableFile, "t_person");
         personTableDesc = tableDesc;
         this.dataBase = dataBase;
@@ -61,7 +61,7 @@ public class TransactionTest {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
             row.setField(1, new IntField(18));
-            DataBase.getBufferPool().insertRow(row, "t_person");
+            dataBase.getBufferPool().insertRow(row, "t_person");
         }
         transaction.commit();
     }
@@ -78,7 +78,7 @@ public class TransactionTest {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
             row.setField(1, new IntField(18));
-            DataBase.getBufferPool().insertRow(row, "t_person");
+            dataBase.getBufferPool().insertRow(row, "t_person");
         }
 
         System.out.println("开始打印表数据====");
@@ -111,7 +111,7 @@ public class TransactionTest {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
             row.setField(1, new IntField(18));
-            DataBase.getBufferPool().insertRow(row, "t_person");
+            dataBase.getBufferPool().insertRow(row, "t_person");
         }
 
         System.out.println("开始打印表数据====");

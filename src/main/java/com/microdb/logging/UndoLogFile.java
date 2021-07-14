@@ -6,6 +6,7 @@ import com.microdb.model.table.DbTable;
 import com.microdb.model.page.Page;
 import com.microdb.transaction.TransactionID;
 
+import javax.swing.*;
 import java.io.*;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,11 +39,17 @@ public class UndoLogFile {
     private int offsetAddrInByte = 8;
 
     /**
+     * 数据库唯一实例
+     */
+    private final DataBase dataBase;
+
+    /**
      * 事务开始时的偏移地址
      */
     HashMap<Long, Long> txId2StartOffset = new HashMap<>();
     
-    public UndoLogFile(File file){
+    public UndoLogFile(DataBase dataBase,File file){
+        this.dataBase = dataBase;
         this.file = file;
         try {
             raf = new RandomAccessFile(file, "rw");
@@ -126,7 +133,7 @@ public class UndoLogFile {
 
                     DbTable dbTableById = DataBase.getInstance().getDbTableById(beforePage.getPageID().getTableId());
                     dbTableById.getTableFile().writePageToDisk(beforePage);
-                    DataBase.getBufferPool().discardPages(Collections.singletonList(beforePage.getPageID()));
+                    dataBase.getBufferPool().discardPages(Collections.singletonList(beforePage.getPageID()));
                 }
 
                 // 已经到开始位置，结束循环

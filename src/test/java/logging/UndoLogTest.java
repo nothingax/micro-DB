@@ -38,7 +38,7 @@ public class UndoLogTest {
     @Before
     public void initDataBase() throws IOException {
         DataBase dataBase = DataBase.getInstance();
-        bufferPool = DataBase.getBufferPool();
+        bufferPool = dataBase.getBufferPool();
         // 创建数据库文件
         String fileName = UUID.randomUUID().toString();
 
@@ -49,7 +49,7 @@ public class UndoLogTest {
         File file = new File(fileName);
         file.deleteOnExit();
         TableDesc tableDesc = new TableDesc(attributes);
-        TableFile tableFile = new HeapTableFile(file, tableDesc);
+        TableFile tableFile = new HeapTableFile(dataBase,file, tableDesc);
         dataBase.addTable(tableFile, "t_person");
         this.tableId = tableFile.getTableId();
         personTableDesc = tableDesc;
@@ -74,12 +74,12 @@ public class UndoLogTest {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
             row.setField(1, new IntField(18));
-            DataBase.getBufferPool().insertRow(row, "t_person");
+            dataBase.getBufferPool().insertRow(row, "t_person");
         }
 
 
         // 模拟Steal：事务未提交，但缓冲区的脏页被刷盘
-        DataBase.getBufferPool().flushAllPage();
+        dataBase.getBufferPool().flushAllPage();
         // 事务终止
         transaction.abort();
 

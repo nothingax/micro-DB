@@ -41,13 +41,13 @@ public class DataBaseTest {
         TableDesc tableDesc = new TableDesc(attributes);
         File file = new File(fileName);
         file.deleteOnExit();
-        TableFile tableFile = new HeapTableFile(file, tableDesc);
+        TableFile tableFile = new HeapTableFile(dataBase,file, tableDesc);
 
         // tableDesc
         dataBase.addTable(tableFile, "t_person", tableDesc);
 
         this.dataBase = dataBase;
-        this.bufferPool = DataBase.getBufferPool();
+        this.bufferPool = dataBase.getBufferPool();
 
     }
     @Test
@@ -71,7 +71,7 @@ public class DataBaseTest {
     @Test
     public void testCalculateMaxSlotNum() throws IOException {
         DbTable tablePerson = this.dataBase.getDbTableByName("t_person");
-        HeapPage heapPage = new HeapPage(new HeapPageID(tablePerson.getTableId(), 0), HeapPage.createEmptyPageData());
+        HeapPage heapPage = new HeapPage(dataBase,new HeapPageID(tablePerson.getTableId(), 0), HeapPage.createEmptyPageData(dataBase.getDBConfig().getPageSizeInByte()));
         int i = heapPage.calculateMaxSlotNum(tablePerson.getTableDesc());
         System.out.println(i);
         Assert.assertEquals(819, i);

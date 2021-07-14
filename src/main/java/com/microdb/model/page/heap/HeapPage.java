@@ -2,10 +2,11 @@ package com.microdb.model.page.heap;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
+import com.microdb.model.page.PageCommon;
 import com.microdb.model.row.Row;
 import com.microdb.model.table.TableDesc;
 import com.microdb.model.field.Field;
-import com.microdb.model.page.DirtyPage;
+import com.microdb.model.page.PageDirty;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
 import com.microdb.model.row.RowID;
@@ -20,7 +21,7 @@ import java.util.Iterator;
  * @author zhangjw
  * @version 1.0
  */
-public class HeapPage extends DirtyPage implements Page, Serializable {
+public class HeapPage extends PageCommon implements Page, Serializable {
 
     private static final long serialVersionUID = 201055810875655321L;
     /**
@@ -51,7 +52,8 @@ public class HeapPage extends DirtyPage implements Page, Serializable {
      */
     private byte[] beforePageData;
 
-    public HeapPage(PageID pageID, byte[] pageData) throws IOException {
+    public HeapPage(DataBase dataBase, PageID pageID, byte[] pageData) throws IOException {
+        this.dataBase = dataBase;
         this.pageID = pageID;
         this.tableDesc = DataBase.getInstance().getDbTableById(pageID.getTableId()).getTableDesc();
         this.maxSlotNum = calculateMaxSlotNum(this.tableDesc);
@@ -70,7 +72,7 @@ public class HeapPage extends DirtyPage implements Page, Serializable {
 
     @Override
     public byte[] serialize() throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(DataBase.getDBConfig().getPageSizeInByte());
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(dataBase.getDBConfig().getPageSizeInByte());
         DataOutputStream dos = new DataOutputStream(baos);
 
         // 1.序列化 slot 使用状态位图
@@ -91,7 +93,7 @@ public class HeapPage extends DirtyPage implements Page, Serializable {
 
         // 3.slot状态位图和行数据之外的位置填充 0
         int zeroSize =
-                DataBase.getDBConfig().getPageSizeInByte()
+                dataBase.getDBConfig().getPageSizeInByte()
                         - slotUsageStatusBitMap.length
                         - tableDesc.getRowMaxSizeInBytes() * rows.length;
         fillBytes(dos, zeroSize);
@@ -153,8 +155,8 @@ public class HeapPage extends DirtyPage implements Page, Serializable {
         return !slotUsageStatusBitMap[i];
     }
 
-    public static byte[] createEmptyPageData() {
-        return new byte[DataBase.getDBConfig().getPageSizeInByte()];
+    public static byte[] createEmptyPageData(int pageSize) {
+        return new byte[pageSize];
     }
 
     @Override
@@ -175,7 +177,7 @@ public class HeapPage extends DirtyPage implements Page, Serializable {
     public int calculateMaxSlotNum(TableDesc tableDesc) {
         // slot状态位占用空间=1byte
         int slotStatusSizeInByte = 1;
-        return DataBase.getDBConfig().getPageSizeInByte() / (tableDesc.getRowMaxSizeInBytes() + slotStatusSizeInByte);
+        return dataBase.getDBConfig().getPageSizeInByte() / (tableDesc.getRowMaxSizeInBytes() + slotStatusSizeInByte);
     }
 
     @Override
@@ -229,7 +231,7 @@ public class HeapPage extends DirtyPage implements Page, Serializable {
     @Override
     public HeapPage getBeforePage() {
         try {
-            return new HeapPage(pageID, beforePageData);
+            return new HeapPage(dataBase, pageID, beforePageData);
         } catch (IOException e) {
             throw new DbException("get before page error", e);
         }

@@ -61,32 +61,33 @@ public class DataBase {
         this.tableId2Table = new HashMap<>();
         this.tableName2Table = new HashMap<>();
         this.lockManager = new LockManager();
-        this.bufferPool = new BufferPool(dbConfig);
-        this.undoLogFile = new UndoLogFile(new File("undo"));
-        this.redoLogFile = new RedoLogFile(new File("redo"));
+        this.bufferPool = new BufferPool(this, dbConfig);
+        this.undoLogFile = new UndoLogFile(this, new File("undo"));
+        this.redoLogFile = new RedoLogFile(this, new File("redo"));
     }
 
     public static DataBase getInstance() {
         return singleton.get();
     }
 
-    public static DBConfig getDBConfig() {
+    public DBConfig getDBConfig() {
         return singleton.get().dbConfig;
     }
 
-    public static BufferPool getBufferPool() {
+
+    public BufferPool getBufferPool() {
         return singleton.get().bufferPool;
     }
 
-    public static LockManager getLockManager() {
+    public LockManager getLockManager() {
         return singleton.get().lockManager;
     }
 
-    public static UndoLogFile getUndoLogFile() {
+    public UndoLogFile getUndoLogFile() {
         return singleton.get().undoLogFile;
     }
 
-    public static RedoLogFile getRedoLogFile() {
+    public RedoLogFile getRedoLogFile() {
         return singleton.get().redoLogFile;
     }
 

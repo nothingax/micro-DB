@@ -4,6 +4,7 @@ import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
 import com.microdb.model.row.Row;
 
+import javax.xml.crypto.Data;
 import java.io.*;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -43,16 +44,18 @@ public class BPTreeHeaderPage extends BPTreePage implements Serializable {
     /**
      * 槽位数量
      */
-    public static final int maxSlotNum = DataBase.getDBConfig().getPageSizeInByte() - 2 * BPTreeHeaderPage.POINTER_SIZE_IN_BYTE;
+    private final int maxSlotNum;
 
-    public BPTreeHeaderPage(BPTreePageID bpTreePageID, byte[] pageData) throws IOException {
+    public BPTreeHeaderPage(DataBase dataBase, BPTreePageID bpTreePageID, byte[] pageData) throws IOException {
         this.pageID = bpTreePageID;
+        this.dataBase = dataBase;
+        this.maxSlotNum = dataBase.getDBConfig().getPageSizeInByte() - 2 * BPTreeHeaderPage.POINTER_SIZE_IN_BYTE;
         deserialize(pageData);
     }
 
     @Override
     public byte[] serialize() throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(DataBase.getDBConfig().getPageSizeInByte());
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(dataBase.getDBConfig().getPageSizeInByte());
         DataOutputStream dos = new DataOutputStream(baos);
         // 1. slotUsageStatusBitMap
         for (boolean b : slotUsageStatusBitMap) {

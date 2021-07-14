@@ -39,7 +39,7 @@ public class JoinTest {
         TableDesc tableDesc = new TableDesc(attributes);
         File person = new File("person");
         person.deleteOnExit();
-        TableFile tableFile = new HeapTableFile(person, tableDesc);
+        TableFile tableFile = new HeapTableFile(dataBase,person, tableDesc);
         dataBase.addTable(tableFile, "t_person", tableDesc);
 
         // 部门表，2个int字段
@@ -47,7 +47,7 @@ public class JoinTest {
                 Arrays.asList(new TableDesc.Attribute("id", FieldType.INT)));
         File dept = new File("dept");
         dept.deleteOnExit();
-        TableFile depTableFile = new HeapTableFile(dept, depTableDesc);
+        TableFile depTableFile = new HeapTableFile(dataBase,dept, depTableDesc);
         dataBase.addTable(depTableFile, "t_dept", depTableDesc);
 
         Transaction transaction = new Transaction(Lock.LockType.XLock);

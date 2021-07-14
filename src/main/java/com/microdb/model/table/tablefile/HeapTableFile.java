@@ -34,13 +34,19 @@ public class HeapTableFile implements TableFile {
      */
     private final TableDesc tableDesc;
 
-    public HeapTableFile(File file, TableDesc tableDesc) {
+    /**
+     * 数据库唯一实例
+     */
+    private final DataBase dataBase;
+
+    public HeapTableFile(DataBase dataBase, File file, TableDesc tableDesc) {
         if (tableDesc == null) {
             throw new IllegalArgumentException("tableDesc cant not be null");
         }
         if (file == null) {
             throw new IllegalArgumentException("file cant not be null");
         }
+        this.dataBase = dataBase;
         this.file = file;
         this.tableDesc = tableDesc;
     }
@@ -58,12 +64,12 @@ public class HeapTableFile implements TableFile {
      */
     @Override
     public Page readPageFromDisk(PageID pageID) {
-        byte[] pageData = HeapPage.createEmptyPageData();
+        byte[] pageData = HeapPage.createEmptyPageData(dataBase.getDBConfig().getPageSizeInByte());
         try {
             FileInputStream in = new FileInputStream(file);
-            in.skip(pageID.getPageNo() * DataBase.getDBConfig().getPageSizeInByte());
+            in.skip(pageID.getPageNo() * dataBase.getDBConfig().getPageSizeInByte());
             in.read(pageData);
-            return new HeapPage(pageID, pageData);
+            return new HeapPage(dataBase, pageID, pageData);
         } catch (IOException e) {
             throw new DbException("read Page from disk error", e);
         }
@@ -79,7 +85,7 @@ public class HeapTableFile implements TableFile {
         try {
             byte[] pgData = page.serialize();
             RandomAccessFile dbFile = new RandomAccessFile(file, "rws");
-            dbFile.skipBytes(page.getPageID().getPageNo() * DataBase.getDBConfig().getPageSizeInByte());
+            dbFile.skipBytes(page.getPageID().getPageNo() * dataBase.getDBConfig().getPageSizeInByte());
             dbFile.write(pgData);
         } catch (IOException e) {
             throw new DbException("write page To disk error", e);
@@ -100,7 +106,7 @@ public class HeapTableFile implements TableFile {
      */
     @Override
     public int getExistPageCount() {
-        return (int) file.length() / DataBase.getDBConfig().getPageSizeInByte();
+        return (int) file.length() / dataBase.getDBConfig().getPageSizeInByte();
     }
 
     @Override
@@ -112,9 +118,9 @@ public class HeapTableFile implements TableFile {
         if (null == availablePage) {
             int pageNo = existPageCount; // 由于pageNo从0开始
             PageID pageID = new HeapPageID(this.getTableId(), pageNo);
-            availablePage = new HeapPage(pageID, HeapPage.createEmptyPageData());
+            availablePage = new HeapPage(dataBase, pageID, HeapPage.createEmptyPageData(dataBase.getDBConfig().getPageSizeInByte()));
             writePageToDisk(availablePage);
-            availablePage = (HeapPage) DataBase.getBufferPool().getPage(pageID);
+            availablePage = (HeapPage) dataBase.getBufferPool().getPage(pageID);
         }
         availablePage.insertRow(row);
         Connection.cacheDirtyPage(availablePage);
@@ -123,7 +129,7 @@ public class HeapTableFile implements TableFile {
     @Override
     public void deleteRow(Row row) {
         PageID pageID = row.getRowID().getPageID();
-        HeapPage page = (HeapPage) DataBase.getBufferPool().getPage(pageID);
+        HeapPage page = (HeapPage) dataBase.getBufferPool().getPage(pageID);
         page.deleteRow(row);
         Connection.cacheDirtyPage(page);
     }
@@ -136,7 +142,7 @@ public class HeapTableFile implements TableFile {
 
         for (int pageNo = 0; pageNo < existPageCount; pageNo++) {
             PageID pageID = new HeapPageID(this.getTableId(), pageNo);
-            Page pg = DataBase.getBufferPool().getPage(pageID);
+            Page pg = dataBase.getBufferPool().getPage(pageID);
             if (pg.hasEmptySlot()) {
                 return pg;
             }
@@ -207,7 +213,7 @@ public class HeapTableFile implements TableFile {
 
         private Page getPage(Integer pageNo) {
             PageID pageID = new HeapPageID(tableId, pageNo);
-            return DataBase.getBufferPool().getPage(pageID);
+            return dataBase.getBufferPool().getPage(pageID);
         }
         //
         // private Iterator<Row> getRowIterator(Integer pageNo) {

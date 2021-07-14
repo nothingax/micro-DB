@@ -62,7 +62,8 @@ public class BPTreeLeafPage extends BPTreePage implements Serializable {
      */
     private TableDesc tableDesc;
 
-    public BPTreeLeafPage(BPTreePageID pageID, byte[] pageData, int keyFieldIndex) throws IOException {
+    public BPTreeLeafPage(DataBase dataBase, BPTreePageID pageID, byte[] pageData, int keyFieldIndex) throws IOException {
+        this.dataBase = dataBase;
         this.pageID = pageID;
         this.tableDesc = DataBase.getInstance().getDbTableById(pageID.getTableId()).getTableDesc();
         this.keyFieldIndex = keyFieldIndex;

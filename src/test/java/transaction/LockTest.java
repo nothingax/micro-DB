@@ -42,7 +42,7 @@ public class LockTest {
     @Before
     public void initDataBase() throws IOException {
         DataBase dataBase = DataBase.getInstance();
-        bufferPool = DataBase.getBufferPool();
+        bufferPool = dataBase.getBufferPool();
         // 创建数据库文件
         String fileName = UUID.randomUUID().toString();
 
@@ -53,7 +53,7 @@ public class LockTest {
         File file = new File(fileName);
         file.deleteOnExit();
         TableDesc tableDesc = new TableDesc(attributes);
-        TableFile tableFile = new HeapTableFile(file, tableDesc);
+        TableFile tableFile = new HeapTableFile(dataBase,file, tableDesc);
         dataBase.addTable(tableFile, "t_person");
         personTableDesc = tableDesc;
         this.dataBase = dataBase;
@@ -66,7 +66,7 @@ public class LockTest {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
             row.setField(1, new IntField(18));
-            DataBase.getBufferPool().insertRow(row, "t_person");
+            dataBase.getBufferPool().insertRow(row, "t_person");
         }
         transaction.commit();
     }
@@ -77,7 +77,7 @@ public class LockTest {
     @Test
     public void concurrentGetXLockSamePage() throws ExecutionException, InterruptedException {
         System.out.println("concurrentGetSamePageXLock----------------start");
-        DbTable table = DataBase.getInstance().getDbTableByName("t_person");
+        DbTable table = dataBase.getInstance().getDbTableByName("t_person");
         ExecutorService threadPool = Executors.newCachedThreadPool();
         int threadNum = 2;
         // 同页
@@ -88,7 +88,7 @@ public class LockTest {
             Transaction transaction = new Transaction(Lock.LockType.XLock);
             Future<Page> pageFuture = threadPool.submit(() -> {
                 Connection.passingTransaction(transaction);
-                return DataBase.getBufferPool().getPage(heapPageID);
+                return dataBase.getBufferPool().getPage(heapPageID);
             });
             futureResult.add(pageFuture);
 
@@ -117,7 +117,7 @@ public class LockTest {
      */
     @Test
     public void concurrentGetXLockOnDifferentPages() throws ExecutionException, InterruptedException {
-        DbTable table = DataBase.getInstance().getDbTableByName("t_person");
+        DbTable table = dataBase.getInstance().getDbTableByName("t_person");
         ExecutorService threadPool = Executors.newCachedThreadPool();
         int threadNum = 2;
 
@@ -128,7 +128,7 @@ public class LockTest {
             Transaction transaction = new Transaction(Lock.LockType.XLock);
             Future<Page> pageFuture = threadPool.submit(() -> {
                 Connection.passingTransaction(transaction);
-                return DataBase.getBufferPool().getPage(heapPageID);
+                return dataBase.getBufferPool().getPage(heapPageID);
             });
             futureResult.add(pageFuture);
         }
@@ -150,7 +150,7 @@ public class LockTest {
      */
     @Test
     public void concurrentGetSLockSamePage() throws ExecutionException, InterruptedException {
-        DbTable table = DataBase.getInstance().getDbTableByName("t_person");
+        DbTable table = dataBase.getInstance().getDbTableByName("t_person");
         ExecutorService threadPool = Executors.newCachedThreadPool();
         int threadNum = 2;
         // 同一页
@@ -161,7 +161,7 @@ public class LockTest {
             Transaction transaction = new Transaction(Lock.LockType.SLock);
             Future<Page> pageFuture = threadPool.submit(() -> {
                 Connection.passingTransaction(transaction);
-                return DataBase.getBufferPool().getPage(heapPageID);
+                return dataBase.getBufferPool().getPage(heapPageID);
             });
             futureResult.add(pageFuture);
         }
@@ -183,7 +183,7 @@ public class LockTest {
      */
     @Test
     public void concurrentGetSLockOnDifferentPage() throws ExecutionException, InterruptedException {
-        DbTable table = DataBase.getInstance().getDbTableByName("t_person");
+        DbTable table = dataBase.getInstance().getDbTableByName("t_person");
         ExecutorService threadPool = Executors.newCachedThreadPool();
         int threadNum = 2;
         ArrayList<Future<Page>> futureResult = new ArrayList<>();
@@ -193,7 +193,7 @@ public class LockTest {
             Transaction transaction = new Transaction(Lock.LockType.SLock);
             Future<Page> pageFuture = threadPool.submit(() -> {
                 Connection.passingTransaction(transaction);
-                return DataBase.getBufferPool().getPage(heapPageID);
+                return dataBase.getBufferPool().getPage(heapPageID);
             });
             futureResult.add(pageFuture);
         }
@@ -213,7 +213,7 @@ public class LockTest {
     // 锁升级：一个事务先后获取一个页s锁、x锁 ，锁应升级为x锁
     @Test
     public void getSAndXLockOnSamePage() throws ExecutionException, InterruptedException {
-        DbTable table = DataBase.getInstance().getDbTableByName("t_person");
+        DbTable table = dataBase.getInstance().getDbTableByName("t_person");
         ExecutorService threadPool = Executors.newCachedThreadPool();
         int threadNum = 2;
         ArrayList<Future<Page>> futureResult = new ArrayList<>();
@@ -222,14 +222,14 @@ public class LockTest {
         Transaction transaction = new Transaction(Lock.LockType.SLock);
         Future<Page> pageFuture = threadPool.submit(() -> {
             Connection.passingTransaction(transaction);
-            return DataBase.getBufferPool().getPage(heapPageID);
+            return dataBase.getBufferPool().getPage(heapPageID);
         });
         futureResult.add(pageFuture);
 
         transaction.setLockType(Lock.LockType.XLock);
         Future<Page> pageFuture2 = threadPool.submit(() -> {
             Connection.passingTransaction(transaction);
-            return DataBase.getBufferPool().getPage(heapPageID);
+            return dataBase.getBufferPool().getPage(heapPageID);
         });
         futureResult.add(pageFuture2);
 
@@ -238,7 +238,7 @@ public class LockTest {
         Transaction transaction3 = new Transaction(Lock.LockType.SLock);
         Future<Page> pageFuture3 = threadPool.submit(() -> {
             Connection.passingTransaction(transaction3);
-            return DataBase.getBufferPool().getPage(heapPageID);
+            return dataBase.getBufferPool().getPage(heapPageID);
         });
         futureResult.add(pageFuture3);
 
@@ -266,7 +266,7 @@ public class LockTest {
     // 锁升级：一个事务先后获取一个页x锁、s锁 ，应保持x锁不变
     @Test
     public void getXAndSLockOnSamePage() throws ExecutionException, InterruptedException {
-        DbTable table = DataBase.getInstance().getDbTableByName("t_person");
+        DbTable table = dataBase.getInstance().getDbTableByName("t_person");
         ExecutorService threadPool = Executors.newCachedThreadPool();
         int threadNum = 2;
         ArrayList<Future<Page>> futureResult = new ArrayList<>();
@@ -275,7 +275,7 @@ public class LockTest {
         Transaction transaction = new Transaction(Lock.LockType.XLock);
         Future<Page> pageFuture = threadPool.submit(() -> {
             Connection.passingTransaction(transaction);
-            return DataBase.getBufferPool().getPage(heapPageID);
+            return dataBase.getBufferPool().getPage(heapPageID);
         });
         futureResult.add(pageFuture);
 
@@ -284,7 +284,7 @@ public class LockTest {
         transaction.setLockType(Lock.LockType.SLock);
         Future<Page> pageFuture2 = threadPool.submit(() -> {
             Connection.passingTransaction(transaction);
-            return DataBase.getBufferPool().getPage(heapPageID);
+            return dataBase.getBufferPool().getPage(heapPageID);
         });
         futureResult.add(pageFuture2);
 
@@ -293,7 +293,7 @@ public class LockTest {
         Transaction transaction3 = new Transaction(Lock.LockType.SLock);
         Future<Page> pageFuture3 = threadPool.submit(() -> {
             Connection.passingTransaction(transaction3);
-            return DataBase.getBufferPool().getPage(heapPageID);
+            return dataBase.getBufferPool().getPage(heapPageID);
         });
         futureResult.add(pageFuture3);
 

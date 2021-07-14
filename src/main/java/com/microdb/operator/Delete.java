@@ -18,6 +18,11 @@ public class Delete extends Operator {
      */
     private final IOperatorIterator tableIterator;
 
+    private DataBase dataBase;
+
+    public void setDataBase(DataBase dataBase) {
+        this.dataBase = DataBase.getInstance();
+    }
 
     public Delete(IOperatorIterator tableIterator) {
         if (tableIterator == null) {
@@ -65,7 +70,7 @@ public class Delete extends Operator {
             Row row = tableIterator.next();
             // DbTable table = DataBase.getInstance().getDbTableById(row.getRowID().getPageID().getTableId());
             try {
-                DataBase.getBufferPool().deleteRow(row);
+                dataBase.getBufferPool().deleteRow(row);
             } catch (Exception e) {
                 System.out.println(row);
                 throw new DbException("deleteRow 异常", e);

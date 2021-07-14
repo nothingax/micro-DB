@@ -42,7 +42,7 @@ public class BPTreeInternalPageTest {
         File file = new File(fileName);
         file.deleteOnExit();
         TableDesc tableDesc = new TableDesc(attributes);
-        BPTreeTableFile bpTreeTableFile = new BPTreeTableFile(file, tableDesc, 0);
+        BPTreeTableFile bpTreeTableFile = new BPTreeTableFile(dataBase, file, tableDesc, 0);
         dataBase.addTable(bpTreeTableFile, "t_person");
         this.dataBase = dataBase;
 
@@ -77,10 +77,10 @@ public class BPTreeInternalPageTest {
      */
     @Test
     public void insertEntry() throws Exception {
-        byte[] data = BPTreeInternalPage.createEmptyPageData();
+        byte[] data = BPTreeInternalPage.createEmptyPageData(dataBase.getDBConfig().getPageSizeInByte());
         BPTreePageID pageID =
                 new BPTreePageID(DataBase.getInstance().getDbTableByName("t_person").getTableId(), 1, BPTreePageType.INTERNAL);
-        BPTreeInternalPage page = new BPTreeInternalPage(pageID, data, 0);
+        BPTreeInternalPage page = new BPTreeInternalPage(dataBase, pageID, data, 0);
         ArrayList<BPTreeEntry> entries = new ArrayList<>();
 
         int[][] EXAMPLE_VALUES = new int[][]{
@@ -113,10 +113,10 @@ public class BPTreeInternalPageTest {
 
     @Test
     public void testIterator() throws IOException {
-        byte[] data = BPTreeInternalPage.createEmptyPageData();
+        byte[] data = BPTreeInternalPage.createEmptyPageData(dataBase.getDBConfig().getPageSizeInByte());
         BPTreePageID pageID =
                 new BPTreePageID(DataBase.getInstance().getDbTableByName("t_person").getTableId(), 1, BPTreePageType.INTERNAL);
-        BPTreeInternalPage page = new BPTreeInternalPage(pageID, data, 0);
+        BPTreeInternalPage page = new BPTreeInternalPage(dataBase, pageID, data, 0);
         ArrayList<BPTreeEntry> entries = new ArrayList<>();
 
         int[][] EXAMPLE_VALUES = new int[][]{
@@ -183,10 +183,10 @@ public class BPTreeInternalPageTest {
     @Test
     public void deleteEntry() throws Exception {
 
-        byte[] data = BPTreeInternalPage.createEmptyPageData();
+        byte[] data = BPTreeInternalPage.createEmptyPageData(dataBase.getDBConfig().getPageSizeInByte());
         BPTreePageID pageID =
                 new BPTreePageID(DataBase.getInstance().getDbTableByName("t_person").getTableId(), 1, BPTreePageType.INTERNAL);
-        BPTreeInternalPage page = new BPTreeInternalPage(pageID, data, 0);
+        BPTreeInternalPage page = new BPTreeInternalPage(dataBase, pageID, data, 0);
         ArrayList<BPTreeEntry> entries = new ArrayList<>();
 
         int[][] EXAMPLE_VALUES = new int[][]{
@@ -224,10 +224,10 @@ public class BPTreeInternalPageTest {
 
     @Test
     public void insertEntryAndSplit() throws IOException {
-        byte[] data = BPTreeInternalPage.createEmptyPageData();
+        byte[] data = BPTreeInternalPage.createEmptyPageData(dataBase.getDBConfig().getPageSizeInByte());
         BPTreePageID pageID =
                 new BPTreePageID(DataBase.getInstance().getDbTableByName("t_person").getTableId(), 1, BPTreePageType.INTERNAL);
-        BPTreeInternalPage page = new BPTreeInternalPage(pageID, data, 0);
+        BPTreeInternalPage page = new BPTreeInternalPage(dataBase, pageID, data, 0);
         ArrayList<BPTreeEntry> entries = new ArrayList<>();
 
         System.out.println(page.getPageID());
@@ -250,8 +250,8 @@ public class BPTreeInternalPageTest {
         row.setField(1, new IntField(18));
         tableFile.insertRow(row);
 
-        rootPtrPage = (BPTreeRootPtrPage) DataBase.getBufferPool().getPage(rootPtrPageID);
-        rootNodePage = (BPTreePage) DataBase.getBufferPool().getPage(rootPtrPage.getRootNodePageID());
+        rootPtrPage = (BPTreeRootPtrPage) dataBase.getBufferPool().getPage(rootPtrPageID);
+        rootNodePage = (BPTreePage) dataBase.getBufferPool().getPage(rootPtrPage.getRootNodePageID());
         System.out.println("打印rootNodePage======");
         IntField key = (IntField) ((BPTreeInternalPage) rootNodePage).getIterator().next().getKey();
         assertTrue(key.getValue() == 5);
@@ -262,13 +262,13 @@ public class BPTreeInternalPageTest {
             // should be internal
 
             System.out.println("left=====:");
-            BPTreePage bpTreePage = (BPTreePage) DataBase.getBufferPool().getPage(next.getLeftChildPageID());
+            BPTreePage bpTreePage = (BPTreePage) dataBase.getBufferPool().getPage(next.getLeftChildPageID());
             printInternalPage((BPTreeInternalPage) bpTreePage);
             printLeafByInternalPage(tableFile, (BPTreeInternalPage) bpTreePage);
 
 
             System.out.println("right=====:");
-            BPTreePage bpTreePage1 = (BPTreePage) DataBase.getBufferPool().getPage(next.getRightChildPageID());
+            BPTreePage bpTreePage1 = (BPTreePage) dataBase.getBufferPool().getPage(next.getRightChildPageID());
             printInternalPage((BPTreeInternalPage) bpTreePage1);
             printLeafByInternalPage(tableFile, (BPTreeInternalPage) bpTreePage1);
         }
@@ -317,7 +317,7 @@ public class BPTreeInternalPageTest {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
             row.setField(1, new IntField(18));
-            DataBase.getBufferPool().insertRow(row, "t_person");
+            dataBase.getBufferPool().insertRow(row, "t_person");
         }
 
         System.out.println("开始打印表数据====");
@@ -351,7 +351,7 @@ public class BPTreeInternalPageTest {
             Row row = new Row(personTableDesc);
             row.setField(0, new IntField(i));
             row.setField(1, new IntField(18));
-            DataBase.getBufferPool().insertRow(row, "t_person");
+            dataBase.getBufferPool().insertRow(row, "t_person");
         }
 
         System.out.println("开始打印表数据====");
@@ -388,14 +388,14 @@ public class BPTreeInternalPageTest {
         scan.open();
         Row next = scan.next();
         // tableFile.deleteRow(scan.next());
-        DataBase.getBufferPool().deleteRow(next);
+        dataBase.getBufferPool().deleteRow(next);
         scan.close();
     }
 
     private void printTree(BPTreeTableFile tableFile, int tableId) {
         BPTreePageID rootPtrPageID = BPTreeRootPtrPage.getRootPtrPageID(tableId);
-        BPTreeRootPtrPage rootPtrPage = (BPTreeRootPtrPage) DataBase.getBufferPool().getPage(rootPtrPageID);
-        BPTreePage rootNodePage = (BPTreePage) DataBase.getBufferPool().getPage(rootPtrPage.getRootNodePageID());
+        BPTreeRootPtrPage rootPtrPage = (BPTreeRootPtrPage) dataBase.getBufferPool().getPage(rootPtrPageID);
+        BPTreePage rootNodePage = (BPTreePage) dataBase.getBufferPool().getPage(rootPtrPage.getRootNodePageID());
         System.out.println("打印rootNodePage======");
         if (rootNodePage instanceof BPTreeInternalPage) {
             printBPTreePage(rootNodePage);
@@ -405,11 +405,11 @@ public class BPTreeInternalPageTest {
                 BPTreeEntry next = iterator.next();
 
                 System.out.println("left=====:");
-                BPTreePage bpTreePage = (BPTreePage) DataBase.getBufferPool().getPage(next.getLeftChildPageID());
+                BPTreePage bpTreePage = (BPTreePage) dataBase.getBufferPool().getPage(next.getLeftChildPageID());
                 printBPTreePage(bpTreePage);
 
                 System.out.println("right=====:");
-                BPTreePage bpTreePage1 = (BPTreePage) DataBase.getBufferPool().getPage(next.getRightChildPageID());
+                BPTreePage bpTreePage1 = (BPTreePage) dataBase.getBufferPool().getPage(next.getRightChildPageID());
                 printBPTreePage(bpTreePage1);
             }
         } else if (rootNodePage instanceof BPTreeLeafPage) {
@@ -430,8 +430,8 @@ public class BPTreeInternalPageTest {
         Iterator<BPTreeEntry> iterator1 = bpTreePage.getIterator();
         while (iterator1.hasNext()) {
             BPTreeEntry next1 = iterator1.next();
-            printLeafPage((BPTreePage) DataBase.getBufferPool().getPage(next1.getLeftChildPageID()));
-            printLeafPage((BPTreePage) DataBase.getBufferPool().getPage(next1.getRightChildPageID()));
+            printLeafPage((BPTreePage) dataBase.getBufferPool().getPage(next1.getLeftChildPageID()));
+            printLeafPage((BPTreePage) dataBase.getBufferPool().getPage(next1.getRightChildPageID()));
         }
     }
 

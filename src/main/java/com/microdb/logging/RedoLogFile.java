@@ -40,11 +40,17 @@ public class RedoLogFile {
     private int offsetAddrInByte = 8;
 
     /**
+     * 数据库唯一实例
+     */
+    private final DataBase dataBase;
+
+    /**
      * 事务开始时的偏移地址
      */
     HashMap<Long, Long> txId2StartOffset = new HashMap<>();
 
-    public RedoLogFile(File file) {
+    public RedoLogFile(DataBase dataBase, File file) {
+        this.dataBase = dataBase;
         this.file = file;
         try {
             raf = new RandomAccessFile(file, "rw");
@@ -176,7 +182,7 @@ public class RedoLogFile {
                     Page beforePage = this.readPage();
                     DbTable dbTableById = DataBase.getInstance().getDbTableById(beforePage.getPageID().getTableId());
                     dbTableById.getTableFile().writePageToDisk(beforePage);
-                    DataBase.getBufferPool().discardPages(Collections.singletonList(beforePage.getPageID()));
+                    dataBase.getBufferPool().discardPages(Collections.singletonList(beforePage.getPageID()));
                 }
             }
             // 已经到开始位置，结束循环
@@ -236,7 +242,7 @@ public class RedoLogFile {
                     Page afterPage = this.readPage();
                     DbTable dbTableById = DataBase.getInstance().getDbTableById(beforePage.getPageID().getTableId());
                     dbTableById.getTableFile().writePageToDisk(afterPage);
-                    DataBase.getBufferPool().discardPages(Collections.singletonList(beforePage.getPageID()));
+                    dataBase.getBufferPool().discardPages(Collections.singletonList(beforePage.getPageID()));
                 }
             }
             // 已经到开始位置，结束循环

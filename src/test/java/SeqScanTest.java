@@ -17,6 +17,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,11 +36,12 @@ public class SeqScanTest {
         DataBase dataBase = DataBase.getInstance();
         // 创建数据库文件
         String fileName = UUID.randomUUID().toString();
-        List<TableDesc.Attribute> attributes = Arrays.asList(new TableDesc.Attribute("f1", FieldType.INT));
+        List<TableDesc.Attribute> attributes =
+                Collections.singletonList(new TableDesc.Attribute("f1", FieldType.INT));
         TableDesc tableDesc = new TableDesc(attributes);
         File file = new File(fileName);
         file.deleteOnExit();
-        TableFile tableFile = new HeapTableFile(file,tableDesc);
+        TableFile tableFile = new HeapTableFile(dataBase,file,tableDesc);
 
         // tableDesc
         dataBase.addTable(tableFile, "t_person", tableDesc);
