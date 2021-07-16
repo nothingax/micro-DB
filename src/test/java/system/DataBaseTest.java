@@ -1,3 +1,5 @@
+package system;
+
 import com.microdb.bufferpool.BufferPool;
 import com.microdb.connection.Connection;
 import com.microdb.model.DataBase;
@@ -20,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * test
@@ -36,7 +39,7 @@ public class DataBaseTest {
     public void initDataBase() {
         DataBase dataBase = DataBase.getInstance();
         // 创建数据库文件
-        String fileName = "person";
+        String fileName = UUID.randomUUID().toString();
         List<TableDesc.Attribute> attributes = Arrays.asList(new TableDesc.Attribute("f1", FieldType.INT));
         TableDesc tableDesc = new TableDesc(attributes);
         File file = new File(fileName);
@@ -60,12 +63,11 @@ public class DataBaseTest {
         Row row = new Row(tablePerson.getTableDesc());
         row.setField(0, new IntField(0));
         bufferPool.insertRow(row, "t_person");
-
         transaction.commit();
     }
 
     /**
-     * 一页4096字节，表t_person有一个int型字段，占用4字节，slot状态占用1字节
+     * 当配置一页4096字节，表t_person有一个int型字段，占用4字节，slot状态占用1字节
      * 4096/(4+1) = 819(向下取整)，即每页可容纳819行
      */
     @Test

@@ -1,4 +1,4 @@
-package transaction;
+package integrated.transaction;
 
 import com.microdb.bufferpool.BufferPool;
 import com.microdb.connection.Connection;

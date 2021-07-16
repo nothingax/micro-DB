@@ -1,4 +1,4 @@
-package logging;
+package integrated.logging;
 
 import com.microdb.bufferpool.BufferPool;
 import com.microdb.connection.Connection;

@@ -1,17 +1,20 @@
-package bptree;
+package integrated.bptree;
 
+import com.microdb.connection.Connection;
 import com.microdb.model.DataBase;
-import com.microdb.model.table.DbTable;
-import com.microdb.model.row.Row;
-import com.microdb.model.table.TableDesc;
-import com.microdb.model.table.tablefile.BPTreeTableFile;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
+import com.microdb.model.row.Row;
+import com.microdb.model.table.DbTable;
+import com.microdb.model.table.TableDesc;
+import com.microdb.model.table.tablefile.BPTreeTableFile;
 import com.microdb.operator.Delete;
 import com.microdb.operator.PredicateEnum;
 import com.microdb.operator.SeqScan;
 import com.microdb.operator.bptree.BPTreeScan;
 import com.microdb.operator.bptree.IndexPredicate;
+import com.microdb.transaction.Lock;
+import com.microdb.transaction.Transaction;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,7 +27,7 @@ import java.util.UUID;
 import static org.junit.Assert.assertFalse;
 
 /**
- * TODO
+ * BPTreeTest
  *
  * @author zhangjw
  * @version 1.0
@@ -59,6 +62,10 @@ public class BPTreeTest {
      */
     @Test
     public void testInsert() throws IOException {
+        Transaction transaction = new Transaction(Lock.LockType.XLock);
+        transaction.start();
+        Connection.passingTransaction(transaction);
+
         DbTable t_person = dataBase.getDbTableByName("t_person");
 
         long l1 = System.currentTimeMillis();
@@ -88,6 +95,8 @@ public class BPTreeTest {
             row.setField(1, new IntField(18));
             t_person.insertRow(row);
         }
+
+        transaction.commit();
     }
 
     /**
@@ -97,6 +106,10 @@ public class BPTreeTest {
      */
     @Test
     public void testInternalPageSplit() throws IOException {
+        Transaction transaction = new Transaction(Lock.LockType.XLock);
+        transaction.start();
+        Connection.passingTransaction(transaction);
+
         DbTable t_person = dataBase.getDbTableByName("t_person");
         long l1 = System.currentTimeMillis();
         int num = 453;
@@ -109,14 +122,19 @@ public class BPTreeTest {
             }
         }
         System.out.println("插入" + 453 * num + "条记录,耗时(ms)" + (System.currentTimeMillis() - l1));
-    }
 
+        transaction.commit();
+    }
 
     /**
      * 将Page的默认大小设置为48字节,便于测测试
      */
     @Test
     public void testInternalPageSplitWithSmallPage() throws IOException {
+        Transaction transaction = new Transaction(Lock.LockType.XLock);
+        transaction.start();
+        Connection.passingTransaction(transaction);
+
         DbTable t_person = dataBase.getDbTableByName("t_person");
 
         // 完成内部页分裂
@@ -132,6 +150,8 @@ public class BPTreeTest {
         Delete delete = new Delete(scan);
         delete.loopDelete();
 
+        transaction.commit();
+
     }
 
     /**
@@ -140,6 +160,10 @@ public class BPTreeTest {
      */
     @Test
     public void BPTreeScan() throws IOException {
+        Transaction transaction = new Transaction(Lock.LockType.XLock);
+        transaction.start();
+        Connection.passingTransaction(transaction);
+
         DbTable person = dataBase.getDbTableByName("t_person");
         long l1 = System.currentTimeMillis();
         int num = 12;
@@ -168,6 +192,8 @@ public class BPTreeTest {
             Row next = scanNoIndex.next();
             System.out.println(next);
         }
+
+        transaction.commit();
     }
 
     /**
@@ -176,6 +202,10 @@ public class BPTreeTest {
      */
     @Test
     public void BPTreeDelete() throws IOException {
+        Transaction transaction = new Transaction(Lock.LockType.XLock);
+        transaction.start();
+        Connection.passingTransaction(transaction);
+
         DbTable person = dataBase.getDbTableByName("t_person");
         long l1 = System.currentTimeMillis();
         int num = 12;
@@ -192,14 +222,14 @@ public class BPTreeTest {
         scan.open();
         Row next = scan.next();
 
-
-
         // 全部删
         Delete delete = new Delete(scan);
         delete.loopDelete();
 
         scan.open();
         assertFalse(scan.hasNext());
+
+        transaction.commit();
 
     }
 

@@ -1,4 +1,4 @@
-package logging;
+package integrated.logging;
 
 import com.microdb.bufferpool.BufferPool;
 import com.microdb.connection.Connection;
@@ -55,7 +55,6 @@ public class UndoLogTest {
         personTableDesc = tableDesc;
         this.dataBase = dataBase;
     }
-
 
     /**
      * 测试基于undoLog的回滚

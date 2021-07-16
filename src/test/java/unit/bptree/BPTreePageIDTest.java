@@ -1,10 +1,11 @@
-package bptree;
+package unit.bptree;
 
 import com.microdb.model.page.bptree.BPTreePageID;
 import com.microdb.model.page.bptree.BPTreePageType;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * B+Tree page id test

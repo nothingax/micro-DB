@@ -1,4 +1,4 @@
-package transaction;
+package integrated.transaction;
 
 import com.microdb.bufferpool.BufferPool;
 import com.microdb.connection.Connection;
@@ -104,8 +104,10 @@ public class TransactionTest {
     public void testTransactionCommit() throws IOException {
         Transaction transaction = new Transaction(Lock.LockType.XLock);
         Connection.passingTransaction(transaction);
+        transaction.start();
+
         TableFile tableFile = dataBase.getDbTableByName("t_person").getTableFile();
-        int num = 30000;
+        int num = 300;
         long l1 = System.currentTimeMillis();
         for (int i = 1; i <= num; i++) {
             Row row = new Row(personTableDesc);
@@ -122,12 +124,10 @@ public class TransactionTest {
         }
         System.out.println("耗时ms:" + (System.currentTimeMillis() - l1));
 
-
         // 添加不经过缓存的读取文件 用于测试
-
         scan.open();
-        Assert.assertFalse(scan.hasNext());
+        Assert.assertTrue(scan.hasNext());
 
-
+        transaction.commit();
     }
 }

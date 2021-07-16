@@ -1,3 +1,5 @@
+package integrated.operator;
+
 import com.microdb.connection.Connection;
 import com.microdb.model.DataBase;
 import com.microdb.model.table.DbTable;
@@ -28,6 +30,7 @@ import java.util.UUID;
  * @version 1.0
  */
 public class AggregateTest {
+
     public DataBase dataBase;
 
     @Before
@@ -80,7 +83,6 @@ public class AggregateTest {
 
         transaction.commit();
     }
-
 
     /**
      * 基于seqScan和Aggregate实现的聚合查询

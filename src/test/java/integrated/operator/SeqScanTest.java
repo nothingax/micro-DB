@@ -1,3 +1,5 @@
+package integrated.operator;
+
 import com.microdb.connection.Connection;
 import com.microdb.model.DataBase;
 import com.microdb.model.table.DbTable;
@@ -7,9 +9,6 @@ import com.microdb.model.table.tablefile.HeapTableFile;
 import com.microdb.model.table.tablefile.TableFile;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
-import com.microdb.operator.Filter;
-import com.microdb.operator.FilterPredicate;
-import com.microdb.operator.PredicateEnum;
 import com.microdb.operator.SeqScan;
 import com.microdb.transaction.Lock;
 import com.microdb.transaction.Transaction;
@@ -24,13 +23,15 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * FilterTest
+ * SeqScanTest
  *
  * @author zhangjw
  * @version 1.0
  */
-public class FilterTest {
+public class SeqScanTest {
+
     public DataBase dataBase;
+
     @Before
     public void initDataBase() throws IOException {
         DataBase dataBase = DataBase.getInstance();
@@ -63,39 +64,23 @@ public class FilterTest {
         transaction.commit();
     }
 
+
     /**
-     * 基于seqScan和filter实现的条件查询
-     * sql_1：select * from t_person where f1=5
-     * sql_2：select * from t_person where f1<5
+     * 基于seqScan 实现的简单查询，等同于sql：select * from t_person
      */
     @Test
     public void testSimpleQueryBasedOnSeqScan() throws IOException {
         Transaction transaction = new Transaction(Lock.LockType.XLock);
         transaction.start();
         Connection.passingTransaction(transaction);
-
-        SeqScan seqScan = new SeqScan(this.dataBase.getDbTableByName("t_person").getTableId());
-        System.out.println("过滤第0字段等于'5'的行");
-        FilterPredicate filterPredicateEQ = new FilterPredicate(0, PredicateEnum.EQUALS, new IntField(5));
-        Filter filter = new Filter(filterPredicateEQ, seqScan);
-        filter.open();
-        while (filter.hasNext()) {
-            Row next = filter.next();
+        SeqScan scan = new SeqScan(this.dataBase.getDbTableByName("t_person").getTableId());
+        scan.open();
+        while (scan.hasNext()) {
+            Row next = scan.next();
             next.getFields().forEach(x-> System.out.println(x.toString()));
         }
-        filter.close();
 
-
-        System.out.println("过滤第0字段<'5'的行");
-        FilterPredicate filterPredicateLessThan = new FilterPredicate(0, PredicateEnum.LESS_THAN, new IntField(5));
-        Filter filter2 = new Filter(filterPredicateLessThan, seqScan);
-        filter2.open();
-        while (filter2.hasNext()) {
-            Row next = filter2.next();
-            next.getFields().forEach(x-> System.out.println(x.toString()));
-        }
-        filter2.close();
-
+        scan.close();
         transaction.commit();
     }
 }
