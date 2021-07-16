@@ -107,7 +107,7 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable {
 
     @Override
     public byte[] serialize() throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(DataBase.getDBConfig().getPageSizeInByte());
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(dataBase.getDBConfig().getPageSizeInByte());
         DataOutputStream dos = new DataOutputStream(baos);
         // 1. slotUsageStatusBitMap
         for (boolean b : slotUsageStatusBitMap) {
@@ -148,7 +148,7 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable {
         int childrenPageTypeSize = 1;
         int keysSize = sizePerKeyInByte * (keys.length);
         int childrenNosSize = childPages.length * INDEX_SIZE_IN_BYTE * 2;// childPages 左右两个页面
-        int paddingLength = DataBase.getDBConfig().getPageSizeInByte()
+        int paddingLength = dataBase.getDBConfig().getPageSizeInByte()
                 - slotSize - parentPageNoSize - childrenPageTypeSize - keysSize - childrenNosSize;
         fillBytes(dos, paddingLength);
 

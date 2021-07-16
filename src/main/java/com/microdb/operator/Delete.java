@@ -20,11 +20,13 @@ public class Delete extends Operator {
 
     private DataBase dataBase;
 
+    @Deprecated
     public void setDataBase(DataBase dataBase) {
-        this.dataBase = DataBase.getInstance();
+        this.dataBase = dataBase;
     }
 
     public Delete(IOperatorIterator tableIterator) {
+        this.dataBase = DataBase.getInstance();
         if (tableIterator == null) {
             throw new DbException("tableIterator can not be null");
         }

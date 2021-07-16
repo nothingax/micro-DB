@@ -39,12 +39,14 @@ public class LockManager {
     private DataBase dataBase;
 
     public LockManager() {
+        this.dataBase = DataBase.getInstance();
         lockTable = new ConcurrentHashMap<>();
         transactionTable = new ConcurrentHashMap<>();
     }
 
+    @Deprecated
     public void setDataBase(DataBase dataBase) {
-        this.dataBase = DataBase.getInstance();
+        this.dataBase = dataBase;
     }
 
     public int getDefaultTimeOutInMillis() {

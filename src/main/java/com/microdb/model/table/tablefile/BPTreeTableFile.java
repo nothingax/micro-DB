@@ -690,7 +690,7 @@ public class BPTreeTableFile implements TableFile {
             if (file.length() == 0) {
                 BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file, true));
                 byte[] emptyRootPtrData = BPTreeRootPtrPage.createEmptyPageData();
-                byte[] emptyLeafData = BPTreeLeafPage.createEmptyPageData();
+                byte[] emptyLeafData = BPTreeLeafPage.createEmptyPageData(dataBase.getDBConfig().getPageSizeInByte());
                 bos.write(emptyRootPtrData);
                 bos.write(emptyLeafData);
                 bos.close();

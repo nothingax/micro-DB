@@ -6,12 +6,11 @@ import com.microdb.connection.Connection;
 import com.microdb.exception.DbException;
 import com.microdb.exception.TransactionException;
 import com.microdb.model.DataBase;
-import com.microdb.model.table.DbTable;
-import com.microdb.model.row.Row;
 import com.microdb.model.page.Page;
 import com.microdb.model.page.PageID;
+import com.microdb.model.row.Row;
+import com.microdb.model.table.DbTable;
 import com.microdb.transaction.Lock;
-import com.microdb.transaction.LockManager;
 import com.microdb.transaction.Transaction;
 import com.microdb.transaction.TransactionID;
 

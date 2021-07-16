@@ -34,12 +34,13 @@ public class Transaction {
      * 构造事务,事务ID自增
      */
     public Transaction(Lock.LockType lockType) {
+        this.dataBase = DataBase.getInstance();
         this.transactionId = new TransactionID();
         this.lockType = lockType;
     }
 
     public void setDataBase(DataBase dataBase) {
-        this.dataBase = DataBase.getInstance();
+        this.dataBase = dataBase;
     }
 
     public TransactionID getTransactionId() {

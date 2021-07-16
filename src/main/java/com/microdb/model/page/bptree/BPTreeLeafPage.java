@@ -111,8 +111,8 @@ public class BPTreeLeafPage extends BPTreePage implements Serializable {
     /**
      * 初始化一块leafPae页面默认大小的空间
      */
-    public static byte[] createEmptyPageData() {
-        return new byte[DataBase.getDBConfig().getPageSizeInByte()];
+    public static byte[] createEmptyPageData(int pageSizeInByte) {
+        return new byte[pageSizeInByte];
     }
 
     @Override
@@ -131,7 +131,7 @@ public class BPTreeLeafPage extends BPTreePage implements Serializable {
         //     }
         // }
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(DataBase.getDBConfig().getPageSizeInByte());
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(dataBase.getDBConfig().getPageSizeInByte());
         DataOutputStream dos = new DataOutputStream(baos);
 
         // 1. slotUsageStatusBitMap
@@ -158,7 +158,7 @@ public class BPTreeLeafPage extends BPTreePage implements Serializable {
         int slotSize = slotUsageStatusBitMap.length;
         int indexSize = 3 * 4;
         int rowSize = tableDesc.getRowMaxSizeInBytes() * rows.length;
-        fillBytes(dos, DataBase.getDBConfig().getPageSizeInByte() - slotSize - indexSize - rowSize);
+        fillBytes(dos, dataBase.getDBConfig().getPageSizeInByte() - slotSize - indexSize - rowSize);
 
         dos.flush();
         return baos.toByteArray();
@@ -246,7 +246,7 @@ public class BPTreeLeafPage extends BPTreePage implements Serializable {
         int sizePerRowInBytes = tableDesc.getRowMaxSizeInBytes() + slotStatusSizeInByte;
 
         int pointerSizeInBytes = 3 * POINTER_SIZE_IN_BYTE;
-        return (DataBase.getDBConfig().getPageSizeInByte() - pointerSizeInBytes) / sizePerRowInBytes;
+        return (dataBase.getDBConfig().getPageSizeInByte() - pointerSizeInBytes) / sizePerRowInBytes;
     }
 
     @Override
