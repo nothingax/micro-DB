@@ -1,14 +1,15 @@
 package integrated.operator;
 
+import base.TestBase;
 import com.microdb.connection.Connection;
 import com.microdb.model.DataBase;
-import com.microdb.model.table.DbTable;
+import com.microdb.model.field.FieldType;
+import com.microdb.model.field.IntField;
 import com.microdb.model.row.Row;
+import com.microdb.model.table.DbTable;
 import com.microdb.model.table.TableDesc;
 import com.microdb.model.table.tablefile.HeapTableFile;
 import com.microdb.model.table.tablefile.TableFile;
-import com.microdb.model.field.FieldType;
-import com.microdb.model.field.IntField;
 import com.microdb.operator.Filter;
 import com.microdb.operator.FilterPredicate;
 import com.microdb.operator.PredicateEnum;
@@ -31,7 +32,7 @@ import java.util.UUID;
  * @author zhangjw
  * @version 1.0
  */
-public class FilterTest {
+public class FilterTest extends TestBase {
     public DataBase dataBase;
     @Before
     public void initDataBase() throws IOException {

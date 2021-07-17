@@ -1,5 +1,6 @@
 package integrated.bptree;
 
+import base.TestBase;
 import com.microdb.connection.Connection;
 import com.microdb.model.DataBase;
 import com.microdb.model.field.FieldType;
@@ -10,7 +11,6 @@ import com.microdb.model.table.TableDesc;
 import com.microdb.model.table.tablefile.BPTreeTableFile;
 import com.microdb.operator.Delete;
 import com.microdb.operator.PredicateEnum;
-import com.microdb.operator.SeqScan;
 import com.microdb.operator.bptree.BPTreeScan;
 import com.microdb.operator.bptree.IndexPredicate;
 import com.microdb.transaction.Lock;
@@ -32,7 +32,7 @@ import static org.junit.Assert.assertFalse;
  * @author zhangjw
  * @version 1.0
  */
-public class BPTreeTest {
+public class BPTreeTest extends TestBase {
     public DataBase dataBase;
 
     private TableDesc personTableDesc;
@@ -97,61 +97,6 @@ public class BPTreeTest {
         }
 
         transaction.commit();
-    }
-
-    /**
-     * t_person表 Leaf页可存储453行记录，Internal页可以存储455个索引
-     * <p>
-     * 需要>455个leaf页来触发Internal页分裂
-     */
-    @Test
-    public void testInternalPageSplit() throws IOException {
-        Transaction transaction = new Transaction(Lock.LockType.XLock);
-        transaction.start();
-        Connection.passingTransaction(transaction);
-
-        DbTable t_person = dataBase.getDbTableByName("t_person");
-        long l1 = System.currentTimeMillis();
-        int num = 453;
-        for (int j = 0; j < 456; j++) {
-            for (int i = 0; i < num; i++) {
-                Row row = new Row(personTableDesc);
-                row.setField(0, new IntField(i));
-                row.setField(1, new IntField(18));
-                t_person.insertRow(row);
-            }
-        }
-        System.out.println("插入" + 453 * num + "条记录,耗时(ms)" + (System.currentTimeMillis() - l1));
-
-        transaction.commit();
-    }
-
-    /**
-     * 将Page的默认大小设置为48字节,便于测测试
-     */
-    @Test
-    public void testInternalPageSplitWithSmallPage() throws IOException {
-        Transaction transaction = new Transaction(Lock.LockType.XLock);
-        transaction.start();
-        Connection.passingTransaction(transaction);
-
-        DbTable t_person = dataBase.getDbTableByName("t_person");
-
-        // 完成内部页分裂
-        for (int i = 1; i < 14; i++) {
-            Row row = new Row(personTableDesc);
-            row.setField(0, new IntField(i));
-            row.setField(1, new IntField(18));
-            t_person.insertRow(row);
-        }
-
-        // 全部删除
-        SeqScan scan = new SeqScan(t_person.getTableId());
-        Delete delete = new Delete(scan);
-        delete.loopDelete();
-
-        transaction.commit();
-
     }
 
     /**

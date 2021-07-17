@@ -1,5 +1,6 @@
 package integrated.bptree;
 
+import base.TestBase;
 import com.microdb.connection.Connection;
 import com.microdb.model.DataBase;
 import com.microdb.model.field.FieldType;
@@ -17,10 +18,12 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.UUID;
 
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * BPTreeInternalPageTest
@@ -28,10 +31,10 @@ import static org.junit.Assert.assertTrue;
  * @author zhangjw
  * @version 1.0
  */
-public class BPTreeInternalPageTest {
+public class BPTreeInternalPageTest extends TestBase {
     public DataBase dataBase;
-
     private TableDesc personTableDesc;
+    private int keyIndex;
 
     @Before
     public void initDataBase() {
@@ -46,69 +49,31 @@ public class BPTreeInternalPageTest {
         File file = new File(fileName);
         file.deleteOnExit();
         TableDesc tableDesc = new TableDesc(attributes);
-        BPTreeTableFile bpTreeTableFile = new BPTreeTableFile(file, tableDesc, 0);
+        this.keyIndex = 0;
+        BPTreeTableFile bpTreeTableFile = new BPTreeTableFile(file, tableDesc, keyIndex);
         dataBase.addTable(bpTreeTableFile, "t_person");
         this.dataBase = dataBase;
 
         personTableDesc = tableDesc;
     }
 
+    /**
+     * t_person表 Leaf页可存储453行记录，Internal页可以存储455个索引
+     * <p>
+     * 需要>455个leaf页来触发Internal页分裂
+     *
+     * TODO pageSize多大时，执行时间过长， 后续更更改为参数可配置，
+     */
+    @Test
+    public void testInternalPageSplit() throws IOException {
+    }
+
+    /**
+     *
+     */
     @Test
     public void insertEntryAndSplit() throws IOException {
-        Transaction transaction = new Transaction(Lock.LockType.XLock);
-        transaction.start();
-        Connection.passingTransaction(transaction);
 
-        byte[] data = BPTreeInternalPage.createEmptyPageData();
-        BPTreePageID pageID =
-                new BPTreePageID(DataBase.getInstance().getDbTableByName("t_person").getTableId(), 1, BPTreePageType.INTERNAL);
-        BPTreeInternalPage page = new BPTreeInternalPage(pageID, data, 0);
-        ArrayList<BPTreeEntry> entries = new ArrayList<>();
-
-        System.out.println(page.getPageID());
-        BPTreeTableFile tableFile = (BPTreeTableFile) dataBase.getDbTableByName("t_person").getTableFile();
-
-        for (int i = 1; i < 11; i++) {
-            Row row = new Row(personTableDesc);
-            row.setField(0, new IntField(i));
-            row.setField(1, new IntField(18));
-            tableFile.insertRow(row);
-        }
-        int tableId = tableFile.getTableId();
-        BPTreePageID rootPtrPageID = BPTreeRootPtrPage.getRootPtrPageID(tableId);
-        BPTreeRootPtrPage rootPtrPage;
-        BPTreePage rootNodePage;
-
-
-        Row row = new Row(personTableDesc);
-        row.setField(0, new IntField(11));
-        row.setField(1, new IntField(18));
-        tableFile.insertRow(row);
-
-        rootPtrPage = (BPTreeRootPtrPage) DataBase.getBufferPool().getPage(rootPtrPageID);
-        rootNodePage = (BPTreePage) DataBase.getBufferPool().getPage(rootPtrPage.getRootNodePageID());
-        System.out.println("打印rootNodePage======");
-        IntField key = (IntField) ((BPTreeInternalPage) rootNodePage).getIterator().next().getKey();
-        assertTrue(key.getValue() == 5);
-        Iterator<BPTreeEntry> iterator = ((BPTreeInternalPage) rootNodePage).getIterator();
-
-        while (iterator.hasNext()) {
-            BPTreeEntry next = iterator.next();
-            // should be internal
-
-            System.out.println("left=====:");
-            BPTreePage bpTreePage = (BPTreePage) DataBase.getBufferPool().getPage(next.getLeftChildPageID());
-            printInternalPage((BPTreeInternalPage) bpTreePage);
-            printLeafByInternalPage(tableFile, (BPTreeInternalPage) bpTreePage);
-
-
-            System.out.println("right=====:");
-            BPTreePage bpTreePage1 = (BPTreePage) DataBase.getBufferPool().getPage(next.getRightChildPageID());
-            printInternalPage((BPTreeInternalPage) bpTreePage1);
-            printLeafByInternalPage(tableFile, (BPTreeInternalPage) bpTreePage1);
-        }
-
-        transaction.commit();
     }
 
     /**
@@ -273,7 +238,7 @@ public class BPTreeInternalPageTest {
         if (bpTreePage instanceof BPTreeInternalPage) {
             printInternalPage((BPTreeInternalPage) bpTreePage);
         } else if (bpTreePage instanceof BPTreeLeafPage) {
-            printLeafPage(bpTreePage);
+            printLeafPage((BPTreeLeafPage) bpTreePage);
         }
     }
 
@@ -281,12 +246,12 @@ public class BPTreeInternalPageTest {
         Iterator<BPTreeEntry> iterator1 = bpTreePage.getIterator();
         while (iterator1.hasNext()) {
             BPTreeEntry next1 = iterator1.next();
-            printLeafPage((BPTreePage) DataBase.getBufferPool().getPage(next1.getLeftChildPageID()));
-            printLeafPage((BPTreePage) DataBase.getBufferPool().getPage(next1.getRightChildPageID()));
+            printLeafPage((BPTreeLeafPage) DataBase.getBufferPool().getPage(next1.getLeftChildPageID()));
+            printLeafPage((BPTreeLeafPage) DataBase.getBufferPool().getPage(next1.getRightChildPageID()));
         }
     }
 
-    private void printLeafPage(BPTreePage bpTreePage) {
+    private void printLeafPage(BPTreeLeafPage bpTreePage) {
         Iterator<Row> rowIterator = bpTreePage.getRowIterator();
         while (rowIterator.hasNext()) {
             Row next1 = rowIterator.next();
@@ -300,6 +265,38 @@ public class BPTreeInternalPageTest {
             BPTreeEntry next = iterator.next();
             System.out.println(next);
         }
+    }
+
+    public int getMaxEntryNum(TableDesc tableDesc, int keyFieldIndex) {
+        int slotStatusSizeInByte = 1;
+        int pageNoSizeInByte = FieldType.INT.getSizeInByte();
+        int keySizeInByte = tableDesc.getFieldTypes().get(keyFieldIndex).getSizeInByte();
+
+        // 索引值+子节点指针（每个entry两个子页面）+slot状态位
+        int perEntrySizeInByte = keySizeInByte + pageNoSizeInByte * 2 + slotStatusSizeInByte;
+
+        // // 每页一个父指针，m个entry有m+1个子节点指针，一个字节表示子page类型、一个额外的header使用1字节。
+        // int extra = 2 * FieldType.INT.getSizeInByte() + 1 + 1;
+
+        // 每页一个父pageNo指针 一个字节表示子page类型
+        int extra = FieldType.INT.getSizeInByte() + 1;
+
+        return (DataBase.getDBConfig().getPageSizeInByte() - extra) / perEntrySizeInByte;
+    }
+
+    /**
+     * 返回该页容纳的行数
+     * 每行数据使用1 byte存储行的使用状态
+     * page需要额外3个指针维护左右兄弟page，父page
+     */
+    public int calculateMaxSlotNum(TableDesc tableDesc) {
+        // slot状态位占用空间=1byte
+        int slotStatusSizeInByte = 1;
+        int sizePerRowInBytes = tableDesc.getRowMaxSizeInBytes() + slotStatusSizeInByte;
+
+        int POINTER_SIZE_IN_BYTE = 4;
+        int pointerSizeInBytes = 3 * POINTER_SIZE_IN_BYTE;
+        return (DataBase.getDBConfig().getPageSizeInByte() - pointerSizeInBytes) / sizePerRowInBytes;
     }
 
 }

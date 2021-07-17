@@ -155,7 +155,7 @@ public class HeapTableFile implements TableFile {
         private Integer pageNo;
         private int tableId;
         private int existPageCount;
-        private Page curPage;
+        private HeapPage curPage;
         private Iterator<Row> rowIterator;
 
         public HeapTableFileIterator() {
@@ -205,9 +205,9 @@ public class HeapTableFile implements TableFile {
             rowIterator = null;
         }
 
-        private Page getPage(Integer pageNo) {
+        private HeapPage getPage(Integer pageNo) {
             PageID pageID = new HeapPageID(tableId, pageNo);
-            return DataBase.getBufferPool().getPage(pageID);
+            return (HeapPage) DataBase.getBufferPool().getPage(pageID);
         }
         //
         // private Iterator<Row> getRowIterator(Integer pageNo) {

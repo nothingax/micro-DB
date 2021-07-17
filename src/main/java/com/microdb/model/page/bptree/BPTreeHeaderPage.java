@@ -2,11 +2,10 @@ package com.microdb.model.page.bptree;
 
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
-import com.microdb.model.row.Row;
+import com.microdb.model.page.Page;
 
 import java.io.*;
 import java.util.Arrays;
-import java.util.Iterator;
 
 /**
  * headerPage 用来维护整个file中的pageNo的使用状态，所有headerPage串接成一个双向链表
@@ -48,6 +47,9 @@ public class BPTreeHeaderPage extends BPTreePage implements Serializable {
     public BPTreeHeaderPage(BPTreePageID bpTreePageID, byte[] pageData) throws IOException {
         this.pageID = bpTreePageID;
         deserialize(pageData);
+
+        // 保留页原始数据
+        saveBeforePage();
     }
 
     @Override
@@ -98,9 +100,18 @@ public class BPTreeHeaderPage extends BPTreePage implements Serializable {
         return maxSlotNum;
     }
 
+    // @Override
+    // public Iterator<Row> getRowIterator() {
+    //     return null;
+    // }
+
     @Override
-    public Iterator<Row> getRowIterator() {
-        return null;
+    public Page getBeforePage() {
+        try {
+            return new BPTreeHeaderPage(pageID, beforePageData);
+        } catch (IOException e) {
+            throw new DbException("get before page error", e);
+        }
     }
 
     public BPTreePageID getNextPageID() {

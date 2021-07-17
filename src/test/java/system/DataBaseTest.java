@@ -1,5 +1,6 @@
 package system;
 
+import base.TestBase;
 import com.microdb.bufferpool.BufferPool;
 import com.microdb.connection.Connection;
 import com.microdb.model.DataBase;
@@ -30,7 +31,7 @@ import java.util.UUID;
  * @author zhangjw
  * @version 1.0
  */
-public class DataBaseTest {
+public class DataBaseTest extends TestBase {
 
     public DataBase dataBase;
     private BufferPool bufferPool;

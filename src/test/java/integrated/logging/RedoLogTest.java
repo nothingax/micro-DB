@@ -1,25 +1,29 @@
 package integrated.logging;
 
+import base.TestBase;
 import com.microdb.bufferpool.BufferPool;
 import com.microdb.connection.Connection;
 import com.microdb.model.DataBase;
+import com.microdb.model.field.FieldType;
+import com.microdb.model.field.IntField;
 import com.microdb.model.row.Row;
 import com.microdb.model.table.TableDesc;
 import com.microdb.model.table.tablefile.HeapTableFile;
 import com.microdb.model.table.tablefile.TableFile;
-import com.microdb.model.field.FieldType;
-import com.microdb.model.field.IntField;
 import com.microdb.operator.SeqScan;
 import com.microdb.transaction.Lock;
 import com.microdb.transaction.Transaction;
-import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * RedoLogTest
@@ -27,7 +31,8 @@ import java.util.List;
  * @author zhangjw
  * @version 1.0
  */
-public class RedoLogTest {
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+public class RedoLogTest extends TestBase {
 
     public DataBase dataBase;
     private TableDesc personTableDesc;
@@ -35,6 +40,7 @@ public class RedoLogTest {
     private int tableId;
     private TableFile tableFile;
 
+    @Before
     public void initDataBase() throws IOException {
         File redoFile = new File("redo");
         redoFile.delete();
@@ -42,13 +48,12 @@ public class RedoLogTest {
         DataBase.reset();
         DataBase dataBase = DataBase.getInstance();
         bufferPool = DataBase.getBufferPool();
-        // 创建数据库文件
-        String fileName = "person";
 
         // 表中有两个int类型字段，person_id 字段为索引字段
         List<TableDesc.Attribute> attributes = Arrays.asList(new TableDesc.Attribute("person_id", FieldType.INT));
 
-        File file = new File(fileName);
+        // 创建数据库文件
+        File file = new File(UUID.randomUUID().toString());
         file.deleteOnExit();
         TableDesc tableDesc = new TableDesc(attributes);
         TableFile tableFile = new HeapTableFile(file, tableDesc);
@@ -57,11 +62,6 @@ public class RedoLogTest {
         personTableDesc = tableDesc;
         this.dataBase = dataBase;
         this.tableFile = tableFile;
-    }
-
-    @After
-    public void after() {
-        (new File("redo")).delete();
     }
 
     /**
@@ -105,7 +105,6 @@ public class RedoLogTest {
     @Test
     public void testUnCommitCrashRecover() throws IOException {
         initDataBase();
-
         // 表中初始化数据
         Transaction transaction = new Transaction(Lock.LockType.XLock);
         transaction.start();

@@ -1,14 +1,15 @@
 package integrated.transaction;
 
+import base.TestBase;
 import com.microdb.bufferpool.BufferPool;
 import com.microdb.connection.Connection;
 import com.microdb.model.DataBase;
+import com.microdb.model.field.FieldType;
+import com.microdb.model.field.IntField;
 import com.microdb.model.row.Row;
 import com.microdb.model.table.TableDesc;
 import com.microdb.model.table.tablefile.HeapTableFile;
 import com.microdb.model.table.tablefile.TableFile;
-import com.microdb.model.field.FieldType;
-import com.microdb.model.field.IntField;
 import com.microdb.operator.Delete;
 import com.microdb.operator.SeqScan;
 import com.microdb.transaction.Lock;
@@ -29,7 +30,7 @@ import java.util.UUID;
  * @author zhangjw
  * @version 1.0
  */
-public class TransactionTest {
+public class TransactionTest extends TestBase {
     public DataBase dataBase;
     private TableDesc personTableDesc;
     private BufferPool bufferPool;

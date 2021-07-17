@@ -1,10 +1,9 @@
 package com.microdb.model.page.bptree;
 
 import com.microdb.exception.DbException;
-import com.microdb.model.row.Row;
+import com.microdb.model.page.Page;
 
 import java.io.*;
-import java.util.Iterator;
 
 /**
  * RootPtrPage，单例，一个表文件只有一个RootPtrPage，
@@ -42,6 +41,9 @@ public class BPTreeRootPtrPage extends BPTreePage implements Serializable{
     public BPTreeRootPtrPage(BPTreePageID pageID, byte[] pageData) throws IOException {
         this.pageID = pageID;
         deserialize(pageData);
+
+        // 保留页原始数据
+        saveBeforePage();
     }
 
     /**
@@ -119,8 +121,12 @@ public class BPTreeRootPtrPage extends BPTreePage implements Serializable{
     }
 
     @Override
-    public Iterator<Row> getRowIterator() {
-        return null;
+    public Page getBeforePage() {
+        try {
+            return new BPTreeRootPtrPage(pageID, beforePageData);
+        } catch (IOException e) {
+            throw new DbException("get before page error", e);
+        }
     }
 
     public void setRootPageID(BPTreePageID bpTreePageID) {

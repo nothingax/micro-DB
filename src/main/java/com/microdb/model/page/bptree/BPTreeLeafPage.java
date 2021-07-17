@@ -3,6 +3,7 @@ package com.microdb.model.page.bptree;
 import com.microdb.exception.DbException;
 import com.microdb.model.DataBase;
 import com.microdb.model.field.Field;
+import com.microdb.model.page.Page;
 import com.microdb.model.row.Row;
 import com.microdb.model.row.RowID;
 import com.microdb.model.table.TableDesc;
@@ -74,6 +75,9 @@ public class BPTreeLeafPage extends BPTreePage implements Serializable {
         //     }
         // }
         check(this);
+
+        // 保留页原始数据
+        saveBeforePage();
     }
 
     private void check(BPTreeLeafPage leafPage) {
@@ -305,9 +309,17 @@ public class BPTreeLeafPage extends BPTreePage implements Serializable {
         rows[matchedSlot] = row;
     }
 
-    @Override
     public Iterator<Row> getRowIterator() {
         return new BPTreeLeafPageIterator(this);
+    }
+
+    @Override
+    public Page getBeforePage() {
+        try {
+            return new BPTreeLeafPage(pageID, beforePageData,keyFieldIndex);
+        } catch (IOException e) {
+            throw new DbException("get before page error", e);
+        }
     }
 
     public Iterator<Row> getReverseIterator() {

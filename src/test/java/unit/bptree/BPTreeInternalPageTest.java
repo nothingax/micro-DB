@@ -1,5 +1,6 @@
 package unit.bptree;
 
+import base.TestBase;
 import com.microdb.model.DataBase;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
@@ -24,7 +25,7 @@ import static org.junit.Assert.fail;
  * @author zhangjw
  * @version 1.0
  */
-public class BPTreeInternalPageTest {
+public class BPTreeInternalPageTest extends TestBase {
     public DataBase dataBase;
 
     @Before

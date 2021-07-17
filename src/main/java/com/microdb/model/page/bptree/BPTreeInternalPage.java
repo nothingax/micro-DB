@@ -5,7 +5,7 @@ import com.microdb.model.DataBase;
 import com.microdb.model.field.Field;
 import com.microdb.model.field.FieldType;
 import com.microdb.model.field.IntField;
-import com.microdb.model.row.Row;
+import com.microdb.model.page.Page;
 import com.microdb.model.row.RowID;
 import com.microdb.model.table.TableDesc;
 import com.microdb.operator.PredicateEnum;
@@ -29,7 +29,10 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable {
 
     private static final long serialVersionUID = -375689079604630693L;
 
-    public class ChildPages {
+    // public class ChildPages {
+    public class ChildPages implements Serializable{
+        private static final long serialVersionUID = -7775410939052830687L;
+
         int leftPageNo;
         int rightPageNo;
 
@@ -102,6 +105,9 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable {
         this.maxSlotNum = calculateMaxSlotNum(tableDesc);
         this.keyFieldIndex = keyFieldIndex;
         deserialize(pageData);
+
+        // 保留页原始数据
+        saveBeforePage();
     }
 
     @Override
@@ -221,7 +227,7 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable {
         return slotUsageStatusBitMap[index];
     }
 
-    public int calculateMaxSlotNum(TableDesc tableDesc) {
+    private int calculateMaxSlotNum(TableDesc tableDesc) {
         return getMaxEntryNum(tableDesc);
     }
 
@@ -248,9 +254,18 @@ public class BPTreeInternalPage extends BPTreePage implements Serializable {
         return maxSlotNum;
     }
 
+    // @Override
+    // public Iterator<Row> getRowIterator() {
+    //     throw new UnsupportedOperationException("");
+    // }
+
     @Override
-    public Iterator<Row> getRowIterator() {
-        return null;
+    public Page getBeforePage() {
+        try {
+            return new BPTreeInternalPage(pageID, beforePageData,keyFieldIndex);
+        } catch (IOException e) {
+            throw new DbException("get before page error", e);
+        }
     }
 
     /**

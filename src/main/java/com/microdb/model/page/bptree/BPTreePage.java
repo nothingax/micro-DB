@@ -1,15 +1,13 @@
 package com.microdb.model.page.bptree;
 
 import com.microdb.exception.DbException;
-import com.microdb.model.row.Row;
-import com.microdb.model.table.TableDesc;
 import com.microdb.model.page.DirtyPage;
 import com.microdb.model.page.Page;
+import com.microdb.model.table.TableDesc;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Iterator;
 
 /**
  * b+树各类页的公共属性、方法
@@ -40,6 +38,11 @@ public abstract class BPTreePage extends DirtyPage implements Page, Serializable
      */
     protected TableDesc tableDesc;
 
+    /**
+     * 原始页数据
+     */
+    protected byte[] beforePageData;
+
     @Override
     public BPTreePageID getPageID() {
         return pageID;
@@ -55,18 +58,16 @@ public abstract class BPTreePage extends DirtyPage implements Page, Serializable
 
     // public abstract int calculateMaxSlotNum(TableDesc tableDesc);
 
-    public abstract Iterator<Row> getRowIterator();
+    // public abstract Iterator<Row> getRowIterator();
 
     @Override
     public void saveBeforePage() {
-        throw new UnsupportedOperationException();
+        try {
+            beforePageData = this.serialize().clone();
+        } catch (Exception e) {
+            throw new DbException("save before page error", e);
+        }
     }
-
-    @Override
-    public Page getBeforePage() {
-        throw new UnsupportedOperationException();
-    }
-
 
     /**
      * 向dos中填充指定数量的字节

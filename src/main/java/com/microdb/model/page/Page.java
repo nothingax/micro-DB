@@ -1,10 +1,8 @@
 package com.microdb.model.page;
 
-import com.microdb.model.row.Row;
 import com.microdb.transaction.TransactionID;
 
 import java.io.IOException;
-import java.util.Iterator;
 
 /**
  * Page 抽象接口
@@ -40,8 +38,6 @@ public interface Page {
     boolean isSlotUsed(int index);
 
     boolean hasEmptySlot();
-
-    Iterator<Row> getRowIterator();
 
     /**
      * 标记是否为脏页

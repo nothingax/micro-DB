@@ -1,5 +1,6 @@
 package integrated.operator;
 
+import base.TestBase;
 import com.microdb.connection.Connection;
 import com.microdb.model.DataBase;
 import com.microdb.model.table.DbTable;
@@ -29,7 +30,7 @@ import java.util.List;
  * @author zhangjw
  * @version 1.0
  */
-public class JoinTest {
+public class JoinTest extends TestBase {
     public DataBase dataBase = DataBase.getInstance();
 
     @Before
@@ -74,15 +75,15 @@ public class JoinTest {
         TableDesc personTableDesc = tablePerson.getTableDesc();
 
         Row tRow1 = new Row(personTableDesc);
-        tRow1.setFields(Arrays.asList(new IntField(100),new IntField(1)));
+        tRow1.setFields(Arrays.asList(new IntField(100), new IntField(1)));
         tablePerson.insertRow(tRow1);
 
         Row tRow2 = new Row(personTableDesc);
-        tRow2.setFields(Arrays.asList(new IntField(200),new IntField(2)));
+        tRow2.setFields(Arrays.asList(new IntField(200), new IntField(2)));
         tablePerson.insertRow(tRow2);
 
         Row tRow3 = new Row(personTableDesc);
-        tRow3.setFields(Arrays.asList(new IntField(201),new IntField(2)));
+        tRow3.setFields(Arrays.asList(new IntField(201), new IntField(2)));
         tablePerson.insertRow(tRow3);
 
         transaction.commit();

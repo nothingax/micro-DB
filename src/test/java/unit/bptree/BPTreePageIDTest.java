@@ -1,5 +1,6 @@
 package unit.bptree;
 
+import base.TestBase;
 import com.microdb.model.page.bptree.BPTreePageID;
 import com.microdb.model.page.bptree.BPTreePageType;
 import org.junit.Test;
@@ -13,7 +14,7 @@ import static org.junit.Assert.assertNotEquals;
  * @author zhangjw
  * @version 1.0
  */
-public class BPTreePageIDTest {
+public class BPTreePageIDTest extends TestBase {
 
     /**
      * 测试Equals 方法
